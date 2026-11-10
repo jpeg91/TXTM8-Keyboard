@@ -42,6 +42,11 @@ class T9Session(private val engine: T9Engine) {
         if (candidates.isNotEmpty()) index = (index - 1 + candidates.size) % candidates.size
     }
 
+    /** Jump straight to a candidate (e.g. the user tapped it in the strip). */
+    fun select(i: Int) {
+        if (i in candidates.indices) index = i
+    }
+
     /** Finishes the word, teaches the engine, and returns the text to insert. */
     fun commit(): String? {
         if (digits.isEmpty()) return null

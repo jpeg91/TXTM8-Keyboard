@@ -1,0 +1,8 @@
+<!-- app/src/main/res/xml/method.xml -->
+<input-method xmlns:android="http://schemas.android.com/apk/res/android"
+    android:settingsActivity="com.m8.keyboard.SetupActivity">
+    <subtype
+        android:imeSubtypeLocale="en_US"
+        android:imeSubtypeMode="keyboard"
+        android:label="English (T9)" />
+</input-method>
