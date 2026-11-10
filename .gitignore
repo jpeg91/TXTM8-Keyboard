@@ -4,5 +4,4 @@ build/
 *.iml
 local.properties
 # raw downloaded frequency lists (regenerate dictionaries/en.txt with tools/build_dictionary.py)
-dictionaries/raw/*
 !dictionaries/raw/.gitkeep
