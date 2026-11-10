@@ -1,3 +1,4 @@
+// src/test/kotlin/t9/T9EngineTest.kt
 package t9
 
 import kotlin.test.Test
@@ -19,7 +20,7 @@ class T9EngineTest {
     @Test
     fun encodesWords() {
         assertEquals("4663", T9Keymap.encode("home"))
-        assertEquals("366", T9Keymap.encode("don't"))
+        assertEquals("3668", T9Keymap.encode("don't"))
         assertEquals("2233", T9Keymap.encode("caf\u00e9"))
         assertEquals(null, T9Keymap.encode("a1"))
     }

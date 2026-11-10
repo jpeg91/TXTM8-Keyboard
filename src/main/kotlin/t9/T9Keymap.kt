@@ -1,3 +1,4 @@
+// src/main/kotlin/t9/T9Keymap.kt
 package t9
 
 import java.text.Normalizer
@@ -27,7 +28,7 @@ object T9Keymap {
     /**
      * Converts a word to its key sequence ("home" -> "4663").
      * Accents are stripped ("café" -> "2233") and apostrophes are skipped
-     * ("don't" -> "366"), so the user never has to type them.
+     * ("don't" -> "3668", same as "dont"), so the user never has to type them.
      * Returns null if the word contains anything that isn't a letter.
      */
     fun encode(word: String): String? {

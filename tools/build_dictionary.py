@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+# tools/build_dictionary.py
 """
 Build the T9 dictionary asset from a word-frequency list.
 
