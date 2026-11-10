@@ -1,0 +1,65 @@
+// app/src/main/kotlin/com/m8/keyboard/KeyboardSettings.kt
+package com.m8.keyboard
+
+import android.content.Context
+import android.media.AudioManager
+import android.view.HapticFeedbackConstants
+import android.view.View
+
+/** User-adjustable options, stored in SharedPreferences by [SetupActivity]. */
+data class KeyboardSettings(
+    val theme: Int = THEME_SYSTEM,
+    val keySize: Int = 1,
+    val multiTapMs: Int = 800,
+    val haptic: Boolean = true,
+    val sound: Boolean = false,
+    val reopenWord: Boolean = true,
+) {
+    val keyHeightDp: Int
+        get() = when (keySize) {
+            0 -> 48
+            2 -> 66
+            else -> 56
+        }
+
+    companion object {
+        const val PREFS = "m8_settings"
+
+        const val KEY_THEME = "theme"
+        const val KEY_SIZE = "key_size"
+        const val KEY_TIMEOUT = "multitap_ms"
+        const val KEY_HAPTIC = "haptic"
+        const val KEY_SOUND = "sound"
+        const val KEY_REOPEN = "reopen_word"
+        const val KEY_CLEAR_TOKEN = "clear_token"
+
+        const val THEME_SYSTEM = 0
+        const val THEME_DARK = 1
+        const val THEME_LIGHT = 2
+
+        fun load(context: Context): KeyboardSettings {
+            val p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            return KeyboardSettings(
+                theme = p.getInt(KEY_THEME, THEME_SYSTEM),
+                keySize = p.getInt(KEY_SIZE, 1),
+                multiTapMs = p.getInt(KEY_TIMEOUT, 800),
+                haptic = p.getBoolean(KEY_HAPTIC, true),
+                sound = p.getBoolean(KEY_SOUND, false),
+                reopenWord = p.getBoolean(KEY_REOPEN, true),
+            )
+        }
+    }
+}
+
+/** Vibration / click sound for a key press, according to the settings. */
+fun KeyboardSettings.feedback(view: View, isLong: Boolean = false) {
+    if (haptic) {
+        view.performHapticFeedback(
+            if (isLong) HapticFeedbackConstants.LONG_PRESS else HapticFeedbackConstants.KEYBOARD_TAP,
+        )
+    }
+    if (sound) {
+        val am = view.context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        am.playSoundEffect(AudioManager.FX_KEYPRESS_STANDARD)
+    }
+}
