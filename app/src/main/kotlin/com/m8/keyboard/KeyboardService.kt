@@ -200,6 +200,7 @@ class KeyboardService : InputMethodService(), NumberPadView.Listener, QwertyKeyp
     // ---------------------------------------------------------------- number pad events
 
     override fun onKeypadKey(key: Char) {
+        if (key != '#') pulse()
         if (digitsOnly) {
             currentInputConnection?.commitText(key.toString(), 1)
             return
@@ -220,6 +221,7 @@ class KeyboardService : InputMethodService(), NumberPadView.Listener, QwertyKeyp
 
     override fun onKeypadLongKey(key: Char) {
         spaceTapAt = 0L
+        if (key.isDigit()) pulse()
         if (digitsOnly) {
             currentInputConnection?.commitText(key.toString(), 1)
             return
@@ -246,16 +248,21 @@ class KeyboardService : InputMethodService(), NumberPadView.Listener, QwertyKeyp
 
     override fun onKeypadEnter() = doEnter()
 
+    /** Tapping a suggestion types that word and a space after it. */
     override fun onKeypadCandidate(index: Int) {
         if (!session.isComposing) return
         spaceTapAt = 0L
+        pulse()
         session.select(index)
-        showComposing()
+        commitWord()
+        insertSpace()
+        updateAutoCap()
         refreshUi()
     }
 
     override fun onKeypadSymbol(symbol: String) {
         spaceTapAt = 0L
+        pulse()
         commitWord()
         currentInputConnection?.commitText(symbol, 1)
         refreshUi()
@@ -268,6 +275,7 @@ class KeyboardService : InputMethodService(), NumberPadView.Listener, QwertyKeyp
     override fun onQwertyText(text: String, isLetter: Boolean) {
         val ic = currentInputConnection ?: return
         spaceTapAt = 0L
+        pulse()
         if (isLetter) {
             ic.commitText(caseAdjust(text), 1)
             if (caseMode == CaseMode.CAP_NEXT) caseMode = CaseMode.LOWER
@@ -278,6 +286,7 @@ class KeyboardService : InputMethodService(), NumberPadView.Listener, QwertyKeyp
     }
 
     override fun onQwertySpace() {
+        pulse()
         fixContraction()
         learnTrailingWord()
         insertSpace()
@@ -574,6 +583,12 @@ class KeyboardService : InputMethodService(), NumberPadView.Listener, QwertyKeyp
         if (caseMode != CaseMode.LOWER) return
         val type = currentInputEditorInfo?.inputType ?: return
         if (cursorWantsCaps(type)) caseMode = CaseMode.CAP_NEXT
+    }
+
+    /** Flash the keyboard background in the accent colour (if the setting is on). */
+    private fun pulse() {
+        padView?.pulse()
+        qwertyView?.pulse()
     }
 
     private fun refreshUi() {

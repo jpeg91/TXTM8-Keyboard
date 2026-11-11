@@ -38,6 +38,7 @@ class QwertyKeypadView(
     }
 
     private val uiHandler = Handler(Looper.getMainLooper())
+    private val pulseBackground = PulseBackground(theme.backgroundDrawable(this), theme.accent, settings.pulseStrength)
     private val letterKeys = ArrayList<Pair<TextView, Char>>()
     private var shiftKey: TextView? = null
     private var shiftLabel = "abc"
@@ -53,10 +54,13 @@ class QwertyKeypadView(
 
     init {
         orientation = VERTICAL
-        theme.applyBackground(this)
+        background = pulseBackground
         setPadding(0, dp(4), 0, 0) // no side padding: the outer keys reach the screen edge
         buildPage()
     }
+
+    /** Flashes the background in the accent colour (a character was typed). */
+    fun pulse() = pulseBackground.pulse()
 
     /** [label] is the shift key text (abc / Abc / ABC); [upper] shows capital letters on the keys. */
     fun setCase(label: String, upper: Boolean) {
@@ -161,7 +165,7 @@ class QwertyKeypadView(
     }
 
     private fun makeDelKey(): TextView {
-        val del = makeKey("DEL", 13f, action = true)
+        val del = theme.iconKey(context, KeyIcon.BACKSPACE, true, GAP_X_DP, GAP_Y_DP, 8, "Backspace")
         del.setOnTouchListener { v, e ->
             when (e.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
@@ -181,7 +185,7 @@ class QwertyKeypadView(
     }
 
     private fun makeEnterKey(): TextView {
-        val enter = makeKey("ENTER", 13f, action = true)
+        val enter = theme.iconKey(context, KeyIcon.ENTER, true, GAP_X_DP, GAP_Y_DP, 8, "Enter")
         enter.setOnClickListener {
             settings.feedback(it)
             listener.onQwertyEnter()

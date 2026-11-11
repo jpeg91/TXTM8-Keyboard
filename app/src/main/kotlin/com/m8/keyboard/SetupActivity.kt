@@ -4,6 +4,7 @@ package com.m8.keyboard
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.Typeface
 import android.os.Bundle
 import android.provider.Settings
@@ -15,6 +16,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
+import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 
@@ -47,13 +49,13 @@ class SetupActivity : Activity() {
         root.orientation = LinearLayout.VERTICAL
         root.setPadding(dp(16), dp(20), dp(16), dp(24))
 
-        root.addView(title("M8 Keyboard"))
+        root.addView(title("TXTM8 Keyboard"))
         root.addView(
             body(
                 "Predictive number-pad typing.\n\n" +
                     "Hold # to switch between predictive and multi-tap. " +
                     "Hold a number key to type the digit, then keep tapping it to reach the letters " +
-                    "(hold 7, tap 4 more times for S). Tap QWERTY for the full keyboard.",
+                    "(hold 7, tap 4 more times for S). Tap the keyboard icon for the full keyboard.",
             ),
         )
 
@@ -64,7 +66,7 @@ class SetupActivity : Activity() {
             },
         )
         root.addView(
-            button("2. Switch to M8 Keyboard", action = true) {
+            button("2. Switch to TXTM8 Keyboard", action = true) {
                 val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
                 imm.showInputMethodPicker()
             },
@@ -105,7 +107,9 @@ class SetupActivity : Activity() {
         root.addView(label("Feedback and editing"))
         addToggle(root, "Vibrate on key press", KeyboardSettings.KEY_HAPTIC, true)
         addToggle(root, "Key click sound", KeyboardSettings.KEY_SOUND, false)
-        addToggle(root, "DEL re-opens the previous word", KeyboardSettings.KEY_REOPEN, true)
+        addToggle(root, "Backspace re-opens the previous word", KeyboardSettings.KEY_REOPEN, true)
+        root.addView(label("Typing pulse"))
+        addPulseControls(root)
 
         val clear = button("Clear learned words", action = false) {
             AlertDialog.Builder(this, AlertDialog.THEME_DEVICE_DEFAULT_DARK)
@@ -250,6 +254,55 @@ class SetupActivity : Activity() {
             }
             parent.addView(row)
         }
+    }
+
+    /** A switch for the typing pulse plus an intensity slider that is greyed out while it is off. */
+    private fun addPulseControls(parent: LinearLayout) {
+        var on = prefs.getBoolean(KeyboardSettings.KEY_PULSE, true)
+
+        val valueText = TextView(this)
+        valueText.textSize = 14f
+        valueText.setTextColor(look.subText)
+        valueText.setPadding(dp(36), dp(4), 0, 0)
+
+        val seek = SeekBar(this)
+        seek.max = 100
+        seek.progress = prefs.getInt(KeyboardSettings.KEY_PULSE_LEVEL, 50)
+        val tint = ColorStateList.valueOf(look.accent)
+        seek.progressTintList = tint
+        seek.thumbTintList = tint
+        seek.progressBackgroundTintList = ColorStateList.valueOf(0xFF727272.toInt()) // dim grey
+
+        fun refresh() {
+            seek.isEnabled = on
+            seek.alpha = if (on) 1f else 0.35f
+            valueText.alpha = if (on) 1f else 0.35f
+            valueText.text = "Pulse intensity: " + seek.progress + "%"
+        }
+        seek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(bar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) prefs.edit().putInt(KeyboardSettings.KEY_PULSE_LEVEL, progress).apply()
+                refresh()
+            }
+
+            override fun onStartTrackingTouch(bar: SeekBar?) {}
+
+            override fun onStopTrackingTouch(bar: SeekBar?) {}
+        })
+
+        val diamond = View(this)
+        diamond.background = DiamondDrawable(on, look.accent, density)
+        val row = optionRow(diamond, "Pulse the background when typing")
+        row.setOnClickListener {
+            on = !on
+            prefs.edit().putBoolean(KeyboardSettings.KEY_PULSE, on).apply()
+            diamond.background = DiamondDrawable(on, look.accent, density)
+            refresh()
+        }
+        parent.addView(row)
+        parent.addView(valueText)
+        parent.addView(seek, LinearLayout.LayoutParams(MATCH, WRAP))
+        refresh()
     }
 
     private fun addToggle(parent: LinearLayout, title: String, key: String, default: Boolean) {

@@ -25,7 +25,7 @@ private const val MATCH = ViewGroup.LayoutParams.MATCH_PARENT
 private const val GAP_DP = 3
 
 /**
- * The number pad: [QWERTY] [candidate strip] [ENTER] [DEL] on top, a 4x3 key grid below.
+ * The number pad: [keyboard icon] [candidate strip] [enter] [backspace] on top, a 4x3 key grid below.
  * The grid can be swapped for a symbol picker with [showSymbols].
  */
 class NumberPadView(
@@ -50,6 +50,7 @@ class NumberPadView(
     private val scroll = HorizontalScrollView(context)
     private val grid = LinearLayout(context)
     private val symbolPanel = LinearLayout(context)
+    private val pulseBackground = PulseBackground(theme.backgroundDrawable(this), theme.accent, settings.pulseStrength)
     private lateinit var hashKey: TextView
 
     private val repeatBackspace = object : Runnable {
@@ -61,7 +62,7 @@ class NumberPadView(
 
     init {
         orientation = VERTICAL
-        theme.applyBackground(this)
+        background = pulseBackground
         setPadding(0, dp(4), 0, 0) // no side padding: the outer keys reach the screen edge
 
         // --- top bar: QWERTY | candidates | DEL | ENTER ---
@@ -70,13 +71,13 @@ class NumberPadView(
         scroll.setBackgroundColor(theme.strip)
         scroll.addView(strip, FrameLayout.LayoutParams(WRAP, MATCH))
 
-        val qwerty = makeKey("QWERTY", 11f)
+        val qwerty = theme.iconKey(context, KeyIcon.KEYBOARD, false, GAP_DP, GAP_DP, 10, "Full keyboard")
         qwerty.setOnClickListener {
             settings.feedback(it)
             listener.onKeypadQwerty()
         }
 
-        val del = makeKey("DEL", 14f, action = true)
+        val del = theme.iconKey(context, KeyIcon.BACKSPACE, true, GAP_DP, GAP_DP, 10, "Backspace")
         del.setOnTouchListener { v, e ->
             when (e.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
@@ -93,7 +94,7 @@ class NumberPadView(
             true
         }
 
-        val enter = makeKey("ENTER", 14f, action = true)
+        val enter = theme.iconKey(context, KeyIcon.ENTER, true, GAP_DP, GAP_DP, 10, "Enter")
         enter.setOnClickListener {
             settings.feedback(it)
             listener.onKeypadEnter()
@@ -161,6 +162,9 @@ class NumberPadView(
         symbolPanel.addView(bottom, LinearLayout.LayoutParams(MATCH, WRAP))
         addView(symbolPanel, LinearLayout.LayoutParams(MATCH, WRAP))
     }
+
+    /** Flashes the background in the accent colour (a character was typed). */
+    fun pulse() = pulseBackground.pulse()
 
     /** Swaps the number grid for the symbol picker (or back). */
     fun showSymbols(show: Boolean) {

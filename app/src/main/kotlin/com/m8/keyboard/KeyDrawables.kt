@@ -1,16 +1,22 @@
 // app/src/main/kotlin/com/m8/keyboard/KeyDrawables.kt
 package com.m8.keyboard
 
+import android.animation.ValueAnimator
 import android.graphics.Canvas
 import android.graphics.ColorFilter
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.RadialGradient
+import android.graphics.Rect
+import android.graphics.Shader
 import android.graphics.PixelFormat
+import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.InsetDrawable
 import android.graphics.drawable.StateListDrawable
 import android.view.View
+import android.view.animation.DecelerateInterpolator
 
 /**
  * One slanted key: a parallelogram (top edge pushed right, bottom edge left) with a white
@@ -188,10 +194,10 @@ class BackdropDrawable(
     override fun getOpacity(): Int = PixelFormat.OPAQUE
 }
 
-/** Sets the keyboard's background for this theme (plain colour, or the pinstriped backdrop). */
-fun KeyboardTheme.applyBackground(view: View) {
+/** The keyboard's background for this theme (plain colour, or the pinstriped backdrop). */
+fun KeyboardTheme.backgroundDrawable(view: View): Drawable =
     if (isSlanted) {
-        view.background = BackdropDrawable(
+        BackdropDrawable(
             base = background,
             stripe = 0x08FFFFFF,
             red = accent,
@@ -199,8 +205,70 @@ fun KeyboardTheme.applyBackground(view: View) {
             density = view.resources.displayMetrics.density,
         )
     } else {
-        view.setBackgroundColor(background)
+        ColorDrawable(background)
     }
+
+/** Sets [view]'s background for this theme. */
+fun KeyboardTheme.applyBackground(view: View) {
+    view.background = backgroundDrawable(view)
+}
+
+/**
+ * Wraps a background and, on [pulse], washes it with a glow of the accent colour (rising from the
+ * bottom centre, where thumbs are) that fades out. [strength] is the glow's peak opacity; 0 disables it.
+ */
+class PulseBackground(
+    private val base: Drawable,
+    private val accent: Int,
+    private val strength: Float,
+) : Drawable() {
+
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private var level = 0f
+    private var animator: ValueAnimator? = null
+
+    override fun onBoundsChange(bounds: Rect) {
+        base.bounds = bounds
+        val size = maxOf(bounds.width(), bounds.height()).toFloat()
+        paint.shader = RadialGradient(
+            bounds.exactCenterX(),
+            bounds.bottom.toFloat(),
+            size * 0.95f,
+            accent,
+            accent and 0x00FFFFFF,
+            Shader.TileMode.CLAMP,
+        )
+    }
+
+    override fun draw(canvas: Canvas) {
+        base.draw(canvas)
+        if (level > 0f && strength > 0f) {
+            paint.alpha = (255f * strength * level).toInt().coerceIn(0, 255)
+            canvas.drawRect(bounds, paint)
+        }
+    }
+
+    /** Flash now and fade out. */
+    fun pulse() {
+        if (strength <= 0f) return
+        animator?.cancel()
+        animator = ValueAnimator.ofFloat(1f, 0f).apply {
+            duration = 450L
+            interpolator = DecelerateInterpolator()
+            addUpdateListener {
+                level = it.animatedValue as Float
+                invalidateSelf()
+            }
+            start()
+        }
+    }
+
+    override fun setAlpha(alpha: Int) {}
+
+    override fun setColorFilter(colorFilter: ColorFilter?) {}
+
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun getOpacity(): Int = PixelFormat.OPAQUE
 }
 
 /**
