@@ -133,4 +133,19 @@ class T9EngineTest {
         assertEquals("good", s.displayText)
         assertEquals("4663", s.digitString)
     }
+
+    @Test
+    fun contractionFixesKeepTheSameKeys() {
+        for ((typed, fixed) in Contractions.FIXES) {
+            assertEquals(T9Keymap.encode(typed), T9Keymap.encode(fixed), typed)
+        }
+    }
+
+    @Test
+    fun contractionsAreSuggested() {
+        val e = engine()
+        for ((w, s) in Contractions.WORDS) e.add(w, s)
+        assertTrue(e.lookup("43").any { it.word == "i'd" })
+        assertTrue(e.lookup("9373").any { it.word == "we're" })
+    }
 }
