@@ -38,6 +38,7 @@ data class KeyboardSettings(
         const val THEME_DARK = 1
         const val THEME_LIGHT = 2
         const val THEME_P5 = 3
+        const val THEME_P5_PURPLE = 4 // WebMChan's "princetheme" (Audio Mode)
 
         fun load(context: Context): KeyboardSettings {
             val p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

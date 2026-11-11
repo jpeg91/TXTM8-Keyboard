@@ -84,6 +84,46 @@ class P5KeyDrawable(
     override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
 }
 
+/** The marker in front of a choice: a diamond, filled with the accent when picked. */
+class P5DiamondDrawable(
+    private val selected: Boolean,
+    private val accent: Int,
+    private val density: Float,
+) : Drawable() {
+
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+    override fun draw(canvas: Canvas) {
+        val b = bounds
+        val cx = b.exactCenterX()
+        val cy = b.exactCenterY()
+        val half = 6f * density
+        canvas.save()
+        canvas.rotate(45f, cx, cy)
+        if (selected) {
+            paint.style = Paint.Style.FILL
+            paint.color = accent
+            canvas.drawRect(cx - half, cy - half, cx + half, cy + half, paint)
+        }
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = 2f * density
+        paint.color = if (selected) accent else 0xFF727272.toInt() // P5.GreyDim
+        canvas.drawRect(cx - half, cy - half, cx + half, cy + half, paint)
+        canvas.restore()
+    }
+
+    override fun setAlpha(alpha: Int) {
+        paint.alpha = alpha
+    }
+
+    override fun setColorFilter(colorFilter: ColorFilter?) {
+        paint.colorFilter = colorFilter
+    }
+
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+}
+
 /** WebMChan's screen backdrop: black, faint diagonal pinstripes, red wedges in two corners. */
 class P5BackdropDrawable(
     private val base: Int,

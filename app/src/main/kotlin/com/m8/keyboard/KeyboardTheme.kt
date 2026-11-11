@@ -51,27 +51,34 @@ class KeyboardTheme(
         )
 
         /**
-         * WebMChan's Persona 5 look: black, white outlines, red accents, slanted keys with a
-         * dark-red drop shadow and heavy italic type. Colours are the app's P5 palette.
+         * WebMChan's Persona 5 look: black, white outlines, a bold accent, slanted keys with a
+         * dark-accent drop shadow and heavy italic type. The three accent shades are the app's
+         * Red / RedBright / RedDeep (or their purple stand-ins in the "princetheme").
          */
-        val P5 = KeyboardTheme(
+        private fun p5(red: Int, redBright: Int, redDeep: Int) = KeyboardTheme(
             background = 0xFF080808.toInt(),        // P5.Black
             strip = Color.TRANSPARENT,              // candidates sit on the pinstriped backdrop
             key = 0xFF151515.toInt(),               // P5.Ink
-            keyPressed = 0xFFE60012.toInt(),        // P5.Red
+            keyPressed = red,
             text = 0xFFFFFFFF.toInt(),              // P5.White
-            accent = 0xFFE60012.toInt(),
+            accent = red,
             accentText = 0xFFFFFFFF.toInt(),
-            actionKey = 0xFFE60012.toInt(),
-            actionKeyPressed = 0xFFFF4553.toInt(),  // P5.RedBright
+            actionKey = red,
+            actionKeyPressed = redBright,
             actionText = 0xFFFFFFFF.toInt(),
             subText = 0xFFC4C4C4.toInt(),           // P5.Grey
             isP5 = true,
             border = 0xFFFFFFFF.toInt(),
-            shadow = 0xFF7A000B.toInt(),            // P5.RedDeep
-            deep = 0xFF7A000B.toInt(),
+            shadow = redDeep,
+            deep = redDeep,
             typeface = heavyItalic(),
         )
+
+        /** WebMChan's red P5 theme. */
+        val P5 = p5(0xFFE60012.toInt(), 0xFFFF4553.toInt(), 0xFF7A000B.toInt())
+
+        /** WebMChan's "princetheme" (Audio Mode): the same look with purple in place of red. */
+        val P5_PURPLE = p5(0xFF755FBE.toInt(), 0xFFA897EC.toInt(), 0xFF3A2E6B.toInt())
 
         private fun heavyItalic(): Typeface =
             if (Build.VERSION.SDK_INT >= 28) {
@@ -85,6 +92,7 @@ class KeyboardTheme(
                 Configuration.UI_MODE_NIGHT_YES
             return when (setting) {
                 KeyboardSettings.THEME_P5 -> P5
+                KeyboardSettings.THEME_P5_PURPLE -> P5_PURPLE
                 KeyboardSettings.THEME_DARK -> DARK
                 KeyboardSettings.THEME_LIGHT -> LIGHT
                 else -> if (night) DARK else LIGHT
