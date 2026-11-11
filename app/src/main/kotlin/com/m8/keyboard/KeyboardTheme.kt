@@ -8,7 +8,7 @@ import android.graphics.Typeface
 import android.os.Build
 
 /**
- * Colours (and, for P5, shapes and type) for the keyboard views.
+ * Colours (and, for the red and purple themes, shapes and type) for the keyboard views.
  * "Action" keys (DEL, ENTER, shift) can be drawn differently from ordinary keys.
  */
 class KeyboardTheme(
@@ -23,7 +23,7 @@ class KeyboardTheme(
     val actionKeyPressed: Int = keyPressed,
     val actionText: Int = text,
     val subText: Int = text,
-    val isP5: Boolean = false,
+    val isSlanted: Boolean = false,
     val border: Int = 0,
     val shadow: Int = 0,
     val deep: Int = 0,
@@ -51,34 +51,35 @@ class KeyboardTheme(
         )
 
         /**
-         * WebMChan's Persona 5 look: black, white outlines, a bold accent, slanted keys with a
-         * dark-accent drop shadow and heavy italic type. The three accent shades are the app's
-         * Red / RedBright / RedDeep (or their purple stand-ins in the "princetheme").
+         * The bold look shared by the red and purple themes: black, white outlines, a strong
+         * accent, slanted keys with a dark-accent drop shadow and heavy italic type. The three
+         * accent shades are the main colour, a brighter one (pressed action keys) and a deep one
+         * (shadows and corner wedges).
          */
-        private fun p5(red: Int, redBright: Int, redDeep: Int) = KeyboardTheme(
-            background = 0xFF080808.toInt(),        // P5.Black
+        private fun accented(red: Int, redBright: Int, redDeep: Int) = KeyboardTheme(
+            background = 0xFF080808.toInt(),        // near black
             strip = Color.TRANSPARENT,              // candidates sit on the pinstriped backdrop
-            key = 0xFF151515.toInt(),               // P5.Ink
+            key = 0xFF151515.toInt(),               // ink
             keyPressed = red,
-            text = 0xFFFFFFFF.toInt(),              // P5.White
+            text = 0xFFFFFFFF.toInt(),              // white
             accent = red,
             accentText = 0xFFFFFFFF.toInt(),
             actionKey = red,
             actionKeyPressed = redBright,
             actionText = 0xFFFFFFFF.toInt(),
-            subText = 0xFFC4C4C4.toInt(),           // P5.Grey
-            isP5 = true,
+            subText = 0xFFC4C4C4.toInt(),           // light grey
+            isSlanted = true,
             border = 0xFFFFFFFF.toInt(),
             shadow = redDeep,
             deep = redDeep,
             typeface = heavyItalic(),
         )
 
-        /** WebMChan's red P5 theme. */
-        val P5 = p5(0xFFE60012.toInt(), 0xFFFF4553.toInt(), 0xFF7A000B.toInt())
+        /** The red theme. */
+        val RED = accented(0xFFE60012.toInt(), 0xFFFF4553.toInt(), 0xFF7A000B.toInt())
 
-        /** WebMChan's "princetheme" (Audio Mode): the same look with purple in place of red. */
-        val P5_PURPLE = p5(0xFF755FBE.toInt(), 0xFFA897EC.toInt(), 0xFF3A2E6B.toInt())
+        /** The purple theme: the same look with purple in place of red. */
+        val PURPLE = accented(0xFF755FBE.toInt(), 0xFFA897EC.toInt(), 0xFF3A2E6B.toInt())
 
         private fun heavyItalic(): Typeface =
             if (Build.VERSION.SDK_INT >= 28) {
@@ -91,8 +92,8 @@ class KeyboardTheme(
             val night = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
                 Configuration.UI_MODE_NIGHT_YES
             return when (setting) {
-                KeyboardSettings.THEME_P5 -> P5
-                KeyboardSettings.THEME_P5_PURPLE -> P5_PURPLE
+                KeyboardSettings.THEME_RED -> RED
+                KeyboardSettings.THEME_PURPLE -> PURPLE
                 KeyboardSettings.THEME_DARK -> DARK
                 KeyboardSettings.THEME_LIGHT -> LIGHT
                 else -> if (night) DARK else LIGHT

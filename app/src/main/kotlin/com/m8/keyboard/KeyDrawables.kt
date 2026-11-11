@@ -13,12 +13,12 @@ import android.graphics.drawable.StateListDrawable
 import android.view.View
 
 /**
- * One P5 key: a slanted parallelogram (top edge pushed right, bottom edge left) with a white
- * outline and a dark-red copy offset behind it, like WebMChan's buttons. The drawable only
+ * One slanted key: a parallelogram (top edge pushed right, bottom edge left) with a white
+ * outline and a dark-accent copy offset behind it. The drawable only
  * paints inside its inset; the view keeps its full cell as touch area.
  * [leftFrac]/[rightFrac] pull the shape inwards (fractions of the width) for wide end keys.
  */
-class P5KeyDrawable(
+class SlantKeyDrawable(
     private val fill: Int,
     private val border: Int,
     private val shadow: Int,
@@ -85,7 +85,7 @@ class P5KeyDrawable(
 }
 
 /** The marker in front of a choice: a diamond, filled with the accent when picked. */
-class P5DiamondDrawable(
+class DiamondDrawable(
     private val selected: Boolean,
     private val accent: Int,
     private val density: Float,
@@ -107,7 +107,7 @@ class P5DiamondDrawable(
         }
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = 2f * density
-        paint.color = if (selected) accent else 0xFF727272.toInt() // P5.GreyDim
+        paint.color = if (selected) accent else 0xFF727272.toInt() // dim grey
         canvas.drawRect(cx - half, cy - half, cx + half, cy + half, paint)
         canvas.restore()
     }
@@ -124,8 +124,8 @@ class P5DiamondDrawable(
     override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
 }
 
-/** WebMChan's screen backdrop: black, faint diagonal pinstripes, red wedges in two corners. */
-class P5BackdropDrawable(
+/** Screen backdrop: black, faint diagonal pinstripes, accent wedges in two corners. */
+class BackdropDrawable(
     private val base: Int,
     private val stripe: Int,
     private val red: Int,
@@ -188,10 +188,10 @@ class P5BackdropDrawable(
     override fun getOpacity(): Int = PixelFormat.OPAQUE
 }
 
-/** Sets the keyboard's background for this theme (plain colour, or the P5 backdrop). */
+/** Sets the keyboard's background for this theme (plain colour, or the pinstriped backdrop). */
 fun KeyboardTheme.applyBackground(view: View) {
-    if (isP5) {
-        view.background = P5BackdropDrawable(
+    if (isSlanted) {
+        view.background = BackdropDrawable(
             base = background,
             stripe = 0x08FFFFFF,
             red = accent,
@@ -220,8 +220,8 @@ fun KeyboardTheme.keyBackground(
     val pressed = if (action) actionKeyPressed else keyPressed
 
     fun layer(color: Int): Drawable {
-        if (isP5) {
-            return P5KeyDrawable(
+        if (isSlanted) {
+            return SlantKeyDrawable(
                 fill = color,
                 border = border,
                 shadow = shadow,
@@ -252,8 +252,8 @@ fun KeyboardTheme.keyBackground(
 
 /** Highlight behind the selected candidate word. */
 fun KeyboardTheme.candidateBackground(density: Float): Drawable {
-    if (isP5) {
-        return P5KeyDrawable(
+    if (isSlanted) {
+        return SlantKeyDrawable(
             fill = accent,
             border = border,
             shadow = shadow,

@@ -207,8 +207,8 @@ class T9KeypadView(
 
     private fun dp(v: Int): Int = (v * density()).toInt()
 
-    /** The P5 theme shouts its labels. */
-    private fun caps(s: String): String = if (theme.isP5) s.uppercase() else s
+    /** The red and purple themes shout their labels. */
+    private fun caps(s: String): String = if (theme.isSlanted) s.uppercase() else s
 
     private fun newRow(): LinearLayout {
         val r = LinearLayout(context)

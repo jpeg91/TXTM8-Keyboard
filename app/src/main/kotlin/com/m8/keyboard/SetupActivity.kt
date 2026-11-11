@@ -23,7 +23,7 @@ private const val MATCH = ViewGroup.LayoutParams.MATCH_PARENT
 
 /**
  * Launcher screen: enable/select the keyboard, try it, and change its settings.
- * Drawn in WebMChan's P5 look (purple accent when the purple theme is chosen).
+ * Drawn in the same bold look as the red theme (with a purple accent when the purple theme is chosen).
  */
 class SetupActivity : Activity() {
 
@@ -37,8 +37,8 @@ class SetupActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val chosen = prefs.getInt(KeyboardSettings.KEY_THEME, KeyboardSettings.THEME_P5)
-        look = if (chosen == KeyboardSettings.THEME_P5_PURPLE) KeyboardTheme.P5_PURPLE else KeyboardTheme.P5
+        val chosen = prefs.getInt(KeyboardSettings.KEY_THEME, KeyboardSettings.THEME_RED)
+        look = if (chosen == KeyboardSettings.THEME_PURPLE) KeyboardTheme.PURPLE else KeyboardTheme.RED
         window.statusBarColor = look.background
         window.navigationBarColor = look.background
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
@@ -73,7 +73,7 @@ class SetupActivity : Activity() {
         root.addView(sectionTitle("Try it"))
         val test = EditText(this)
         test.hint = "Tap here to try it"
-        test.setHintTextColor(0xFF727272.toInt()) // P5.GreyDim
+        test.setHintTextColor(0xFF727272.toInt()) // dim grey
         test.setTextColor(look.text)
         test.textSize = 16f
         test.setPadding(dp(18), dp(14), dp(18), dp(14))
@@ -83,15 +83,15 @@ class SetupActivity : Activity() {
         root.addView(sectionTitle("Settings"))
         addChoice(
             root, "Theme", KeyboardSettings.KEY_THEME,
-            listOf("P5 (red)", "P5 purple (Audio Mode)", "Follow system", "Dark", "Light"),
+            listOf("Red", "Purple", "Follow system", "Dark", "Light"),
             listOf(
-                KeyboardSettings.THEME_P5,
-                KeyboardSettings.THEME_P5_PURPLE,
+                KeyboardSettings.THEME_RED,
+                KeyboardSettings.THEME_PURPLE,
                 KeyboardSettings.THEME_SYSTEM,
                 KeyboardSettings.THEME_DARK,
                 KeyboardSettings.THEME_LIGHT,
             ),
-            KeyboardSettings.THEME_P5,
+            KeyboardSettings.THEME_RED,
             recreateOnChange = true, // so this screen picks up the new accent
         )
         addChoice(
@@ -127,7 +127,7 @@ class SetupActivity : Activity() {
         setContentView(scroll)
     }
 
-    // ---- P5 building blocks ----
+    // ---- building blocks ----
 
     /** The big screen title: heavy italic capitals with a hard accent drop shadow. */
     private fun title(text: String): TextView {
@@ -158,7 +158,7 @@ class SetupActivity : Activity() {
         tv.typeface = look.typeface
         tv.setTextColor(look.text)
         tv.setPadding(dp(20), dp(5), dp(24), dp(9))
-        tv.background = P5KeyDrawable(
+        tv.background = SlantKeyDrawable(
             fill = look.accent,
             border = 0,
             shadow = look.text,
@@ -237,14 +237,14 @@ class SetupActivity : Activity() {
         var selected = values.indexOf(prefs.getInt(key, default)).coerceAtLeast(0)
         options.forEachIndexed { i, option ->
             val diamond = View(this)
-            diamond.background = P5DiamondDrawable(i == selected, look.accent, density)
+            diamond.background = DiamondDrawable(i == selected, look.accent, density)
             diamonds.add(diamond)
             val row = optionRow(diamond, option)
             row.setOnClickListener {
                 selected = i
                 prefs.edit().putInt(key, values[i]).apply()
                 diamonds.forEachIndexed { j, d ->
-                    d.background = P5DiamondDrawable(j == selected, look.accent, density)
+                    d.background = DiamondDrawable(j == selected, look.accent, density)
                 }
                 if (recreateOnChange) recreate()
             }
@@ -255,12 +255,12 @@ class SetupActivity : Activity() {
     private fun addToggle(parent: LinearLayout, title: String, key: String, default: Boolean) {
         var on = prefs.getBoolean(key, default)
         val diamond = View(this)
-        diamond.background = P5DiamondDrawable(on, look.accent, density)
+        diamond.background = DiamondDrawable(on, look.accent, density)
         val row = optionRow(diamond, title)
         row.setOnClickListener {
             on = !on
             prefs.edit().putBoolean(key, on).apply()
-            diamond.background = P5DiamondDrawable(on, look.accent, density)
+            diamond.background = DiamondDrawable(on, look.accent, density)
         }
         parent.addView(row)
     }

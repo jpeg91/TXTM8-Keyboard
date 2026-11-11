@@ -138,7 +138,7 @@ class QwertyKeypadView(
             settings.feedback(it)
             listener.onQwertyText(",", false)
         }
-        val space = makeKey(if (theme.isP5) "SPACE" else "space", 14f)
+        val space = makeKey(if (theme.isSlanted) "SPACE" else "space", 14f)
         space.setOnClickListener {
             settings.feedback(it)
             listener.onQwertySpace()
