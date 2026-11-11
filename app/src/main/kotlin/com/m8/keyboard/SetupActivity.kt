@@ -62,9 +62,14 @@ class SetupActivity : Activity() {
         root.addView(heading("Settings"))
         addChoice(
             root, "Theme", KeyboardSettings.KEY_THEME,
-            listOf("Follow system", "Dark", "Light"),
-            listOf(KeyboardSettings.THEME_SYSTEM, KeyboardSettings.THEME_DARK, KeyboardSettings.THEME_LIGHT),
-            KeyboardSettings.THEME_SYSTEM,
+            listOf("P5 (WebMChan)", "Follow system", "Dark", "Light"),
+            listOf(
+                KeyboardSettings.THEME_P5,
+                KeyboardSettings.THEME_SYSTEM,
+                KeyboardSettings.THEME_DARK,
+                KeyboardSettings.THEME_LIGHT,
+            ),
+            KeyboardSettings.THEME_P5,
         )
         addChoice(
             root, "Key size", KeyboardSettings.KEY_SIZE,

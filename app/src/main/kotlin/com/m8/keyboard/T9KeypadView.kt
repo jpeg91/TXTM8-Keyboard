@@ -2,12 +2,11 @@
 package com.m8.keyboard
 
 import android.content.Context
-import android.graphics.drawable.GradientDrawable
-import android.graphics.drawable.StateListDrawable
 import android.os.Handler
 import android.os.Looper
 import android.text.SpannableString
 import android.text.Spanned
+import android.text.style.ForegroundColorSpan
 import android.text.style.RelativeSizeSpan
 import android.view.Gravity
 import android.view.MotionEvent
@@ -20,6 +19,10 @@ import t9.T9Keymap
 
 private const val WRAP = ViewGroup.LayoutParams.WRAP_CONTENT
 private const val MATCH = ViewGroup.LayoutParams.MATCH_PARENT
+
+// Visible gap between keys. The gap is drawn *inside* each key's touch area (see
+// KeyboardTheme.keyBackground), so there are no dead zones between keys.
+private const val GAP_DP = 3
 
 /**
  * The number pad: [QWERTY] [candidate strip] [DEL] [ENTER] on top, a 4x3 key grid below.
@@ -58,8 +61,8 @@ class T9KeypadView(
 
     init {
         orientation = VERTICAL
-        setBackgroundColor(theme.background)
-        setPadding(dp(4), dp(4), dp(4), dp(4))
+        theme.applyBackground(this)
+        setPadding(0, dp(4), 0, 0) // no side padding: the outer keys reach the screen edge
 
         // --- top bar: QWERTY | candidates | DEL | ENTER ---
         strip.orientation = HORIZONTAL
@@ -73,7 +76,7 @@ class T9KeypadView(
             listener.onKeypadQwerty()
         }
 
-        val del = makeKey("DEL", 14f)
+        val del = makeKey("DEL", 14f, action = true)
         del.setOnTouchListener { v, e ->
             when (e.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
@@ -90,7 +93,7 @@ class T9KeypadView(
             true
         }
 
-        val enter = makeKey("ENTER", 14f)
+        val enter = makeKey("ENTER", 14f, action = true)
         enter.setOnClickListener {
             settings.feedback(it)
             listener.onKeypadEnter()
@@ -98,10 +101,10 @@ class T9KeypadView(
 
         val top = newRow()
         top.gravity = Gravity.CENTER_VERTICAL
-        top.addView(qwerty, LinearLayout.LayoutParams(dp(56), dp(44)).apply { setMargins(0, 0, dp(3), 0) })
-        top.addView(scroll, LinearLayout.LayoutParams(0, dp(48)).apply { weight = 1f })
-        top.addView(del, LinearLayout.LayoutParams(dp(56), dp(44)).apply { setMargins(dp(3), 0, dp(3), 0) })
-        top.addView(enter, LinearLayout.LayoutParams(dp(64), dp(44)))
+        top.addView(qwerty, LinearLayout.LayoutParams(dp(60), dp(52)))
+        top.addView(scroll, LinearLayout.LayoutParams(0, dp(52)).apply { weight = 1f })
+        top.addView(del, LinearLayout.LayoutParams(dp(60), dp(52)))
+        top.addView(enter, LinearLayout.LayoutParams(dp(68), dp(52)))
         addView(top, LinearLayout.LayoutParams(MATCH, WRAP))
 
         // --- 4x3 number grid ---
@@ -143,12 +146,12 @@ class T9KeypadView(
             symbolPanel.addView(r, LinearLayout.LayoutParams(MATCH, WRAP))
         }
         val bottom = newRow()
-        val back = makeKey("ABC", 16f)
+        val back = makeKey("ABC", 16f, action = true)
         back.setOnClickListener {
             settings.feedback(it)
             showSymbols(false)
         }
-        val space = makeKey("space", 16f)
+        val space = makeKey(caps("space"), 16f)
         space.setOnClickListener {
             settings.feedback(it)
             listener.onKeypadKey('0')
@@ -172,14 +175,13 @@ class T9KeypadView(
             val tv = TextView(context)
             tv.text = w
             tv.textSize = 18f
-            tv.gravity = Gravity.CENTER_VERTICAL
+            tv.typeface = theme.typeface
+            tv.gravity = Gravity.CENTER
+            tv.minWidth = dp(48) // short words like "I" or "a" stay easy to tap
             tv.setPadding(dp(12), 0, dp(12), 0)
             if (i == selected) {
                 tv.setTextColor(theme.accentText)
-                tv.background = GradientDrawable().apply {
-                    setColor(theme.accent)
-                    cornerRadius = dp(8).toFloat()
-                }
+                tv.background = theme.candidateBackground(density())
             } else {
                 tv.setTextColor(theme.text)
             }
@@ -201,7 +203,12 @@ class T9KeypadView(
 
     // ---- helpers ----
 
-    private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
+    private fun density(): Float = resources.displayMetrics.density
+
+    private fun dp(v: Int): Int = (v * density()).toInt()
+
+    /** The P5 theme shouts its labels. */
+    private fun caps(s: String): String = if (theme.isP5) s.uppercase() else s
 
     private fun newRow(): LinearLayout {
         val r = LinearLayout(context)
@@ -210,15 +217,15 @@ class T9KeypadView(
     }
 
     private fun keyParams(weight: Float = 1f): LinearLayout.LayoutParams =
-        LinearLayout.LayoutParams(0, dp(settings.keyHeightDp)).apply {
+        // The cell includes the gap, so neighbouring keys touch and every pixel hits a key.
+        LinearLayout.LayoutParams(0, dp(settings.keyHeightDp + 2 * GAP_DP)).apply {
             this.weight = weight
-            setMargins(dp(3), dp(3), dp(3), dp(3))
         }
 
     private fun labelFor(k: Char): CharSequence = when (k) {
         '1' -> twoLine("1", ".,?!")
-        '0' -> twoLine("0", "space")
-        '*' -> twoLine("*", "next")
+        '0' -> twoLine("0", caps("space"))
+        '*' -> twoLine("*", caps("next"))
         '#' -> twoLine("#", "")
         else -> twoLine(k.toString(), T9Keymap.keyLetters.getValue(k).uppercase())
     }
@@ -227,27 +234,18 @@ class T9KeypadView(
         if (small.isEmpty()) return big
         val s = SpannableString("$big\n$small")
         s.setSpan(RelativeSizeSpan(0.55f), big.length + 1, s.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        s.setSpan(ForegroundColorSpan(theme.subText), big.length + 1, s.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         return s
     }
 
-    private fun makeKey(label: CharSequence, size: Float = 20f): TextView {
+    private fun makeKey(label: CharSequence, size: Float = 20f, action: Boolean = false): TextView {
         val tv = TextView(context)
         tv.text = label
         tv.textSize = size
+        tv.typeface = theme.typeface
         tv.gravity = Gravity.CENTER
-        tv.setTextColor(theme.text)
-        tv.background = keyBackground()
+        tv.setTextColor(if (action) theme.actionText else theme.text)
+        tv.background = theme.keyBackground(density(), action, GAP_DP, GAP_DP, 10)
         return tv
-    }
-
-    private fun keyBackground(): StateListDrawable {
-        fun shape(color: Int) = GradientDrawable().apply {
-            setColor(color)
-            cornerRadius = dp(10).toFloat()
-        }
-        return StateListDrawable().apply {
-            addState(intArrayOf(android.R.attr.state_pressed), shape(theme.keyPressed))
-            addState(intArrayOf(), shape(theme.key))
-        }
     }
 }

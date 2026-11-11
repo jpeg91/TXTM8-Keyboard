@@ -2,8 +2,6 @@
 package com.m8.keyboard
 
 import android.content.Context
-import android.graphics.drawable.GradientDrawable
-import android.graphics.drawable.StateListDrawable
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
@@ -11,11 +9,15 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
-import android.widget.Space
 import android.widget.TextView
 
 private const val WRAP = ViewGroup.LayoutParams.WRAP_CONTENT
 private const val MATCH = ViewGroup.LayoutParams.MATCH_PARENT
+
+// Visible gaps between keys. They are drawn *inside* each key's touch area (see
+// KeyboardTheme.keyBackground), so there are no dead zones between keys.
+private const val GAP_X_DP = 2
+private const val GAP_Y_DP = 3
 
 /** A plain full QWERTY keyboard (letters page and numbers/symbols page) with a T9 switch key. */
 class QwertyKeypadView(
@@ -50,8 +52,8 @@ class QwertyKeypadView(
 
     init {
         orientation = VERTICAL
-        setBackgroundColor(theme.background)
-        setPadding(dp(4), dp(4), dp(4), dp(4))
+        theme.applyBackground(this)
+        setPadding(0, dp(4), 0, 0) // no side padding: the outer keys reach the screen edge
         buildPage()
     }
 
@@ -73,7 +75,7 @@ class QwertyKeypadView(
         if (!symbolsPage) {
             addKeysRow("qwertyuiop", isLetter = true)
             addKeysRow("asdfghjkl", isLetter = true, pad = 0.5f)
-            val shift = makeKey(shiftLabel, 13f)
+            val shift = makeKey(shiftLabel, 13f, action = true)
             shift.setOnClickListener {
                 settings.feedback(it)
                 listener.onQwertyShift()
@@ -96,19 +98,24 @@ class QwertyKeypadView(
         pad: Float = 0f,
     ) {
         val row = newRow()
-        if (pad > 0f) row.addView(Space(context), LinearLayout.LayoutParams(0, 0).apply { weight = pad })
         if (leading != null) row.addView(leading, keyParams(1.5f))
-        for (ch in chars) {
-            val key = makeKey(if (isLetter) shown(ch) else ch.toString())
+        for ((i, ch) in chars.withIndex()) {
+            // An indented row (pad > 0) folds the indent into its first and last key, so the
+            // blank space at the row ends still registers taps on the nearest key.
+            val first = pad > 0f && i == 0
+            val last = pad > 0f && i == chars.lastIndex
+            val weight = 1f + (if (first) pad else 0f) + (if (last) pad else 0f)
+            val leftFrac = if (first) pad / weight else 0f
+            val rightFrac = if (last) pad / weight else 0f
+            val key = makeKey(if (isLetter) shown(ch) else ch.toString(), 20f, leftFrac, rightFrac)
             key.setOnClickListener {
                 settings.feedback(it)
                 listener.onQwertyText(ch.toString(), isLetter)
             }
             if (isLetter) letterKeys.add(Pair(key, ch))
-            row.addView(key, keyParams())
+            row.addView(key, keyParams(weight))
         }
         if (trailing != null) row.addView(trailing, keyParams(1.5f))
-        if (pad > 0f) row.addView(Space(context), LinearLayout.LayoutParams(0, 0).apply { weight = pad })
         addView(row, LinearLayout.LayoutParams(MATCH, WRAP))
     }
 
@@ -131,7 +138,7 @@ class QwertyKeypadView(
             settings.feedback(it)
             listener.onQwertyText(",", false)
         }
-        val space = makeKey("space", 14f)
+        val space = makeKey(if (theme.isP5) "SPACE" else "space", 14f)
         space.setOnClickListener {
             settings.feedback(it)
             listener.onQwertySpace()
@@ -141,7 +148,7 @@ class QwertyKeypadView(
             settings.feedback(it)
             listener.onQwertyText(".", false)
         }
-        val enter = makeKey("ENTER", 13f)
+        val enter = makeKey("ENTER", 13f, action = true)
         enter.setOnClickListener {
             settings.feedback(it)
             listener.onQwertyEnter()
@@ -157,7 +164,7 @@ class QwertyKeypadView(
     }
 
     private fun makeDelKey(): TextView {
-        val del = makeKey("DEL", 13f)
+        val del = makeKey("DEL", 13f, action = true)
         del.setOnTouchListener { v, e ->
             when (e.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
@@ -178,7 +185,9 @@ class QwertyKeypadView(
 
     // ---- helpers ----
 
-    private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
+    private fun density(): Float = resources.displayMetrics.density
+
+    private fun dp(v: Int): Int = (v * density()).toInt()
 
     private fun newRow(): LinearLayout {
         val r = LinearLayout(context)
@@ -188,29 +197,29 @@ class QwertyKeypadView(
     }
 
     private fun keyParams(weight: Float = 1f): LinearLayout.LayoutParams =
-        LinearLayout.LayoutParams(0, dp(settings.keyHeightDp)).apply {
+        // The cell includes the gap, so neighbouring keys touch and every pixel hits a key.
+        LinearLayout.LayoutParams(0, dp(settings.keyHeightDp + 2 * GAP_Y_DP)).apply {
             this.weight = weight
-            setMargins(dp(2), dp(3), dp(2), dp(3))
         }
 
-    private fun makeKey(label: CharSequence, size: Float = 20f): TextView {
+    /**
+     * [leftFrac]/[rightFrac] shift the drawn shape inwards for the wide end keys of indented rows;
+     * [action] uses the theme's action-key colours (shift, DEL, ENTER).
+     */
+    private fun makeKey(
+        label: CharSequence,
+        size: Float = 20f,
+        leftFrac: Float = 0f,
+        rightFrac: Float = 0f,
+        action: Boolean = false,
+    ): TextView {
         val tv = TextView(context)
         tv.text = label
         tv.textSize = size
+        tv.typeface = theme.typeface
         tv.gravity = Gravity.CENTER
-        tv.setTextColor(theme.text)
-        tv.background = keyBackground()
+        tv.setTextColor(if (action) theme.actionText else theme.text)
+        tv.background = theme.keyBackground(density(), action, GAP_X_DP, GAP_Y_DP, 8, leftFrac, rightFrac)
         return tv
-    }
-
-    private fun keyBackground(): StateListDrawable {
-        fun shape(color: Int) = GradientDrawable().apply {
-            setColor(color)
-            cornerRadius = dp(8).toFloat()
-        }
-        return StateListDrawable().apply {
-            addState(intArrayOf(android.R.attr.state_pressed), shape(theme.keyPressed))
-            addState(intArrayOf(), shape(theme.key))
-        }
     }
 }

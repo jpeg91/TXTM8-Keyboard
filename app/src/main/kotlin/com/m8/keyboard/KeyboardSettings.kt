@@ -8,7 +8,7 @@ import android.view.View
 
 /** User-adjustable options, stored in SharedPreferences by [SetupActivity]. */
 data class KeyboardSettings(
-    val theme: Int = THEME_SYSTEM,
+    val theme: Int = THEME_P5,
     val keySize: Int = 1,
     val multiTapMs: Int = 800,
     val haptic: Boolean = true,
@@ -25,7 +25,8 @@ data class KeyboardSettings(
     companion object {
         const val PREFS = "m8_settings"
 
-        const val KEY_THEME = "theme"
+        // "theme_v2": a new key so everyone starts on the P5 look (the old "theme" key is ignored).
+        const val KEY_THEME = "theme_v2"
         const val KEY_SIZE = "key_size"
         const val KEY_TIMEOUT = "multitap_ms"
         const val KEY_HAPTIC = "haptic"
@@ -36,11 +37,12 @@ data class KeyboardSettings(
         const val THEME_SYSTEM = 0
         const val THEME_DARK = 1
         const val THEME_LIGHT = 2
+        const val THEME_P5 = 3
 
         fun load(context: Context): KeyboardSettings {
             val p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             return KeyboardSettings(
-                theme = p.getInt(KEY_THEME, THEME_SYSTEM),
+                theme = p.getInt(KEY_THEME, THEME_P5),
                 keySize = p.getInt(KEY_SIZE, 1),
                 multiTapMs = p.getInt(KEY_TIMEOUT, 800),
                 haptic = p.getBoolean(KEY_HAPTIC, true),
