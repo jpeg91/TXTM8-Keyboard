@@ -4,11 +4,13 @@ package com.m8.keyboard
 import android.inputmethodservice.InputMethodService
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.text.InputType
 import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
+import t9.Contractions
 import t9.T9Engine
 import t9.T9Keymap
 import t9.T9Session
@@ -49,6 +51,9 @@ class T9InputMethodService : InputMethodService(), T9KeypadView.Listener, Qwerty
     private var mtIndex = 0
     private val mtTimeout = Runnable { commitMultiTap() }
 
+    // double-tap space -> ". "
+    private var spaceTapAt = 0L
+
     // saving learned data
     private var lastSaved = 0
     private val saveTask = Runnable { saveNow() }
@@ -83,6 +88,7 @@ class T9InputMethodService : InputMethodService(), T9KeypadView.Listener, Qwerty
         } catch (ex: Exception) {
             e.build() // no dictionary packaged: start empty, user words still work
         }
+        for ((w, s) in Contractions.WORDS) e.add(w, s) // only adds the ones the dictionary lacks
         store.load(e)
         engine = e
         session = T9Session(e)
@@ -198,6 +204,7 @@ class T9InputMethodService : InputMethodService(), T9KeypadView.Listener, Qwerty
             currentInputConnection?.commitText(key.toString(), 1)
             return
         }
+        if (key != '0') spaceTapAt = 0L
         when (key) {
             '1' -> {
                 if (mtKey != '1') commitWord()
@@ -212,6 +219,7 @@ class T9InputMethodService : InputMethodService(), T9KeypadView.Listener, Qwerty
     }
 
     override fun onKeypadLongKey(key: Char) {
+        spaceTapAt = 0L
         if (digitsOnly) {
             currentInputConnection?.commitText(key.toString(), 1)
             return
@@ -240,12 +248,14 @@ class T9InputMethodService : InputMethodService(), T9KeypadView.Listener, Qwerty
 
     override fun onKeypadCandidate(index: Int) {
         if (!session.isComposing) return
+        spaceTapAt = 0L
         session.select(index)
         showComposing()
         refreshUi()
     }
 
     override fun onKeypadSymbol(symbol: String) {
+        spaceTapAt = 0L
         commitWord()
         currentInputConnection?.commitText(symbol, 1)
         refreshUi()
@@ -257,6 +267,7 @@ class T9InputMethodService : InputMethodService(), T9KeypadView.Listener, Qwerty
 
     override fun onQwertyText(text: String, isLetter: Boolean) {
         val ic = currentInputConnection ?: return
+        spaceTapAt = 0L
         if (isLetter) {
             ic.commitText(caseAdjust(text), 1)
             if (caseMode == CaseMode.CAP_NEXT) caseMode = CaseMode.LOWER
@@ -267,8 +278,9 @@ class T9InputMethodService : InputMethodService(), T9KeypadView.Listener, Qwerty
     }
 
     override fun onQwertySpace() {
+        fixContraction()
         learnTrailingWord()
-        currentInputConnection?.commitText(" ", 1)
+        insertSpace()
         updateAutoCap()
         refreshUi()
     }
@@ -300,8 +312,11 @@ class T9InputMethodService : InputMethodService(), T9KeypadView.Listener, Qwerty
 
     private fun onSpace() {
         commitWord()
-        if (mode == InputMode.MULTI_TAP) learnTrailingWord()
-        currentInputConnection?.commitText(" ", 1)
+        if (mode == InputMode.MULTI_TAP) {
+            fixContraction()
+            learnTrailingWord()
+        }
+        insertSpace()
         updateAutoCap()
     }
 
@@ -339,6 +354,7 @@ class T9InputMethodService : InputMethodService(), T9KeypadView.Listener, Qwerty
 
     private fun doBackspace() {
         val ic = currentInputConnection ?: return
+        spaceTapAt = 0L
         when {
             mtKey != null -> {
                 uiHandler.removeCallbacks(mtTimeout)
@@ -357,8 +373,12 @@ class T9InputMethodService : InputMethodService(), T9KeypadView.Listener, Qwerty
     }
 
     private fun doEnter() {
+        spaceTapAt = 0L
         commitWord()
-        if (fullKeyboard || mode == InputMode.MULTI_TAP) learnTrailingWord()
+        if (fullKeyboard || mode == InputMode.MULTI_TAP) {
+            fixContraction()
+            learnTrailingWord()
+        }
         val info = currentInputEditorInfo
         val ic = currentInputConnection
         if (info != null && ic != null) {
@@ -451,6 +471,47 @@ class T9InputMethodService : InputMethodService(), T9KeypadView.Listener, Qwerty
         refreshUi()
     }
 
+    /**
+     * Inserts a space. A second space tapped quickly after the first one (right after a word)
+     * turns the pair into ". ", in both layouts.
+     */
+    private fun insertSpace() {
+        val ic = currentInputConnection ?: return
+        val now = SystemClock.uptimeMillis()
+        if (learningEnabled && spaceTapAt != 0L && now - spaceTapAt <= DOUBLE_SPACE_MS) {
+            val before = ic.getTextBeforeCursor(2, 0)?.toString().orEmpty()
+            if (before.length == 2 && before[1] == ' ' && (before[0].isLetterOrDigit() || before[0] in ")]\"'")) {
+                ic.deleteSurroundingText(1, 0)
+                ic.commitText(". ", 1)
+                spaceTapAt = 0L
+                return
+            }
+        }
+        ic.commitText(" ", 1)
+        spaceTapAt = now
+    }
+
+    /**
+     * Typing letter by letter (QWERTY / multi-tap): "dont" becomes "don't", "im" becomes "I'm",
+     * and so on, when space or enter finishes the word. Capitalisation is kept.
+     */
+    private fun fixContraction() {
+        if (!learningEnabled) return // not in password fields
+        val ic = currentInputConnection ?: return
+        val before = ic.getTextBeforeCursor(30, 0)?.toString() ?: return
+        val raw = before.takeLastWhile { it.isLetter() }
+        if (raw.length < 2) return
+        val fixed = Contractions.FIXES[raw.lowercase()] ?: return
+        var out = when {
+            raw.all { it.isUpperCase() } -> fixed.uppercase()
+            raw[0].isUpperCase() -> fixed.replaceFirstChar { it.uppercaseChar() }
+            else -> fixed
+        }
+        if (fixed.startsWith("i'")) out = out.replaceFirstChar { it.uppercaseChar() }
+        ic.deleteSurroundingText(raw.length, 0)
+        ic.commitText(out, 1)
+    }
+
     /** Words typed letter by letter (multi-tap or QWERTY) are added to the user dictionary. */
     private fun learnTrailingWord() {
         if (!learningEnabled) return
@@ -539,5 +600,6 @@ class T9InputMethodService : InputMethodService(), T9KeypadView.Listener, Qwerty
     private companion object {
         val PREV_WORD = Regex("([A-Za-z']+) $")
         const val SAVE_DELAY_MS = 4000L
+        const val DOUBLE_SPACE_MS = 500L
     }
 }

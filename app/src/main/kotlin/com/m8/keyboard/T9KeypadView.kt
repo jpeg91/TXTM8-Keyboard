@@ -25,7 +25,7 @@ private const val MATCH = ViewGroup.LayoutParams.MATCH_PARENT
 private const val GAP_DP = 3
 
 /**
- * The number pad: [QWERTY] [candidate strip] [DEL] [ENTER] on top, a 4x3 key grid below.
+ * The number pad: [QWERTY] [candidate strip] [ENTER] [DEL] on top, a 4x3 key grid below.
  * The grid can be swapped for a symbol picker with [showSymbols].
  */
 class T9KeypadView(
@@ -103,8 +103,8 @@ class T9KeypadView(
         top.gravity = Gravity.CENTER_VERTICAL
         top.addView(qwerty, LinearLayout.LayoutParams(dp(60), dp(52)))
         top.addView(scroll, LinearLayout.LayoutParams(0, dp(52)).apply { weight = 1f })
-        top.addView(del, LinearLayout.LayoutParams(dp(60), dp(52)))
         top.addView(enter, LinearLayout.LayoutParams(dp(68), dp(52)))
+        top.addView(del, LinearLayout.LayoutParams(dp(60), dp(52)))
         addView(top, LinearLayout.LayoutParams(MATCH, WRAP))
 
         // --- 4x3 number grid ---
