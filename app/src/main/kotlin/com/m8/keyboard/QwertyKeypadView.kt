@@ -2,6 +2,7 @@
 package com.m8.keyboard
 
 import android.content.Context
+import android.graphics.Canvas
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
@@ -19,7 +20,7 @@ private const val MATCH = ViewGroup.LayoutParams.MATCH_PARENT
 private const val GAP_X_DP = 2
 private const val GAP_Y_DP = 3
 
-/** A plain full QWERTY keyboard (letters page and numbers/symbols page) with a T9 switch key. */
+/** A plain full QWERTY keyboard (letters page and numbers/symbols page) with a key to switch back to the number pad. */
 class QwertyKeypadView(
     context: Context,
     private val listener: Listener,
@@ -33,10 +34,11 @@ class QwertyKeypadView(
         fun onQwertyBackspace()
         fun onQwertyEnter()
         fun onQwertyShift()
-        fun onQwertyT9()
+        fun onQwertyPad()
     }
 
     private val uiHandler = Handler(Looper.getMainLooper())
+    private val pulseBackground = PulseBackground(theme.backgroundDrawable(this), theme.accent, settings.pulseStrength)
     private val letterKeys = ArrayList<Pair<TextView, Char>>()
     private var shiftKey: TextView? = null
     private var shiftLabel = "abc"
@@ -52,10 +54,13 @@ class QwertyKeypadView(
 
     init {
         orientation = VERTICAL
-        theme.applyBackground(this)
+        background = pulseBackground
         setPadding(0, dp(4), 0, 0) // no side padding: the outer keys reach the screen edge
         buildPage()
     }
+
+    /** Flashes the background in the accent colour (a character was typed). */
+    fun pulse() = pulseBackground.pulse()
 
     /** [label] is the shift key text (abc / Abc / ABC); [upper] shows capital letters on the keys. */
     fun setCase(label: String, upper: Boolean) {
@@ -81,11 +86,11 @@ class QwertyKeypadView(
                 listener.onQwertyShift()
             }
             shiftKey = shift
-            addKeysRow("zxcvbnm", isLetter = true, leading = shift, trailing = makeDelKey())
+            addKeysRow("zxcvbnm", isLetter = true, leading = shift, trailing = makeEnterKey())
         } else {
             addKeysRow("1234567890", isLetter = false)
             addKeysRow("@#\$%&-+()/", isLetter = false)
-            addKeysRow("*\"':;!?", isLetter = false, trailing = makeDelKey())
+            addKeysRow("*\"':;!?", isLetter = false, trailing = makeEnterKey())
         }
         addBottomRow()
     }
@@ -128,10 +133,10 @@ class QwertyKeypadView(
             symbolsPage = !symbolsPage
             buildPage()
         }
-        val t9 = makeKey("T9", 14f)
-        t9.setOnClickListener {
+        val pad = makeKey("PAD", 14f)
+        pad.setOnClickListener {
             settings.feedback(it)
-            listener.onQwertyT9()
+            listener.onQwertyPad()
         }
         val comma = makeKey(",")
         comma.setOnClickListener {
@@ -148,23 +153,19 @@ class QwertyKeypadView(
             settings.feedback(it)
             listener.onQwertyText(".", false)
         }
-        val enter = makeKey("ENTER", 13f, action = true)
-        enter.setOnClickListener {
-            settings.feedback(it)
-            listener.onQwertyEnter()
-        }
+        val del = makeDelKey()
 
         row.addView(page, keyParams(1.4f))
-        row.addView(t9, keyParams(1.2f))
+        row.addView(pad, keyParams(1.2f))
         row.addView(comma, keyParams(1f))
         row.addView(space, keyParams(4f))
         row.addView(period, keyParams(1f))
-        row.addView(enter, keyParams(1.6f))
+        row.addView(del, keyParams(1.6f))
         addView(row, LinearLayout.LayoutParams(MATCH, WRAP))
     }
 
     private fun makeDelKey(): TextView {
-        val del = makeKey("DEL", 13f, action = true)
+        val del = theme.iconKey(context, KeyIcon.BACKSPACE, true, GAP_X_DP, GAP_Y_DP, 8, "Backspace")
         del.setOnTouchListener { v, e ->
             when (e.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
@@ -181,6 +182,15 @@ class QwertyKeypadView(
             true
         }
         return del
+    }
+
+    private fun makeEnterKey(): TextView {
+        val enter = theme.iconKey(context, KeyIcon.ENTER, true, GAP_X_DP, GAP_Y_DP, 8, "Enter")
+        enter.setOnClickListener {
+            settings.feedback(it)
+            listener.onQwertyEnter()
+        }
+        return enter
     }
 
     // ---- helpers ----
@@ -213,7 +223,7 @@ class QwertyKeypadView(
         rightFrac: Float = 0f,
         action: Boolean = false,
     ): TextView {
-        val tv = TextView(context)
+        val tv = KeyTextView(context, leftFrac, rightFrac)
         tv.text = label
         tv.textSize = size
         tv.typeface = theme.typeface
@@ -221,5 +231,28 @@ class QwertyKeypadView(
         tv.setTextColor(if (action) theme.actionText else theme.text)
         tv.background = theme.keyBackground(density(), action, GAP_X_DP, GAP_Y_DP, 8, leftFrac, rightFrac)
         return tv
+    }
+}
+
+/**
+ * A key label that stays centred inside a key shape that is pulled in from one or both sides
+ * (the wide end keys of an indented row), instead of centred in the whole touch cell.
+ */
+private class KeyTextView(
+    context: Context,
+    private val leftFrac: Float,
+    private val rightFrac: Float,
+) : TextView(context) {
+
+    override fun onDraw(canvas: Canvas) {
+        val shift = (leftFrac - rightFrac) * width / 2f
+        if (shift == 0f) {
+            super.onDraw(canvas)
+            return
+        }
+        canvas.save()
+        canvas.translate(shift, 0f)
+        super.onDraw(canvas)
+        canvas.restore()
     }
 }

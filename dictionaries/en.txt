@@ -1,4 +1,4 @@
-# T9 dictionary: "word score" per line, score = round(100 * ln(count))
+# Dictionary: "word score" per line, score = round(100 * ln(count))
 # Derived from hermitdave/FrequencyWords (OpenSubtitles), CC BY-SA 4.0. See dictionaries/ATTRIBUTION.md
 you 1718
 i 1711

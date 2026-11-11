@@ -1,14 +1,14 @@
 # tools/build_dictionary.py
 """
-Build the T9 dictionary asset from a word-frequency list.
+Build the dictionary asset from a word-frequency list.
 
 Input : lines of "word count" (e.g. FrequencyWords' en_50k.txt)
-Output: lines of "word score", most frequent first, ready for T9Engine.load()
+Output: lines of "word score", most frequent first, ready for PredictiveEngine.load()
 
     score = max(1, round(100 * ln(count)))
 
 The log scale keeps scores in a small range (~1..1700) so that a user's own
-picks (T9Engine.userWeight) can meaningfully re-rank words.
+picks (PredictiveEngine.userWeight) can meaningfully re-rank words.
 
 Usage:
     python3 tools/build_dictionary.py dictionaries/raw/en_50k.txt \
@@ -115,7 +115,7 @@ def main():
     kept = kept[: args.max_words]
 
     with open(args.output, "w", encoding="utf-8", newline="\n") as out:
-        out.write('# T9 dictionary: "word score" per line, score = round(100 * ln(count))\n')
+        out.write('# Dictionary: "word score" per line, score = round(100 * ln(count))\n')
         out.write(f"# {args.note}\n")
         for w, c in kept:
             out.write(f"{w} {max(1, round(SCALE * math.log(c)))}\n")

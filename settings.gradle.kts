@@ -7,6 +7,6 @@ pluginManagement {
     }
 }
 
-rootProject.name = "t9engine"
+rootProject.name = "TXTM8-Keyboard"
 
 include(":app")

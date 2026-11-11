@@ -1,14 +1,14 @@
-// src/test/kotlin/t9/T9EngineTest.kt
-package t9
+// src/test/kotlin/predictive/PredictiveEngineTest.kt
+package predictive
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-class T9EngineTest {
+class PredictiveEngineTest {
 
-    private fun engine() = T9Engine().apply {
+    private fun engine() = PredictiveEngine().apply {
         load(
             sequenceOf(
                 "good 700", "home 650", "gone 600", "hood 400", "hone 300",
@@ -19,10 +19,10 @@ class T9EngineTest {
 
     @Test
     fun encodesWords() {
-        assertEquals("4663", T9Keymap.encode("home"))
-        assertEquals("3668", T9Keymap.encode("don't"))
-        assertEquals("2233", T9Keymap.encode("caf\u00e9"))
-        assertEquals(null, T9Keymap.encode("a1"))
+        assertEquals("4663", KeypadMap.encode("home"))
+        assertEquals("3668", KeypadMap.encode("don't"))
+        assertEquals("2233", KeypadMap.encode("caf\u00e9"))
+        assertEquals(null, KeypadMap.encode("a1"))
     }
 
     @Test
@@ -63,7 +63,7 @@ class T9EngineTest {
 
     @Test
     fun loadsFromStream() {
-        val e = T9Engine()
+        val e = PredictiveEngine()
         e.loadFrom("# comment\ngood 700\nhome 650\n".byteInputStream())
         assertEquals(listOf("good", "home"), e.lookup("4663").map { it.word })
     }
@@ -71,7 +71,7 @@ class T9EngineTest {
     @Test
     fun sessionCyclesAndCommits() {
         val e = engine()
-        val s = T9Session(e)
+        val s = PredictiveSession(e)
         "4663".forEach { s.pressDigit(it) }
         assertEquals("good", s.displayText)
         s.next()
@@ -85,7 +85,7 @@ class T9EngineTest {
 
     @Test
     fun sessionBackspaceAndFallback() {
-        val s = T9Session(engine())
+        val s = PredictiveSession(engine())
         "999".forEach { s.pressDigit(it) }
         assertEquals("www", s.displayText)
         assertTrue(s.backspace())
@@ -128,9 +128,24 @@ class T9EngineTest {
 
     @Test
     fun sessionRestoreReopensAWord() {
-        val s = T9Session(engine())
+        val s = PredictiveSession(engine())
         s.restore("4663")
         assertEquals("good", s.displayText)
         assertEquals("4663", s.digitString)
+    }
+
+    @Test
+    fun contractionFixesKeepTheSameKeys() {
+        for ((typed, fixed) in Contractions.FIXES) {
+            assertEquals(KeypadMap.encode(typed), KeypadMap.encode(fixed), typed)
+        }
+    }
+
+    @Test
+    fun contractionsAreSuggested() {
+        val e = engine()
+        for ((w, s) in Contractions.WORDS) e.add(w, s)
+        assertTrue(e.lookup("43").any { it.word == "i'd" })
+        assertTrue(e.lookup("9373").any { it.word == "we're" })
     }
 }

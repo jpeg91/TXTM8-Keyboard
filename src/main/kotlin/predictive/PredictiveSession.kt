@@ -1,12 +1,12 @@
-// src/main/kotlin/t9/T9Session.kt
-package t9
+// src/main/kotlin/predictive/PredictiveSession.kt
+package predictive
 
 /**
  * The state of the word currently being typed in predictive mode.
  * The keyboard service owns one of these and mirrors [displayText]
  * into the editor's composing region.
  */
-class T9Session(private val engine: T9Engine) {
+class PredictiveSession(private val engine: PredictiveEngine) {
     private val digits = StringBuilder()
     private var candidates: List<Candidate> = emptyList()
     private var index = 0
@@ -81,6 +81,6 @@ class T9Session(private val engine: T9Engine) {
 
     // Unknown word: show the first letter of each key so the user sees something.
     private fun fallbackText(): String = buildString {
-        for (d in digits) append(T9Keymap.keyLetters.getValue(d)[0])
+        for (d in digits) append(KeypadMap.keyLetters.getValue(d)[0])
     }
 }

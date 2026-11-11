@@ -1,5 +1,5 @@
-// src/main/kotlin/t9/T9Engine.kt
-package t9
+// src/main/kotlin/predictive/PredictiveEngine.kt
+package predictive
 
 import java.io.InputStream
 
@@ -23,7 +23,7 @@ data class Candidate(val word: String, val isCompletion: Boolean)
  * so the default userWeight of 200 makes each pick worth about a 7x frequency gap.
  * If you load other data, tune the weights to its scale.
  */
-class T9Engine(
+class PredictiveEngine(
     private val userWeight: Long = 200L,
     private val topK: Int = 12,
     private val bigramWeight: Long = 120L,
@@ -50,7 +50,7 @@ class T9Engine(
     /** Adds a word. Call [build] after a bulk load (or use [load]). */
     fun add(word: String, baseScore: Long = 1L) {
         if (byWord.containsKey(word)) return
-        val digits = T9Keymap.encode(word) ?: return
+        val digits = KeypadMap.encode(word) ?: return
         var node = root
         for (d in digits) {
             val i = d - '2'
@@ -105,7 +105,7 @@ class T9Engine(
         if (prev != null) {
             bigrams[prev]?.keys?.forEach { w ->
                 val e = byWord[w] ?: return@forEach
-                val enc = T9Keymap.encode(w) ?: return@forEach
+                val enc = KeypadMap.encode(w) ?: return@forEach
                 if (enc.length > digits.length && enc.startsWith(digits)) pool.add(e)
             }
         }
@@ -200,7 +200,7 @@ class T9Engine(
     }
 
     private fun refreshWord(word: String) {
-        if (built) T9Keymap.encode(word)?.let { refreshPath(it) }
+        if (built) KeypadMap.encode(word)?.let { refreshPath(it) }
     }
 
     private fun rebuildDeeper(node: Node) {

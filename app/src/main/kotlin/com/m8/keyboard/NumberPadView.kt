@@ -1,4 +1,4 @@
-// app/src/main/kotlin/com/m8/keyboard/T9KeypadView.kt
+// app/src/main/kotlin/com/m8/keyboard/NumberPadView.kt
 package com.m8.keyboard
 
 import android.content.Context
@@ -15,7 +15,7 @@ import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.TextView
-import t9.T9Keymap
+import predictive.KeypadMap
 
 private const val WRAP = ViewGroup.LayoutParams.WRAP_CONTENT
 private const val MATCH = ViewGroup.LayoutParams.MATCH_PARENT
@@ -25,10 +25,10 @@ private const val MATCH = ViewGroup.LayoutParams.MATCH_PARENT
 private const val GAP_DP = 3
 
 /**
- * The number pad: [QWERTY] [candidate strip] [DEL] [ENTER] on top, a 4x3 key grid below.
+ * The number pad: [keyboard icon] [candidate strip] [enter] [backspace] on top, a 4x3 key grid below.
  * The grid can be swapped for a symbol picker with [showSymbols].
  */
-class T9KeypadView(
+class NumberPadView(
     context: Context,
     private val listener: Listener,
     private val settings: KeyboardSettings,
@@ -50,6 +50,7 @@ class T9KeypadView(
     private val scroll = HorizontalScrollView(context)
     private val grid = LinearLayout(context)
     private val symbolPanel = LinearLayout(context)
+    private val pulseBackground = PulseBackground(theme.backgroundDrawable(this), theme.accent, settings.pulseStrength)
     private lateinit var hashKey: TextView
 
     private val repeatBackspace = object : Runnable {
@@ -61,7 +62,7 @@ class T9KeypadView(
 
     init {
         orientation = VERTICAL
-        theme.applyBackground(this)
+        background = pulseBackground
         setPadding(0, dp(4), 0, 0) // no side padding: the outer keys reach the screen edge
 
         // --- top bar: QWERTY | candidates | DEL | ENTER ---
@@ -70,13 +71,13 @@ class T9KeypadView(
         scroll.setBackgroundColor(theme.strip)
         scroll.addView(strip, FrameLayout.LayoutParams(WRAP, MATCH))
 
-        val qwerty = makeKey("QWERTY", 11f)
+        val qwerty = theme.iconKey(context, KeyIcon.KEYBOARD, false, GAP_DP, GAP_DP, 10, "Full keyboard")
         qwerty.setOnClickListener {
             settings.feedback(it)
             listener.onKeypadQwerty()
         }
 
-        val del = makeKey("DEL", 14f, action = true)
+        val del = theme.iconKey(context, KeyIcon.BACKSPACE, true, GAP_DP, GAP_DP, 10, "Backspace")
         del.setOnTouchListener { v, e ->
             when (e.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
@@ -93,7 +94,7 @@ class T9KeypadView(
             true
         }
 
-        val enter = makeKey("ENTER", 14f, action = true)
+        val enter = theme.iconKey(context, KeyIcon.ENTER, true, GAP_DP, GAP_DP, 10, "Enter")
         enter.setOnClickListener {
             settings.feedback(it)
             listener.onKeypadEnter()
@@ -103,8 +104,8 @@ class T9KeypadView(
         top.gravity = Gravity.CENTER_VERTICAL
         top.addView(qwerty, LinearLayout.LayoutParams(dp(60), dp(52)))
         top.addView(scroll, LinearLayout.LayoutParams(0, dp(52)).apply { weight = 1f })
-        top.addView(del, LinearLayout.LayoutParams(dp(60), dp(52)))
         top.addView(enter, LinearLayout.LayoutParams(dp(68), dp(52)))
+        top.addView(del, LinearLayout.LayoutParams(dp(60), dp(52)))
         addView(top, LinearLayout.LayoutParams(MATCH, WRAP))
 
         // --- 4x3 number grid ---
@@ -162,6 +163,9 @@ class T9KeypadView(
         addView(symbolPanel, LinearLayout.LayoutParams(MATCH, WRAP))
     }
 
+    /** Flashes the background in the accent colour (a character was typed). */
+    fun pulse() = pulseBackground.pulse()
+
     /** Swaps the number grid for the symbol picker (or back). */
     fun showSymbols(show: Boolean) {
         symbolPanel.visibility = if (show) VISIBLE else GONE
@@ -196,7 +200,7 @@ class T9KeypadView(
         }
     }
 
-    /** Text under the # key, e.g. "Abc · T9". */
+    /** Text under the # key, e.g. "Abc · predict". */
     fun setModeLabel(label: String) {
         hashKey.text = twoLine("#", label)
     }
@@ -227,7 +231,7 @@ class T9KeypadView(
         '0' -> twoLine("0", caps("space"))
         '*' -> twoLine("*", caps("next"))
         '#' -> twoLine("#", "")
-        else -> twoLine(k.toString(), T9Keymap.keyLetters.getValue(k).uppercase())
+        else -> twoLine(k.toString(), KeypadMap.keyLetters.getValue(k).uppercase())
     }
 
     private fun twoLine(big: String, small: String): CharSequence {

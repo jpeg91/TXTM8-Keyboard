@@ -3,14 +3,14 @@ package com.m8.keyboard
 
 import android.content.Context
 import java.io.File
-import t9.T9Engine
+import predictive.PredictiveEngine
 
 /** Saves and restores what the engine has learned (boosted words, added words, word pairs). */
 class UserDataStore(context: Context) {
     private val file = File(context.filesDir, "user_data.tsv")
     private val tmp = File(context.filesDir, "user_data.tsv.tmp")
 
-    fun load(engine: T9Engine) {
+    fun load(engine: PredictiveEngine) {
         if (!file.exists()) return
         try {
             file.bufferedReader(Charsets.UTF_8).useLines { engine.importUserData(it) }
@@ -19,7 +19,7 @@ class UserDataStore(context: Context) {
         }
     }
 
-    fun save(engine: T9Engine) {
+    fun save(engine: PredictiveEngine) {
         try {
             tmp.writeText(engine.exportUserData(), Charsets.UTF_8)
             if (!tmp.renameTo(file)) {

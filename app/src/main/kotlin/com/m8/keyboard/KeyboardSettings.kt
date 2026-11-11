@@ -14,7 +14,13 @@ data class KeyboardSettings(
     val haptic: Boolean = true,
     val sound: Boolean = false,
     val reopenWord: Boolean = true,
+    val pulse: Boolean = true,
+    val pulseIntensity: Int = 50, // 0..100
 ) {
+    /** How strong the typing pulse is, 0 (off) to 0.85. */
+    val pulseStrength: Float
+        get() = if (pulse) pulseIntensity.coerceIn(0, 100) / 100f * 0.85f else 0f
+
     val keyHeightDp: Int
         get() = when (keySize) {
             0 -> 48
@@ -32,6 +38,8 @@ data class KeyboardSettings(
         const val KEY_HAPTIC = "haptic"
         const val KEY_SOUND = "sound"
         const val KEY_REOPEN = "reopen_word"
+        const val KEY_PULSE = "pulse"
+        const val KEY_PULSE_LEVEL = "pulse_level"
         const val KEY_CLEAR_TOKEN = "clear_token"
 
         const val THEME_SYSTEM = 0
@@ -49,6 +57,8 @@ data class KeyboardSettings(
                 haptic = p.getBoolean(KEY_HAPTIC, true),
                 sound = p.getBoolean(KEY_SOUND, false),
                 reopenWord = p.getBoolean(KEY_REOPEN, true),
+                pulse = p.getBoolean(KEY_PULSE, true),
+                pulseIntensity = p.getInt(KEY_PULSE_LEVEL, 50),
             )
         }
     }
