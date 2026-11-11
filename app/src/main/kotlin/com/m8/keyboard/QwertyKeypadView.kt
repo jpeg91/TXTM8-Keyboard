@@ -20,7 +20,7 @@ private const val MATCH = ViewGroup.LayoutParams.MATCH_PARENT
 private const val GAP_X_DP = 2
 private const val GAP_Y_DP = 3
 
-/** A plain full QWERTY keyboard (letters page and numbers/symbols page) with a T9 switch key. */
+/** A plain full QWERTY keyboard (letters page and numbers/symbols page) with a key to switch back to the number pad. */
 class QwertyKeypadView(
     context: Context,
     private val listener: Listener,
@@ -34,7 +34,7 @@ class QwertyKeypadView(
         fun onQwertyBackspace()
         fun onQwertyEnter()
         fun onQwertyShift()
-        fun onQwertyT9()
+        fun onQwertyPad()
     }
 
     private val uiHandler = Handler(Looper.getMainLooper())
@@ -129,10 +129,10 @@ class QwertyKeypadView(
             symbolsPage = !symbolsPage
             buildPage()
         }
-        val t9 = makeKey("T9", 14f)
-        t9.setOnClickListener {
+        val pad = makeKey("PAD", 14f)
+        pad.setOnClickListener {
             settings.feedback(it)
-            listener.onQwertyT9()
+            listener.onQwertyPad()
         }
         val comma = makeKey(",")
         comma.setOnClickListener {
@@ -152,7 +152,7 @@ class QwertyKeypadView(
         val del = makeDelKey()
 
         row.addView(page, keyParams(1.4f))
-        row.addView(t9, keyParams(1.2f))
+        row.addView(pad, keyParams(1.2f))
         row.addView(comma, keyParams(1f))
         row.addView(space, keyParams(4f))
         row.addView(period, keyParams(1f))
