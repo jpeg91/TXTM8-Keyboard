@@ -8,24 +8,36 @@ import android.text.InputType
 import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputConnection
 import t9.T9Engine
 import t9.T9Keymap
 import t9.T9Session
 
 /**
- * The keyboard service. Predictive mode: digits go to [T9Session] and the best word is
- * shown as composing text. Multi-tap mode: repeated presses cycle letters (800 ms timeout).
+ * The keyboard service. Two layouts: the T9 number pad and a plain QWERTY keyboard.
+ *
+ * T9 predictive mode: digits go to [T9Session] and the best word is shown as composing text.
+ * T9 multi-tap mode: repeated presses cycle letters (then the digit) with a timeout.
+ * Holding a number key types the digit and keeps cycling: hold 7, tap 4 more times for S.
  */
-class T9InputMethodService : InputMethodService(), T9KeypadView.Listener {
+class T9InputMethodService : InputMethodService(), T9KeypadView.Listener, QwertyKeypadView.Listener {
 
     private enum class CaseMode { LOWER, CAP_NEXT, UPPER }
     private enum class InputMode { PREDICTIVE, MULTI_TAP }
 
     private lateinit var engine: T9Engine
     private lateinit var session: T9Session
-    private var keypad: T9KeypadView? = null
+    private lateinit var store: UserDataStore
     private val uiHandler = Handler(Looper.getMainLooper())
 
+    private var settings = KeyboardSettings()
+    private var kbTheme = KeyboardTheme.DARK
+    private var t9View: T9KeypadView? = null
+    private var qwertyView: QwertyKeypadView? = null
+    private var shownView: View? = null
+
+    private var fullKeyboard = false    // QWERTY layout showing
+    private var userFull = false        // the user's own choice of layout
     private var caseMode = CaseMode.LOWER
     private var userMode = InputMode.PREDICTIVE
     private var forceMultiTap = false   // e.g. password fields
@@ -37,6 +49,11 @@ class T9InputMethodService : InputMethodService(), T9KeypadView.Listener {
     private var mtIndex = 0
     private val mtTimeout = Runnable { commitMultiTap() }
 
+    // saving learned data
+    private var lastSaved = 0
+    private val saveTask = Runnable { saveNow() }
+    private var clearToken = 0L
+
     private val mode: InputMode
         get() = if (forceMultiTap) InputMode.MULTI_TAP else userMode
 
@@ -44,25 +61,39 @@ class T9InputMethodService : InputMethodService(), T9KeypadView.Listener {
 
     override fun onCreate() {
         super.onCreate()
-        engine = T9Engine()
-        try {
-            assets.open("dictionaries/en.txt").use { engine.loadFrom(it) }
-        } catch (e: Exception) {
-            engine.build() // no dictionary packaged: start empty, user words still work
-        }
-        session = T9Session(engine)
+        store = UserDataStore(this)
+        settings = KeyboardSettings.load(this)
+        kbTheme = KeyboardTheme.resolve(this, settings.theme)
+        clearToken = getSharedPreferences(KeyboardSettings.PREFS, MODE_PRIVATE)
+            .getLong(KeyboardSettings.KEY_CLEAR_TOKEN, 0L)
+        loadEngine()
     }
 
     override fun onDestroy() {
         uiHandler.removeCallbacks(mtTimeout)
+        uiHandler.removeCallbacks(saveTask)
+        saveNow()
         super.onDestroy()
     }
 
+    private fun loadEngine() {
+        val e = T9Engine()
+        try {
+            assets.open("dictionaries/en.txt").use { e.loadFrom(it) }
+        } catch (ex: Exception) {
+            e.build() // no dictionary packaged: start empty, user words still work
+        }
+        store.load(e)
+        engine = e
+        session = T9Session(e)
+        lastSaved = e.changeCount
+    }
+
     override fun onCreateInputView(): View {
-        val view = T9KeypadView(this, this)
-        keypad = view
+        val v = currentView()
+        shownView = v
         refreshUi()
-        return view
+        return v
     }
 
     override fun onEvaluateFullscreenMode(): Boolean = false
@@ -70,6 +101,8 @@ class T9InputMethodService : InputMethodService(), T9KeypadView.Listener {
     override fun onStartInputView(info: EditorInfo, restarting: Boolean) {
         super.onStartInputView(info, restarting)
         resetState()
+        reloadSettings()
+
         val type = info.inputType
         val cls = type and InputType.TYPE_MASK_CLASS
         val variation = type and InputType.TYPE_MASK_VARIATION
@@ -81,12 +114,17 @@ class T9InputMethodService : InputMethodService(), T9KeypadView.Listener {
             )
         forceMultiTap = isPassword
         learningEnabled = !isPassword
+        fullKeyboard = (userFull || isPassword) && !digitsOnly
         caseMode = if (cursorWantsCaps(type)) CaseMode.CAP_NEXT else CaseMode.LOWER
+
+        if (shownView != null) showView()
+        t9View?.showSymbols(false)
         refreshUi()
     }
 
     override fun onFinishInput() {
         commitWord()
+        saveNow()
         super.onFinishInput()
     }
 
@@ -108,7 +146,52 @@ class T9InputMethodService : InputMethodService(), T9KeypadView.Listener {
         }
     }
 
-    // ---------------------------------------------------------------- keypad events
+    // ---------------------------------------------------------------- views & settings
+
+    private fun currentView(): View {
+        return if (fullKeyboard) {
+            qwertyView ?: QwertyKeypadView(this, this, settings, kbTheme).also { qwertyView = it }
+        } else {
+            t9View ?: T9KeypadView(this, this, settings, kbTheme).also { t9View = it }
+        }
+    }
+
+    private fun showView() {
+        val v = currentView()
+        if (shownView !== v) {
+            setInputView(v)
+            shownView = v
+        }
+    }
+
+    private fun reloadSettings() {
+        val s = KeyboardSettings.load(this)
+        val th = KeyboardTheme.resolve(this, s.theme)
+        if (s != settings || th !== kbTheme) {
+            settings = s
+            kbTheme = th
+            t9View = null
+            qwertyView = null
+        }
+        val token = getSharedPreferences(KeyboardSettings.PREFS, MODE_PRIVATE)
+            .getLong(KeyboardSettings.KEY_CLEAR_TOKEN, 0L)
+        if (token != clearToken) {
+            // "Clear learned words" was pressed in the settings screen.
+            clearToken = token
+            uiHandler.removeCallbacks(saveTask)
+            loadEngine()
+        }
+    }
+
+    private fun switchLayout(full: Boolean) {
+        commitWord()
+        fullKeyboard = full
+        userFull = full
+        showView()
+        refreshUi()
+    }
+
+    // ---------------------------------------------------------------- T9 keypad events
 
     override fun onKeypadKey(key: Char) {
         if (digitsOnly) {
@@ -123,23 +206,138 @@ class T9InputMethodService : InputMethodService(), T9KeypadView.Listener {
             in '2'..'9' -> onLetterKey(key)
             '0' -> onSpace()
             '*' -> onStar()
-            '#' -> onHash()
+            '#' -> cycleCase()
         }
         refreshUi()
     }
 
     override fun onKeypadLongKey(key: Char) {
-        if (key == '#') {
-            commitWord()
-            userMode = if (userMode == InputMode.PREDICTIVE) InputMode.MULTI_TAP else InputMode.PREDICTIVE
-        } else if (key.isDigit()) {
-            commitWord()
+        if (digitsOnly) {
             currentInputConnection?.commitText(key.toString(), 1)
+            return
+        }
+        when {
+            key == '#' -> {
+                commitWord()
+                userMode = if (userMode == InputMode.PREDICTIVE) InputMode.MULTI_TAP else InputMode.PREDICTIVE
+            }
+            key == '*' -> {
+                commitWord()
+                t9View?.showSymbols(true)
+            }
+            key == '0' -> {
+                commitWord()
+                currentInputConnection?.commitText("0", 1)
+            }
+            key.isDigit() -> startDigitCycle(key)
         }
         refreshUi()
     }
 
-    override fun onKeypadBackspace() {
+    override fun onKeypadBackspace() = doBackspace()
+
+    override fun onKeypadEnter() = doEnter()
+
+    override fun onKeypadCandidate(index: Int) {
+        if (!session.isComposing) return
+        session.select(index)
+        showComposing()
+        refreshUi()
+    }
+
+    override fun onKeypadSymbol(symbol: String) {
+        commitWord()
+        currentInputConnection?.commitText(symbol, 1)
+        refreshUi()
+    }
+
+    override fun onKeypadQwerty() = switchLayout(true)
+
+    // ---------------------------------------------------------------- QWERTY events
+
+    override fun onQwertyText(text: String, isLetter: Boolean) {
+        val ic = currentInputConnection ?: return
+        if (isLetter) {
+            ic.commitText(caseAdjust(text), 1)
+            if (caseMode == CaseMode.CAP_NEXT) caseMode = CaseMode.LOWER
+        } else {
+            ic.commitText(text, 1)
+        }
+        refreshUi()
+    }
+
+    override fun onQwertySpace() {
+        learnTrailingWord()
+        currentInputConnection?.commitText(" ", 1)
+        updateAutoCap()
+        refreshUi()
+    }
+
+    override fun onQwertyBackspace() = doBackspace()
+
+    override fun onQwertyEnter() = doEnter()
+
+    override fun onQwertyShift() {
+        cycleCase()
+        refreshUi()
+    }
+
+    override fun onQwertyT9() = switchLayout(false)
+
+    // ---------------------------------------------------------------- key actions
+
+    private fun onLetterKey(key: Char) {
+        if (mode == InputMode.MULTI_TAP || mtKey == key) {
+            // mtKey == key: continuing a hold-to-type-digit cycle, even in predictive mode
+            multiTapPress(key)
+        } else {
+            commitMultiTap() // a pending punctuation mark or digit, if any
+            if (!session.isComposing) session.previousWord = previousWordBefore(currentInputConnection)
+            session.pressDigit(key)
+            showComposing()
+        }
+    }
+
+    private fun onSpace() {
+        commitWord()
+        if (mode == InputMode.MULTI_TAP) learnTrailingWord()
+        currentInputConnection?.commitText(" ", 1)
+        updateAutoCap()
+    }
+
+    /** * = next candidate while composing; otherwise open the symbol picker. */
+    private fun onStar() {
+        if (mode == InputMode.PREDICTIVE && session.isComposing) {
+            session.next()
+            showComposing()
+        } else {
+            commitWord()
+            t9View?.showSymbols(true)
+        }
+    }
+
+    /** # (and the QWERTY shift key) cycle abc -> Abc -> ABC. */
+    private fun cycleCase() {
+        caseMode = when (caseMode) {
+            CaseMode.LOWER -> CaseMode.CAP_NEXT
+            CaseMode.CAP_NEXT -> CaseMode.UPPER
+            CaseMode.UPPER -> CaseMode.LOWER
+        }
+        if (session.isComposing) showComposing()
+    }
+
+    /** Hold a number key: type the digit and carry on cycling (hold 7, tap 4 more times -> S). */
+    private fun startDigitCycle(key: Char) {
+        commitWord()
+        val symbols = symbolsFor(key)
+        mtKey = key
+        mtIndex = symbols.lastIndex // the digit is the last item in the cycle
+        currentInputConnection?.setComposingText(symbols[mtIndex].toString(), 1)
+        uiHandler.removeCallbacks(mtTimeout)
+        uiHandler.postDelayed(mtTimeout, settings.multiTapMs.toLong())
+    }
+
+    private fun doBackspace() {
         val ic = currentInputConnection ?: return
         when {
             mtKey != null -> {
@@ -152,14 +350,15 @@ class T9InputMethodService : InputMethodService(), T9KeypadView.Listener {
                 session.backspace()
                 showComposing()
             }
+            tryReopenWord(ic) -> Unit
             else -> sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL)
         }
         refreshUi()
     }
 
-    override fun onKeypadEnter() {
+    private fun doEnter() {
         commitWord()
-        if (mode == InputMode.MULTI_TAP) learnTrailingWord()
+        if (fullKeyboard || mode == InputMode.MULTI_TAP) learnTrailingWord()
         val info = currentInputEditorInfo
         val ic = currentInputConnection
         if (info != null && ic != null) {
@@ -178,51 +377,32 @@ class T9InputMethodService : InputMethodService(), T9KeypadView.Listener {
         refreshUi()
     }
 
-    override fun onKeypadCandidate(index: Int) {
-        if (!session.isComposing) return
-        session.select(index)
+    /**
+     * DEL right after a dictionary word re-opens it as the composing word, so the candidate
+     * strip shows the alternatives. Pressing DEL again then removes keys as usual.
+     */
+    private fun tryReopenWord(ic: InputConnection): Boolean {
+        if (!settings.reopenWord || fullKeyboard || mode != InputMode.PREDICTIVE) return false
+        if (!ic.getSelectedText(0).isNullOrEmpty()) return false
+        val before = ic.getTextBeforeCursor(40, 0)?.toString() ?: return false
+        val word = before.takeLastWhile { it.isLetter() || it == '\'' }
+        if (word.length < 2) return false
+        val keys = T9Keymap.encode(word) ?: return false
+        val candidates = engine.lookup(keys)
+        if (candidates.none { !it.isCompletion && it.word.equals(word, ignoreCase = true) }) return false
+
+        ic.deleteSurroundingText(word.length, 0)
+        caseMode = when {
+            word.length > 1 && word.all { it.isUpperCase() || it == '\'' } -> CaseMode.UPPER
+            word[0].isUpperCase() -> CaseMode.CAP_NEXT
+            else -> CaseMode.LOWER
+        }
+        session.previousWord = previousWordBefore(ic)
+        session.restore(keys)
+        val idx = session.candidateList.indexOfFirst { it.word.equals(word, ignoreCase = true) }
+        if (idx >= 0) session.select(idx)
         showComposing()
-        refreshUi()
-    }
-
-    // ---------------------------------------------------------------- key actions
-
-    private fun onLetterKey(key: Char) {
-        if (mode == InputMode.MULTI_TAP) {
-            multiTapPress(key)
-        } else {
-            commitMultiTap() // a pending punctuation mark, if any
-            session.pressDigit(key)
-            showComposing()
-        }
-    }
-
-    private fun onSpace() {
-        commitWord()
-        if (mode == InputMode.MULTI_TAP) learnTrailingWord()
-        currentInputConnection?.commitText(" ", 1)
-        updateAutoCap()
-    }
-
-    /** * = next candidate while composing; otherwise a plain asterisk (symbol picker comes later). */
-    private fun onStar() {
-        if (mode == InputMode.PREDICTIVE && session.isComposing) {
-            session.next()
-            showComposing()
-        } else {
-            commitWord()
-            currentInputConnection?.commitText("*", 1)
-        }
-    }
-
-    /** # = cycle abc -> Abc -> ABC. */
-    private fun onHash() {
-        caseMode = when (caseMode) {
-            CaseMode.LOWER -> CaseMode.CAP_NEXT
-            CaseMode.CAP_NEXT -> CaseMode.UPPER
-            CaseMode.UPPER -> CaseMode.LOWER
-        }
-        if (session.isComposing) showComposing()
+        return true
     }
 
     // ---------------------------------------------------------------- composing / committing
@@ -241,9 +421,10 @@ class T9InputMethodService : InputMethodService(), T9KeypadView.Listener {
         commitMultiTap()
         if (!session.isComposing) return
         val shown = displayWord(session.displayText)
-        session.commit() // teaches the engine the dictionary form
+        session.commit() // teaches the engine the dictionary form and the word pair
         currentInputConnection?.commitText(shown, 1)
         if (caseMode == CaseMode.CAP_NEXT) caseMode = CaseMode.LOWER
+        scheduleSave()
     }
 
     private fun multiTapPress(key: Char) {
@@ -257,7 +438,7 @@ class T9InputMethodService : InputMethodService(), T9KeypadView.Listener {
         }
         currentInputConnection?.setComposingText(caseAdjust(symbols[mtIndex].toString()), 1)
         uiHandler.removeCallbacks(mtTimeout)
-        uiHandler.postDelayed(mtTimeout, MULTI_TAP_TIMEOUT_MS)
+        uiHandler.postDelayed(mtTimeout, settings.multiTapMs.toLong())
     }
 
     private fun commitMultiTap() {
@@ -270,12 +451,22 @@ class T9InputMethodService : InputMethodService(), T9KeypadView.Listener {
         refreshUi()
     }
 
-    /** Words spelled in multi-tap mode are added to the user dictionary when finished. */
+    /** Words typed letter by letter (multi-tap or QWERTY) are added to the user dictionary. */
     private fun learnTrailingWord() {
         if (!learningEnabled) return
-        val before = currentInputConnection?.getTextBeforeCursor(40, 0)?.toString() ?: return
-        val word = before.takeLastWhile { it.isLetter() || it == '\'' }.trim('\'').lowercase()
-        if (word.length >= 2) engine.addUserWord(word)
+        val before = currentInputConnection?.getTextBeforeCursor(60, 0)?.toString() ?: return
+        val raw = before.takeLastWhile { it.isLetter() || it == '\'' }
+        val word = raw.trim('\'').lowercase()
+        if (word.length < 2) return
+        engine.addUserWord(word)
+        val prev = PREV_WORD.find(before.dropLast(raw.length))?.groupValues?.get(1)?.lowercase()
+        if (prev != null) engine.learnPair(prev, word)
+        scheduleSave()
+    }
+
+    private fun previousWordBefore(ic: InputConnection?): String? {
+        val before = ic?.getTextBeforeCursor(40, 0)?.toString() ?: return null
+        return PREV_WORD.find(before)?.groupValues?.get(1)?.lowercase()
     }
 
     private fun resetState() {
@@ -283,6 +474,18 @@ class T9InputMethodService : InputMethodService(), T9KeypadView.Listener {
         mtKey = null
         mtIndex = 0
         session.cancel()
+    }
+
+    private fun scheduleSave() {
+        if (engine.changeCount == lastSaved) return
+        uiHandler.removeCallbacks(saveTask)
+        uiHandler.postDelayed(saveTask, SAVE_DELAY_MS)
+    }
+
+    private fun saveNow() {
+        if (!::engine.isInitialized || engine.changeCount == lastSaved) return
+        store.save(engine)
+        lastSaved = engine.changeCount
     }
 
     // ---------------------------------------------------------------- case & text helpers
@@ -313,26 +516,28 @@ class T9InputMethodService : InputMethodService(), T9KeypadView.Listener {
     }
 
     private fun refreshUi() {
-        val k = keypad ?: return
-        if (mode == InputMode.MULTI_TAP || !session.isComposing) {
-            k.setCandidates(emptyList(), -1)
-        } else {
-            val words = session.candidateList.map { displayWord(it.word) }
-            k.setCandidates(
-                if (words.isEmpty()) listOf(displayWord(session.displayText)) else words,
-                session.selectedIndex,
-            )
-        }
         val caseLabel = when (caseMode) {
             CaseMode.LOWER -> "abc"
             CaseMode.CAP_NEXT -> "Abc"
             CaseMode.UPPER -> "ABC"
         }
-        val modeLabel = if (mode == InputMode.PREDICTIVE) "T9" else "multi"
-        k.setModeLabel("$caseLabel · $modeLabel")
+        t9View?.let { k ->
+            if (mode == InputMode.MULTI_TAP || !session.isComposing) {
+                k.setCandidates(emptyList(), -1)
+            } else {
+                val words = session.candidateList.map { displayWord(it.word) }
+                k.setCandidates(
+                    if (words.isEmpty()) listOf(displayWord(session.displayText)) else words,
+                    session.selectedIndex,
+                )
+            }
+            k.setModeLabel("$caseLabel \u00B7 " + if (mode == InputMode.PREDICTIVE) "T9" else "multi")
+        }
+        qwertyView?.setCase(caseLabel, caseMode != CaseMode.LOWER)
     }
 
     private companion object {
-        const val MULTI_TAP_TIMEOUT_MS = 800L
+        val PREV_WORD = Regex("([A-Za-z']+) $")
+        const val SAVE_DELAY_MS = 4000L
     }
 }
