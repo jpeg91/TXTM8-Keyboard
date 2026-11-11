@@ -11,6 +11,9 @@ class T9Session(private val engine: T9Engine) {
     private var candidates: List<Candidate> = emptyList()
     private var index = 0
 
+    /** The (lowercase) word before the one being typed. Set by the keyboard; used for ranking. */
+    var previousWord: String? = null
+
     val isComposing: Boolean get() = digits.isNotEmpty()
     val digitString: String get() = digits.toString()
     val candidateList: List<Candidate> get() = candidates
@@ -24,6 +27,12 @@ class T9Session(private val engine: T9Engine) {
         require(d in '2'..'9') { "Not a letter key: $d" }
         digits.append(d)
         refresh()
+    }
+
+    /** Replaces the whole key sequence (used to re-open an existing word). */
+    fun restore(keys: String) {
+        cancel()
+        for (d in keys) pressDigit(d)
     }
 
     /** Returns false if there was nothing to delete (caller should delete a real character). */
@@ -51,7 +60,10 @@ class T9Session(private val engine: T9Engine) {
     fun commit(): String? {
         if (digits.isEmpty()) return null
         val word = displayText
-        if (candidates.isNotEmpty()) engine.learn(word)
+        if (candidates.isNotEmpty()) {
+            engine.learn(word)
+            previousWord?.let { engine.learnPair(it, word) }
+        }
         cancel()
         return word
     }
@@ -63,7 +75,7 @@ class T9Session(private val engine: T9Engine) {
     }
 
     private fun refresh() {
-        candidates = if (digits.isEmpty()) emptyList() else engine.lookup(digits.toString())
+        candidates = if (digits.isEmpty()) emptyList() else engine.lookup(digits.toString(), previousWord)
         index = 0
     }
 
