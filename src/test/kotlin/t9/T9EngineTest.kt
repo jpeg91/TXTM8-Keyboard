@@ -93,4 +93,44 @@ class T9EngineTest {
         assertTrue(s.backspace())
         assertFalse(s.backspace())
     }
+
+    @Test
+    fun previousWordPromotesFollowers() {
+        val e = engine()
+        assertEquals("good", e.lookup("4663").first().word)
+        repeat(3) { e.learnPair("i", "gone") }
+        assertEquals("gone", e.lookup("4663", "i").first().word)
+        assertEquals("good", e.lookup("4663", "you").first().word)
+    }
+
+    @Test
+    fun previousWordSurfacesCompletions() {
+        val e = engine()
+        repeat(4) { e.learnPair("i", "homes") }
+        // "466" has only completions; the learned follower should lead.
+        assertEquals("homes", e.lookup("466", "i").first().word)
+    }
+
+    @Test
+    fun userDataSurvivesExportAndImport() {
+        val a = engine()
+        a.learn("hood")
+        a.learn("hood")
+        a.addUserWord("hoof")
+        a.learnPair("i", "gone")
+        val dump = a.exportUserData()
+
+        val b = engine()
+        b.importUserData(dump.lineSequence())
+        assertEquals(a.lookup("4663", "i").map { it.word }, b.lookup("4663", "i").map { it.word })
+        assertTrue(b.lookup("4663").any { it.word == "hoof" })
+    }
+
+    @Test
+    fun sessionRestoreReopensAWord() {
+        val s = T9Session(engine())
+        s.restore("4663")
+        assertEquals("good", s.displayText)
+        assertEquals("4663", s.digitString)
+    }
 }
