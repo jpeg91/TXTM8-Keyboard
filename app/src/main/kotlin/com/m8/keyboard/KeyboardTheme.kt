@@ -28,6 +28,7 @@ class KeyboardTheme(
     val shadow: Int = 0,
     val deep: Int = 0,
     val isNokia: Boolean = false,
+    val isRazr: Boolean = false,
     val typeface: Typeface = Typeface.DEFAULT,
 ) {
     companion object {
@@ -101,6 +102,25 @@ class KeyboardTheme(
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
+        /** Brushed-silver shell, dark keypad and electric-blue V3 illumination. */
+        val RAZR = KeyboardTheme(
+            background = 0xFF9EA5AA.toInt(),
+            strip = 0xFF101820.toInt(),
+            key = 0xFF252D34.toInt(),
+            keyPressed = 0xFF394B59.toInt(),
+            text = 0xFF8DDCFF.toInt(),
+            accent = 0xFF168CCB.toInt(),
+            accentText = 0xFFE8F8FF.toInt(),
+            actionKey = 0xFF414B53.toInt(),
+            actionKeyPressed = 0xFF176F9D.toInt(),
+            actionText = 0xFFC4EDFF.toInt(),
+            subText = 0xFF4EA8D1.toInt(),
+            shadow = 0xFF59636A.toInt(),
+            deep = 0xFF17232B.toInt(),
+            isRazr = true,
+            typeface = Typeface.create("sans-serif", Typeface.NORMAL),
+        )
+
         private fun heavyItalic(): Typeface =
             if (Build.VERSION.SDK_INT >= 28) {
                 Typeface.create(Typeface.SANS_SERIF, 900, true)
@@ -115,6 +135,7 @@ class KeyboardTheme(
                 KeyboardSettings.THEME_RED -> RED
                 KeyboardSettings.THEME_PURPLE -> PURPLE
                 KeyboardSettings.THEME_NOKIA -> NOKIA
+                KeyboardSettings.THEME_RAZR -> RAZR
                 KeyboardSettings.THEME_DARK -> DARK
                 KeyboardSettings.THEME_LIGHT -> LIGHT
                 else -> if (night) DARK else LIGHT

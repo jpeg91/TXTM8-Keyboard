@@ -85,11 +85,12 @@ class SetupActivity : Activity() {
         root.addView(sectionTitle("Settings"))
         addChoice(
             root, "Theme", KeyboardSettings.KEY_THEME,
-            listOf("Red", "Purple", "Nokia 3310", "Follow system", "Dark", "Light"),
+            listOf("Red", "Purple", "Nokia 3310", "Motorola RAZR V3", "Follow system", "Dark", "Light"),
             listOf(
                 KeyboardSettings.THEME_RED,
                 KeyboardSettings.THEME_PURPLE,
                 KeyboardSettings.THEME_NOKIA,
+                KeyboardSettings.THEME_RAZR,
                 KeyboardSettings.THEME_SYSTEM,
                 KeyboardSettings.THEME_DARK,
                 KeyboardSettings.THEME_LIGHT,

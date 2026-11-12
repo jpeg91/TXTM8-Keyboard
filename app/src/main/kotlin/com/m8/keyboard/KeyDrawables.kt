@@ -6,6 +6,7 @@ import android.graphics.Canvas
 import android.graphics.ColorFilter
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.LinearGradient
 import android.graphics.RadialGradient
 import android.graphics.Rect
 import android.graphics.RectF
@@ -91,7 +92,7 @@ class SlantKeyDrawable(
     override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
 }
 
-/** Soft, moulded keycaps inspired by the original Nokia 3310 keypad. */
+/** Raised, slightly domed plastic keycaps inspired by the original Nokia 3310 keypad. */
 class NokiaKeyDrawable(
     private val fill: Int,
     private val shadow: Int,
@@ -110,20 +111,79 @@ class NokiaKeyDrawable(
         val bottom = b.bottom - insetY
         if (r <= l || bottom <= t) return
         val keyRadius = radius
-        // Dark lower rim gives the keycap a little height without a heavy drop shadow.
+
+        // A deeper lower lip and soft cast shadow make the key stand proud of the shell.
         paint.style = Paint.Style.FILL
+        paint.shader = null
         paint.color = shadow
-        rect.set(l, t + 1.5f, r, bottom)
+        rect.set(l + 0.5f, t + 2.8f, r + 0.5f, bottom + 0.5f)
         canvas.drawRoundRect(rect, keyRadius, keyRadius, paint)
-        rect.set(l, t, r, bottom - 1.5f)
-        paint.color = fill
+
+        // Gentle vertical shading suggests a convex moulded plastic surface.
+        rect.set(l, t, r, bottom - 2f)
+        paint.shader = LinearGradient(l, t, l, bottom - 2f,
+            intArrayOf(0xFFFFFFFF.toInt(), fill, fill), null, Shader.TileMode.CLAMP)
         canvas.drawRoundRect(rect, keyRadius, keyRadius, paint)
-        // A restrained top highlight recreates the slightly domed plastic surface.
+        paint.shader = null
+
+        // Fine inset rim and a narrow highlight along the upper edge.
         paint.style = Paint.Style.STROKE
-        paint.strokeWidth = 1f
-        paint.color = 0x66FFFFFF
-        rect.set(l + 1f, t + 1f, r - 1f, bottom - 2.5f)
+        paint.strokeWidth = 0.8f
+        paint.color = 0x66515D61
+        rect.set(l + 0.8f, t + 0.8f, r - 0.8f, bottom - 2.8f)
         canvas.drawRoundRect(rect, maxOf(1f, keyRadius - 1f), maxOf(1f, keyRadius - 1f), paint)
+        paint.strokeWidth = 1.1f
+        paint.color = 0x99FFFFFF.toInt()
+        rect.set(l + 1.5f, t + 1.1f, r - 1.5f, t + 3f)
+        canvas.drawRoundRect(rect, keyRadius, keyRadius, paint)
+        paint.style = Paint.Style.FILL
+    }
+
+    override fun setAlpha(alpha: Int) { paint.alpha = alpha }
+    override fun setColorFilter(colorFilter: ColorFilter?) { paint.colorFilter = colorFilter }
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+}
+
+/** Flat, precision-cut dark keypad buttons with the cool blue edge-light of the RAZR V3. */
+class RazrKeyDrawable(
+    private val fill: Int,
+    private val shadow: Int,
+    private val insetX: Float,
+    private val insetY: Float,
+    private val radius: Float,
+    private val pressed: Boolean,
+) : Drawable() {
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val rect = RectF()
+
+    override fun draw(canvas: Canvas) {
+        val b = bounds
+        val l = b.left + insetX
+        val t = b.top + insetY
+        val r = b.right - insetX
+        val bottom = b.bottom - insetY
+        if (r <= l || bottom <= t) return
+
+        paint.style = Paint.Style.FILL
+        paint.shader = null
+        paint.color = shadow
+        rect.set(l, t + 2f, r, bottom)
+        canvas.drawRoundRect(rect, radius, radius, paint)
+
+        rect.set(l, t, r, bottom - 2f)
+        paint.shader = LinearGradient(l, t, l, bottom - 2f,
+            intArrayOf(0xFF424C53.toInt(), fill, 0xFF171E23.toInt()), null, Shader.TileMode.CLAMP)
+        canvas.drawRoundRect(rect, radius, radius, paint)
+        paint.shader = null
+
+        // The V3's blue electroluminescent keypad is echoed by a restrained luminous rim.
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = if (pressed) 1.5f else 0.8f
+        paint.color = if (pressed) 0xFF65D8FF.toInt() else 0x6650BCEB
+        rect.set(l + 0.8f, t + 0.8f, r - 0.8f, bottom - 2.8f)
+        canvas.drawRoundRect(rect, maxOf(1f, radius - 1f), maxOf(1f, radius - 1f), paint)
+        paint.style = Paint.Style.FILL
     }
 
     override fun setAlpha(alpha: Int) { paint.alpha = alpha }
@@ -330,6 +390,16 @@ fun KeyboardTheme.keyBackground(
     val pressed = if (action) actionKeyPressed else keyPressed
 
     fun layer(color: Int): Drawable {
+        if (isRazr) {
+            return RazrKeyDrawable(
+                fill = color,
+                shadow = this.shadow,
+                insetX = gapXDp * density,
+                insetY = gapYDp * density,
+                radius = 3.5f * density,
+                pressed = color == pressed,
+            )
+        }
         if (isNokia) {
             return NokiaKeyDrawable(
                 fill = color,
@@ -371,6 +441,13 @@ fun KeyboardTheme.keyBackground(
 
 /** Highlight behind the selected candidate word. */
 fun KeyboardTheme.candidateBackground(density: Float): Drawable {
+    if (isRazr) {
+        return GradientDrawable().apply {
+            setColor(accent)
+            cornerRadius = 2f * density
+            setStroke((1f * density).toInt().coerceAtLeast(1), 0xFF73D9FF.toInt())
+        }
+    }
     if (isNokia) {
         return GradientDrawable().apply {
             setColor(accent)
