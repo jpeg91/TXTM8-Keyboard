@@ -27,6 +27,7 @@ class KeyboardTheme(
     val border: Int = 0,
     val shadow: Int = 0,
     val deep: Int = 0,
+    val isNokia: Boolean = false,
     val typeface: Typeface = Typeface.DEFAULT,
 ) {
     companion object {
@@ -81,6 +82,25 @@ class KeyboardTheme(
         /** The purple theme: the same look with purple in place of red. */
         val PURPLE = accented(0xFF755FBE.toInt(), 0xFFA897EC.toInt(), 0xFF3A2E6B.toInt())
 
+        /** Original 3310-inspired blue-grey shell and soft green LCD. */
+        val NOKIA = KeyboardTheme(
+            background = 0xFF8799A6.toInt(),
+            strip = 0xFFB7C99A.toInt(),
+            key = 0xFFD5D9D7.toInt(),
+            keyPressed = 0xFFADB8B6.toInt(),
+            text = 0xFF26343A.toInt(),
+            accent = 0xFF526B4B.toInt(),
+            accentText = 0xFFE4EBCF.toInt(),
+            actionKey = 0xFFBFC8C5.toInt(),
+            actionKeyPressed = 0xFF9EAAA7.toInt(),
+            actionText = 0xFF26343A.toInt(),
+            subText = 0xFF53645A.toInt(),
+            shadow = 0xFF53636A.toInt(),
+            deep = 0xFF53636A.toInt(),
+            isNokia = true,
+            typeface = Typeface.create("sans-serif", Typeface.BOLD),
+        )
+
         private fun heavyItalic(): Typeface =
             if (Build.VERSION.SDK_INT >= 28) {
                 Typeface.create(Typeface.SANS_SERIF, 900, true)
@@ -94,6 +114,7 @@ class KeyboardTheme(
             return when (setting) {
                 KeyboardSettings.THEME_RED -> RED
                 KeyboardSettings.THEME_PURPLE -> PURPLE
+                KeyboardSettings.THEME_NOKIA -> NOKIA
                 KeyboardSettings.THEME_DARK -> DARK
                 KeyboardSettings.THEME_LIGHT -> LIGHT
                 else -> if (night) DARK else LIGHT

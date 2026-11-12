@@ -40,7 +40,7 @@ class SetupActivity : Activity() {
         super.onCreate(savedInstanceState)
 
         val chosen = prefs.getInt(KeyboardSettings.KEY_THEME, KeyboardSettings.THEME_RED)
-        look = if (chosen == KeyboardSettings.THEME_PURPLE) KeyboardTheme.PURPLE else KeyboardTheme.RED
+        look = KeyboardTheme.resolve(this, chosen)
         window.statusBarColor = look.background
         window.navigationBarColor = look.background
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
@@ -85,10 +85,11 @@ class SetupActivity : Activity() {
         root.addView(sectionTitle("Settings"))
         addChoice(
             root, "Theme", KeyboardSettings.KEY_THEME,
-            listOf("Red", "Purple", "Follow system", "Dark", "Light"),
+            listOf("Red", "Purple", "Nokia 3310", "Follow system", "Dark", "Light"),
             listOf(
                 KeyboardSettings.THEME_RED,
                 KeyboardSettings.THEME_PURPLE,
+                KeyboardSettings.THEME_NOKIA,
                 KeyboardSettings.THEME_SYSTEM,
                 KeyboardSettings.THEME_DARK,
                 KeyboardSettings.THEME_LIGHT,

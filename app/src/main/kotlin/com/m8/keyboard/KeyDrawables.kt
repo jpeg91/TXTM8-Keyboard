@@ -8,6 +8,7 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RadialGradient
 import android.graphics.Rect
+import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.PixelFormat
 import android.graphics.drawable.ColorDrawable
@@ -86,6 +87,47 @@ class SlantKeyDrawable(
         paint.colorFilter = colorFilter
     }
 
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+}
+
+/** Soft, moulded keycaps inspired by the original Nokia 3310 keypad. */
+class NokiaKeyDrawable(
+    private val fill: Int,
+    private val shadow: Int,
+    private val insetX: Float,
+    private val insetY: Float,
+    private val radius: Float,
+) : Drawable() {
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val rect = RectF()
+
+    override fun draw(canvas: Canvas) {
+        val b = bounds
+        val l = b.left + insetX
+        val t = b.top + insetY
+        val r = b.right - insetX
+        val bottom = b.bottom - insetY
+        if (r <= l || bottom <= t) return
+        val keyRadius = radius
+        // Dark lower rim gives the keycap a little height without a heavy drop shadow.
+        paint.style = Paint.Style.FILL
+        paint.color = shadow
+        rect.set(l, t + 1.5f, r, bottom)
+        canvas.drawRoundRect(rect, keyRadius, keyRadius, paint)
+        rect.set(l, t, r, bottom - 1.5f)
+        paint.color = fill
+        canvas.drawRoundRect(rect, keyRadius, keyRadius, paint)
+        // A restrained top highlight recreates the slightly domed plastic surface.
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = 1f
+        paint.color = 0x66FFFFFF
+        rect.set(l + 1f, t + 1f, r - 1f, bottom - 2.5f)
+        canvas.drawRoundRect(rect, maxOf(1f, keyRadius - 1f), maxOf(1f, keyRadius - 1f), paint)
+    }
+
+    override fun setAlpha(alpha: Int) { paint.alpha = alpha }
+    override fun setColorFilter(colorFilter: ColorFilter?) { paint.colorFilter = colorFilter }
     @Suppress("OVERRIDE_DEPRECATION")
     override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
 }
@@ -288,6 +330,15 @@ fun KeyboardTheme.keyBackground(
     val pressed = if (action) actionKeyPressed else keyPressed
 
     fun layer(color: Int): Drawable {
+        if (isNokia) {
+            return NokiaKeyDrawable(
+                fill = color,
+                shadow = this.shadow,
+                insetX = gapXDp * density,
+                insetY = gapYDp * density,
+                radius = 7f * density,
+            )
+        }
         if (isSlanted) {
             return SlantKeyDrawable(
                 fill = color,
@@ -320,6 +371,12 @@ fun KeyboardTheme.keyBackground(
 
 /** Highlight behind the selected candidate word. */
 fun KeyboardTheme.candidateBackground(density: Float): Drawable {
+    if (isNokia) {
+        return GradientDrawable().apply {
+            setColor(accent)
+            cornerRadius = 3f * density
+        }
+    }
     if (isSlanted) {
         return SlantKeyDrawable(
             fill = accent,

@@ -47,6 +47,7 @@ data class KeyboardSettings(
         const val THEME_LIGHT = 2
         const val THEME_RED = 3
         const val THEME_PURPLE = 4
+        const val THEME_NOKIA = 5
 
         fun load(context: Context): KeyboardSettings {
             val p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
