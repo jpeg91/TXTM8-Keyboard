@@ -230,6 +230,7 @@ class QwertyKeypadView(
         tv.gravity = Gravity.CENTER
         tv.setTextColor(if (action) theme.actionText else theme.text)
         tv.background = theme.keyBackground(density(), action, GAP_X_DP, GAP_Y_DP, 8, leftFrac, rightFrac)
+        theme.bindKeyGlow(tv)
         return tv
     }
 }

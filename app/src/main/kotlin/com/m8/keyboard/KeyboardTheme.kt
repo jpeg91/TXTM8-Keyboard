@@ -102,23 +102,26 @@ class KeyboardTheme(
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
-        /** Brushed-silver shell, dark keypad and electric-blue V3 illumination. */
+        /**
+         * Motorola RAZR V3: a dark etched-metal keypad with electroluminescent blue numerals.
+         * See RazrTheme.kt for how the keys, the navigation ring and the glow are drawn.
+         */
         val RAZR = KeyboardTheme(
-            background = 0xFF9EA5AA.toInt(),
-            strip = 0xFF101820.toInt(),
-            key = 0xFF252D34.toInt(),
-            keyPressed = 0xFF394B59.toInt(),
-            text = 0xFF8DDCFF.toInt(),
-            accent = 0xFF168CCB.toInt(),
-            accentText = 0xFFE8F8FF.toInt(),
-            actionKey = 0xFF414B53.toInt(),
-            actionKeyPressed = 0xFF176F9D.toInt(),
-            actionText = 0xFFC4EDFF.toInt(),
-            subText = 0xFF4EA8D1.toInt(),
-            shadow = 0xFF59636A.toInt(),
-            deep = 0xFF17232B.toInt(),
+            background = 0xFF0D1115.toInt(),
+            strip = 0xFF020A11.toInt(),
+            key = 0xFF2C353C.toInt(),
+            keyPressed = 0xFF1C5F86.toInt(),
+            text = 0xFF7FD6FF.toInt(),           // numerals at rest: backlit pale blue
+            accent = 0xFF1E9BE0.toInt(),
+            accentText = 0xFF03131D.toInt(),     // dark text on the lit candidate chip
+            actionKey = 0xFF343D45.toInt(),
+            actionKeyPressed = 0xFF1C5F86.toInt(),
+            actionText = 0xFF8DDCFF.toInt(),
+            subText = 0xFF4C9CC4.toInt(),
+            shadow = 0xFF03060A.toInt(),
+            deep = 0xFF000000.toInt(),
             isRazr = true,
-            typeface = Typeface.create("sans-serif", Typeface.NORMAL),
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL),
         )
 
         private fun heavyItalic(): Typeface =

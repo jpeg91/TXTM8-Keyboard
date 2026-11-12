@@ -4,9 +4,6 @@ package com.m8.keyboard
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
-import android.graphics.Canvas
-import android.graphics.Paint
-import android.graphics.Path
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
@@ -30,7 +27,7 @@ private const val GAP_DP = 3
 
 /**
  * The number pad: [keyboard icon] [candidate strip] [enter] [backspace] on top, followed by
- * the RAZR navigation disc when that theme is selected, then a 4x3 key grid.
+ * (in the RAZR theme: the suggestion screen, then the soft keys and navigation ring), then a 4x3 key grid.
  * The grid can be swapped for a symbol picker with [showSymbols].
  */
 class NumberPadView(
@@ -75,14 +72,10 @@ class NumberPadView(
         // --- top bar: QWERTY | candidates | DEL | ENTER ---
         strip.orientation = HORIZONTAL
         scroll.isHorizontalScrollBarEnabled = false
-        scroll.setBackgroundColor(theme.strip)
+        if (theme.isRazr) scroll.background = RazrDisplayDrawable(density()) else scroll.setBackgroundColor(theme.strip)
         scroll.addView(strip, FrameLayout.LayoutParams(WRAP, MATCH))
 
-        val qwerty = theme.iconKey(context, KeyIcon.KEYBOARD, false, GAP_DP, GAP_DP, 10, "Full keyboard")
-        qwerty.setOnClickListener {
-            settings.feedback(it)
-            listener.onKeypadQwerty()
-        }
+        val barHeight = if (theme.isRazr) 44 else 52
 
         val del = theme.iconKey(context, KeyIcon.BACKSPACE, true, GAP_DP, GAP_DP, 10, "Backspace")
         del.setOnTouchListener { v, e ->
@@ -101,31 +94,44 @@ class NumberPadView(
             true
         }
 
-        val enter = theme.iconKey(context, KeyIcon.ENTER, true, GAP_DP, GAP_DP, 10, "Enter")
-        enter.setOnClickListener {
-            settings.feedback(it)
-            listener.onKeypadEnter()
-        }
-
-        val top = newRow()
-        top.gravity = Gravity.CENTER_VERTICAL
-        top.addView(qwerty, LinearLayout.LayoutParams(dp(60), dp(52)))
-        top.addView(scroll, LinearLayout.LayoutParams(0, dp(52)).apply { weight = 1f })
-        top.addView(enter, LinearLayout.LayoutParams(dp(68), dp(52)))
-        top.addView(del, LinearLayout.LayoutParams(dp(60), dp(52)))
-        addView(top, LinearLayout.LayoutParams(MATCH, WRAP))
-
-        // The original RAZR has a circular four-way navigation pad above its etched number keys.
-        // Here it doubles as candidate navigation, so the extra control is functional rather than decorative.
         if (theme.isRazr) {
-            val navRow = FrameLayout(context)
-            val navPad = RazrNavigationPadView(
+            // The suggestion strip is the phone's screen; below it, the V3's soft keys and
+            // navigation ring (keyboard switch, enter, and candidate navigation).
+            val screen = newRow()
+            screen.gravity = Gravity.CENTER_VERTICAL
+            screen.addView(scroll, LinearLayout.LayoutParams(0, dp(barHeight)).apply { weight = 1f })
+            screen.addView(del, LinearLayout.LayoutParams(dp(60), dp(barHeight)))
+            addView(screen, LinearLayout.LayoutParams(MATCH, WRAP))
+
+            val cluster = RazrControlCluster(
                 context,
+                settings,
+                onQwerty = { listener.onKeypadQwerty() },
+                onEnter = { listener.onKeypadEnter() },
                 onMove = { delta -> moveCandidate(delta) },
                 onSelect = { selectCandidate() },
             )
-            navRow.addView(navPad, FrameLayout.LayoutParams(dp(42), dp(42), Gravity.CENTER))
-            addView(navRow, LinearLayout.LayoutParams(MATCH, dp(44)))
+            addView(cluster, LinearLayout.LayoutParams(MATCH, dp(68)))
+        } else {
+            val qwerty = theme.iconKey(context, KeyIcon.KEYBOARD, false, GAP_DP, GAP_DP, 10, "Full keyboard")
+            qwerty.setOnClickListener {
+                settings.feedback(it)
+                listener.onKeypadQwerty()
+            }
+
+            val enter = theme.iconKey(context, KeyIcon.ENTER, true, GAP_DP, GAP_DP, 10, "Enter")
+            enter.setOnClickListener {
+                settings.feedback(it)
+                listener.onKeypadEnter()
+            }
+
+            val top = newRow()
+            top.gravity = Gravity.CENTER_VERTICAL
+            top.addView(qwerty, LinearLayout.LayoutParams(dp(60), dp(barHeight)))
+            top.addView(scroll, LinearLayout.LayoutParams(0, dp(barHeight)).apply { weight = 1f })
+            top.addView(enter, LinearLayout.LayoutParams(dp(68), dp(barHeight)))
+            top.addView(del, LinearLayout.LayoutParams(dp(60), dp(barHeight)))
+            addView(top, LinearLayout.LayoutParams(MATCH, WRAP))
         }
 
         // --- 4x3 number grid ---
@@ -299,109 +305,8 @@ class NumberPadView(
             razrRow = razrRow,
             razrColumn = razrColumn,
         )
+        theme.bindKeyGlow(tv)
         return tv
     }
 }
 
-
-/** Circular four-way control inspired by the RAZR V3 navigation disc. */
-private class RazrNavigationPadView(
-    context: Context,
-    private val onMove: (Int) -> Unit,
-    private val onSelect: () -> Unit,
-) : View(context) {
-    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val path = Path()
-    private val d = resources.displayMetrics.density
-
-    init {
-        contentDescription = "RAZR navigation pad; left and right move through suggestions, centre selects"
-        isClickable = true
-    }
-
-    override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
-        val cx = width / 2f
-        val cy = height / 2f
-        val outer = minOf(width, height) * 0.47f
-
-        // Satin-metal outer disc and narrow blue electroluminescent ring.
-        paint.style = Paint.Style.FILL
-        paint.shader = android.graphics.LinearGradient(
-            cx - outer, cy - outer, cx + outer, cy + outer,
-            0xFFE0E4E6.toInt(), 0xFF7C8991.toInt(), android.graphics.Shader.TileMode.CLAMP,
-        )
-        canvas.drawCircle(cx, cy, outer, paint)
-        paint.shader = null
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = 1.2f * d
-        paint.color = 0xFF48BCEB.toInt()
-        canvas.drawCircle(cx, cy, outer - 1.5f * d, paint)
-
-        paint.style = Paint.Style.FILL
-        paint.color = 0xFF27343D.toInt()
-        canvas.drawCircle(cx, cy, outer * 0.78f, paint)
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = 1.1f * d
-        paint.color = 0xFF68D7FF.toInt()
-        canvas.drawCircle(cx, cy, outer * 0.73f, paint)
-
-        // Four small etched direction markers.
-        val arrowRadius = outer * 0.57f
-        drawArrow(canvas, cx, cy - arrowRadius, 0f)
-        drawArrow(canvas, cx + arrowRadius, cy, 90f)
-        drawArrow(canvas, cx, cy + arrowRadius, 180f)
-        drawArrow(canvas, cx - arrowRadius, cy, 270f)
-
-        paint.style = Paint.Style.FILL
-        paint.color = 0xFF9FB0B9.toInt()
-        canvas.drawCircle(cx, cy, outer * 0.25f, paint)
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = 1f * d
-        paint.color = 0xFF53C9F5.toInt()
-        canvas.drawCircle(cx, cy, outer * 0.25f, paint)
-        paint.style = Paint.Style.FILL
-        paint.color = 0xFF25323A.toInt()
-        canvas.drawCircle(cx, cy, outer * 0.12f, paint)
-    }
-
-    private fun drawArrow(canvas: Canvas, cx: Float, cy: Float, rotation: Float) {
-        val size = 2.8f * d
-        path.reset()
-        path.moveTo(cx, cy - size)
-        path.lineTo(cx - size, cy + size * 0.7f)
-        path.lineTo(cx + size, cy + size * 0.7f)
-        path.close()
-        canvas.save()
-        canvas.rotate(rotation, cx, cy)
-        paint.style = Paint.Style.FILL
-        paint.color = 0xFFB9EFFF.toInt()
-        canvas.drawPath(path, paint)
-        canvas.restore()
-    }
-
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        when (event.actionMasked) {
-            MotionEvent.ACTION_DOWN -> return true
-            MotionEvent.ACTION_UP -> {
-                val dx = event.x - width / 2f
-                val dy = event.y - height / 2f
-                val radius = minOf(width, height) * 0.47f
-                if (kotlin.math.hypot(dx.toDouble(), dy.toDouble()) < radius * 0.30f) {
-                    onSelect()
-                } else if (kotlin.math.abs(dx) > kotlin.math.abs(dy)) {
-                    onMove(if (dx < 0f) -1 else 1)
-                }
-                performClick()
-                return true
-            }
-            MotionEvent.ACTION_CANCEL -> return true
-        }
-        return true
-    }
-
-    override fun performClick(): Boolean {
-        super.performClick()
-        return true
-    }
-}
