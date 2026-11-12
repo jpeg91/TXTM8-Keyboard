@@ -145,7 +145,11 @@ class NokiaKeyDrawable(
     override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
 }
 
-/** Flat, precision-cut dark keypad buttons with the cool blue edge-light of the RAZR V3. */
+/**
+ * Etched metal key from the RAZR V3 keypad. Number keys use the gently waisted,
+ * interlocking outline of the original laser-etched keypad rather than a rounded
+ * rectangular keycap. The blue edge is deliberately drawn as illumination, not paint.
+ */
 class RazrKeyDrawable(
     private val fill: Int,
     private val shadow: Int,
@@ -153,9 +157,12 @@ class RazrKeyDrawable(
     private val insetY: Float,
     private val radius: Float,
     private val pressed: Boolean,
+    private val numberKey: Boolean = false,
+    private val row: Int = -1,
+    private val column: Int = -1,
 ) : Drawable() {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val rect = RectF()
+    private val path = Path()
 
     override fun draw(canvas: Canvas) {
         val b = bounds
@@ -165,24 +172,68 @@ class RazrKeyDrawable(
         val bottom = b.bottom - insetY
         if (r <= l || bottom <= t) return
 
+        val cy = (t + bottom) / 2f
+        val w = r - l
+        val h = bottom - t
+        val corner = minOf(radius * 1.8f, h * 0.22f, w * 0.18f)
+        val waist = if (numberKey) minOf(3.2f, w * 0.045f, h * 0.07f) else 0f
+        val sideBias = when (column) { 0 -> -0.25f; 2 -> 0.25f; else -> 0f }
+        val rowShape = if (row % 2 == 0) 1f else 0.9f
+        val n = waist * (1f + sideBias) * rowShape
+
+        path.reset()
+        path.moveTo(l + corner, t)
+        path.lineTo(r - corner, t)
+        path.quadTo(r, t, r, t + corner)
+        if (numberKey) {
+            path.lineTo(r, cy - n * 1.5f)
+            path.cubicTo(r, cy - n * 0.35f, r - n * 0.2f, cy - n * 0.1f, r - n, cy)
+            path.cubicTo(r - n * 0.2f, cy + n * 0.1f, r, cy + n * 0.35f, r, cy + n * 1.5f)
+        }
+        path.lineTo(r, bottom - corner)
+        path.quadTo(r, bottom, r - corner, bottom)
+        path.lineTo(l + corner, bottom)
+        path.quadTo(l, bottom, l, bottom - corner)
+        if (numberKey) {
+            path.lineTo(l, cy + n * 1.5f)
+            path.cubicTo(l, cy + n * 0.35f, l + n * 0.2f, cy + n * 0.1f, l + n, cy)
+            path.cubicTo(l + n * 0.2f, cy - n * 0.1f, l, cy - n * 0.35f, l, cy - n * 1.5f)
+        }
+        path.lineTo(l, t + corner)
+        path.quadTo(l, t, l + corner, t)
+        path.close()
+
+        // A very shallow dark offset gives the etched plate a tactile boundary.
         paint.style = Paint.Style.FILL
         paint.shader = null
         paint.color = shadow
-        rect.set(l, t + 2f, r, bottom)
-        canvas.drawRoundRect(rect, radius, radius, paint)
+        canvas.save()
+        canvas.translate(0f, 1.5f)
+        canvas.drawPath(path, paint)
+        canvas.restore()
 
-        rect.set(l, t, r, bottom - 2f)
-        paint.shader = LinearGradient(l, t, l, bottom - 2f,
-            intArrayOf(0xFF424C53.toInt(), fill, 0xFF171E23.toInt()), null, Shader.TileMode.CLAMP)
-        canvas.drawRoundRect(rect, radius, radius, paint)
+        paint.shader = LinearGradient(l, t, r, bottom,
+            intArrayOf(0xFF4A555D.toInt(), fill, 0xFF20282E.toInt()),
+            floatArrayOf(0f, 0.48f, 1f), Shader.TileMode.CLAMP)
+        paint.color = android.graphics.Color.WHITE
+        canvas.drawPath(path, paint)
         paint.shader = null
 
-        // The V3's blue electroluminescent keypad is echoed by a restrained luminous rim.
+        // Wide, low-opacity blue bloom under a crisp electroluminescent outline.
         paint.style = Paint.Style.STROKE
-        paint.strokeWidth = if (pressed) 1.5f else 0.8f
-        paint.color = if (pressed) 0xFF65D8FF.toInt() else 0x6650BCEB
-        rect.set(l + 0.8f, t + 0.8f, r - 0.8f, bottom - 2.8f)
-        canvas.drawRoundRect(rect, maxOf(1f, radius - 1f), maxOf(1f, radius - 1f), paint)
+        paint.strokeJoin = Paint.Join.ROUND
+        paint.strokeCap = Paint.Cap.ROUND
+        paint.strokeWidth = if (pressed) 4.2f else 2.6f
+        paint.color = if (pressed) 0xAA55D8FF.toInt() else 0x6650BCEB
+        canvas.drawPath(path, paint)
+        paint.strokeWidth = if (pressed) 1.8f else 1.15f
+        paint.color = if (pressed) 0xFFB8F0FF.toInt() else 0xFF399BC8.toInt()
+        canvas.drawPath(path, paint)
+
+        // A fine cool-metal inner line keeps the plate visible in daylight too.
+        paint.strokeWidth = 0.65f
+        paint.color = 0x887F9AA7.toInt()
+        canvas.drawPath(path, paint)
         paint.style = Paint.Style.FILL
     }
 
@@ -385,6 +436,8 @@ fun KeyboardTheme.keyBackground(
     cornerDp: Int,
     leftFrac: Float = 0f,
     rightFrac: Float = 0f,
+    razrRow: Int = -1,
+    razrColumn: Int = -1,
 ): StateListDrawable {
     val normal = if (action) actionKey else key
     val pressed = if (action) actionKeyPressed else keyPressed
@@ -398,6 +451,9 @@ fun KeyboardTheme.keyBackground(
                 insetY = gapYDp * density,
                 radius = 3.5f * density,
                 pressed = color == pressed,
+                numberKey = razrRow >= 0 && razrColumn >= 0,
+                row = razrRow,
+                column = razrColumn,
             )
         }
         if (isNokia) {
