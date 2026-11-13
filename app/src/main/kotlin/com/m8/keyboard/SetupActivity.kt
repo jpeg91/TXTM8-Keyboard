@@ -40,7 +40,7 @@ class SetupActivity : Activity() {
         super.onCreate(savedInstanceState)
 
         val chosen = prefs.getInt(KeyboardSettings.KEY_THEME, KeyboardSettings.THEME_RED)
-        look = if (chosen == KeyboardSettings.THEME_PURPLE) KeyboardTheme.PURPLE else KeyboardTheme.RED
+        look = KeyboardTheme.resolve(this, chosen)
         window.statusBarColor = look.background
         window.navigationBarColor = look.background
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
@@ -55,7 +55,11 @@ class SetupActivity : Activity() {
                 "Predictive number-pad typing.\n\n" +
                     "Hold # to switch between predictive and multi-tap. " +
                     "Hold a number key to type the digit, then keep tapping it to reach the letters " +
-                    "(hold 7, tap 4 more times for S). Tap the keyboard icon for the full keyboard.",
+                    "(hold 7, tap 4 more times for S). Tap the keyboard icon for the full keyboard.\n\n" +
+                    "Slide along the space key to move the cursor (with text selected, it grows the selection instead). " +
+                    "Slide left from backspace to select text, and let go to delete it. Hold the paste key " +
+                    "to copy the selected text. Hold a suggestion to remove it. On a symbol page, tap ;) for " +
+                    "emoji and text smileys, or the cog to get back here.",
             ),
         )
 
@@ -85,10 +89,12 @@ class SetupActivity : Activity() {
         root.addView(sectionTitle("Settings"))
         addChoice(
             root, "Theme", KeyboardSettings.KEY_THEME,
-            listOf("Red", "Purple", "Follow system", "Dark", "Light"),
+            listOf("Red", "Purple", "Nokia 3310", "Motorola RAZR V3", "Follow system", "Dark", "Light"),
             listOf(
                 KeyboardSettings.THEME_RED,
                 KeyboardSettings.THEME_PURPLE,
+                KeyboardSettings.THEME_NOKIA,
+                KeyboardSettings.THEME_RAZR,
                 KeyboardSettings.THEME_SYSTEM,
                 KeyboardSettings.THEME_DARK,
                 KeyboardSettings.THEME_LIGHT,
@@ -108,13 +114,14 @@ class SetupActivity : Activity() {
         addToggle(root, "Vibrate on key press", KeyboardSettings.KEY_HAPTIC, true)
         addToggle(root, "Key click sound", KeyboardSettings.KEY_SOUND, false)
         addToggle(root, "Backspace re-opens the previous word", KeyboardSettings.KEY_REOPEN, true)
+        addToggle(root, "Suggest the next word", KeyboardSettings.KEY_NEXT_WORD, true)
         root.addView(label("Typing pulse"))
         addPulseControls(root)
 
         val clear = button("Clear learned words", action = false) {
             AlertDialog.Builder(this, AlertDialog.THEME_DEVICE_DEFAULT_DARK)
                 .setTitle("Clear learned words?")
-                .setMessage("This forgets the words and word pairs the keyboard has learned from you.")
+                .setMessage("This forgets the words and word pairs the keyboard has learned from you, and brings back any suggestions you removed.")
                 .setPositiveButton("Clear") { _, _ ->
                     UserDataStore(this).clear()
                     prefs.edit().putLong(KeyboardSettings.KEY_CLEAR_TOKEN, System.currentTimeMillis()).apply()

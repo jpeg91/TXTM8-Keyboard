@@ -3,10 +3,7 @@ package com.m8.keyboard
 
 import android.content.Context
 import android.graphics.Canvas
-import android.os.Handler
-import android.os.Looper
 import android.view.Gravity
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
@@ -32,25 +29,24 @@ class QwertyKeypadView(
         fun onQwertyText(text: String, isLetter: Boolean)
         fun onQwertySpace()
         fun onQwertyBackspace()
+        fun onQwertyBackspaceSlide(steps: Int)
+        fun onQwertyBackspaceSlideEnd(delete: Boolean)
+        fun onQwertyCursorMove(steps: Int)
+        fun onQwertyPaste()
+        fun onQwertyCopy()
+        fun onQwertySettings()
         fun onQwertyEnter()
         fun onQwertyShift()
         fun onQwertyPad()
+        fun onQwertyEmoji()
     }
 
-    private val uiHandler = Handler(Looper.getMainLooper())
     private val pulseBackground = PulseBackground(theme.backgroundDrawable(this), theme.accent, settings.pulseStrength)
     private val letterKeys = ArrayList<Pair<TextView, Char>>()
     private var shiftKey: TextView? = null
     private var shiftLabel = "abc"
     private var showUpper = false
     private var symbolsPage = false
-
-    private val repeatBackspace = object : Runnable {
-        override fun run() {
-            listener.onQwertyBackspace()
-            uiHandler.postDelayed(this, 60L)
-        }
-    }
 
     init {
         orientation = VERTICAL
@@ -90,7 +86,7 @@ class QwertyKeypadView(
         } else {
             addKeysRow("1234567890", isLetter = false)
             addKeysRow("@#\$%&-+()/", isLetter = false)
-            addKeysRow("*\"':;!?", isLetter = false, trailing = makeEnterKey())
+            addKeysRow("*\"':;!?", isLetter = false, leading = makeSettingsKey(), trailing = makeEnterKey())
         }
         addBottomRow()
     }
@@ -143,11 +139,30 @@ class QwertyKeypadView(
             settings.feedback(it)
             listener.onQwertyText(",", false)
         }
+        val paste = theme.iconKey(context, KeyIcon.PASTE, false, GAP_X_DP, GAP_Y_DP, 8, "Paste")
+        paste.setOnClickListener {
+            settings.feedback(it)
+            listener.onQwertyPaste()
+        }
+        // Hold paste to copy the selected text.
+        paste.setOnLongClickListener {
+            settings.feedback(it, isLong = true)
+            listener.onQwertyCopy()
+            true
+        }
+        // The symbols page also has the emoji key.
+        val emoji = if (symbolsPage) makeKey(";)", 14f) else null
+        emoji?.setOnClickListener {
+            settings.feedback(it)
+            listener.onQwertyEmoji()
+        }
         val space = makeKey(if (theme.isSlanted) "SPACE" else "space", 14f)
         space.setOnClickListener {
             settings.feedback(it)
             listener.onQwertySpace()
         }
+        // Slide along the space key to move the cursor.
+        space.setOnTouchListener(SpaceSlideTouch(settings) { listener.onQwertyCursorMove(it) })
         val period = makeKey(".")
         period.setOnClickListener {
             settings.feedback(it)
@@ -157,8 +172,10 @@ class QwertyKeypadView(
 
         row.addView(page, keyParams(1.4f))
         row.addView(pad, keyParams(1.2f))
+        row.addView(paste, keyParams(1.2f))
+        if (emoji != null) row.addView(emoji, keyParams(1.2f))
         row.addView(comma, keyParams(1f))
-        row.addView(space, keyParams(4f))
+        row.addView(space, keyParams(if (emoji != null) 2.4f else 3.4f))
         row.addView(period, keyParams(1f))
         row.addView(del, keyParams(1.6f))
         addView(row, LinearLayout.LayoutParams(MATCH, WRAP))
@@ -166,22 +183,25 @@ class QwertyKeypadView(
 
     private fun makeDelKey(): TextView {
         val del = theme.iconKey(context, KeyIcon.BACKSPACE, true, GAP_X_DP, GAP_Y_DP, 8, "Backspace")
-        del.setOnTouchListener { v, e ->
-            when (e.actionMasked) {
-                MotionEvent.ACTION_DOWN -> {
-                    v.isPressed = true
-                    settings.feedback(v)
-                    listener.onQwertyBackspace()
-                    uiHandler.postDelayed(repeatBackspace, 400L)
-                }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    v.isPressed = false
-                    uiHandler.removeCallbacks(repeatBackspace)
-                }
-            }
-            true
-        }
+        // Tap or hold to delete; slide left to select text and let go to delete it.
+        del.setOnTouchListener(
+            BackspaceTouch(
+                settings,
+                onDelete = { listener.onQwertyBackspace() },
+                onSlide = { listener.onQwertyBackspaceSlide(it) },
+                onSlideEnd = { listener.onQwertyBackspaceSlideEnd(it) },
+            ),
+        )
         return del
+    }
+
+    private fun makeSettingsKey(): TextView {
+        val gear = theme.iconKey(context, KeyIcon.SETTINGS, true, GAP_X_DP, GAP_Y_DP, 8, "Keyboard settings")
+        gear.setOnClickListener {
+            settings.feedback(it)
+            listener.onQwertySettings()
+        }
+        return gear
     }
 
     private fun makeEnterKey(): TextView {
@@ -230,6 +250,7 @@ class QwertyKeypadView(
         tv.gravity = Gravity.CENTER
         tv.setTextColor(if (action) theme.actionText else theme.text)
         tv.background = theme.keyBackground(density(), action, GAP_X_DP, GAP_Y_DP, 8, leftFrac, rightFrac)
+        theme.bindKeyGlow(tv)
         return tv
     }
 }

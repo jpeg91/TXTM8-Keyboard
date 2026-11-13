@@ -2,14 +2,12 @@
 package com.m8.keyboard
 
 import android.content.Context
-import android.os.Handler
-import android.os.Looper
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
 import android.text.style.RelativeSizeSpan
 import android.view.Gravity
-import android.view.MotionEvent
+import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
@@ -25,7 +23,8 @@ private const val MATCH = ViewGroup.LayoutParams.MATCH_PARENT
 private const val GAP_DP = 3
 
 /**
- * The number pad: [keyboard icon] [candidate strip] [enter] [backspace] on top, a 4x3 key grid below.
+ * The number pad: [keyboard icon] [candidate strip] [paste] [enter] [backspace] on top, followed by
+ * (in the RAZR theme: the suggestion screen, then the soft keys and navigation ring), then a 4x3 key grid.
  * The grid can be swapped for a symbol picker with [showSymbols].
  */
 class NumberPadView(
@@ -39,81 +38,116 @@ class NumberPadView(
         fun onKeypadKey(key: Char)
         fun onKeypadLongKey(key: Char)
         fun onKeypadBackspace()
+        fun onKeypadBackspaceSlide(steps: Int)
+        fun onKeypadBackspaceSlideEnd(delete: Boolean)
         fun onKeypadEnter()
+        fun onKeypadCursorMove(steps: Int)
+        fun onKeypadPaste()
+        fun onKeypadCopy()
+        fun onKeypadSettings()
         fun onKeypadCandidate(index: Int)
+        fun onKeypadCandidateMove(index: Int)
+        fun onKeypadCandidateLong(index: Int)
         fun onKeypadSymbol(symbol: String)
         fun onKeypadQwerty()
+        fun onKeypadEmoji()
     }
 
-    private val uiHandler = Handler(Looper.getMainLooper())
     private val strip = LinearLayout(context)
     private val scroll = HorizontalScrollView(context)
     private val grid = LinearLayout(context)
     private val symbolPanel = LinearLayout(context)
     private val pulseBackground = PulseBackground(theme.backgroundDrawable(this), theme.accent, settings.pulseStrength)
     private lateinit var hashKey: TextView
-
-    private val repeatBackspace = object : Runnable {
-        override fun run() {
-            listener.onKeypadBackspace()
-            uiHandler.postDelayed(this, 60L)
-        }
-    }
+    private var candidateWords: List<String> = emptyList()
+    private var selectedCandidate: Int = -1
+    private val letterKeys = ArrayList<Pair<TextView, Char>>()
+    private var upperLetters = false // the letters on the keys follow the case the next letter will have
 
     init {
         orientation = VERTICAL
         background = pulseBackground
         setPadding(0, dp(4), 0, 0) // no side padding: the outer keys reach the screen edge
 
-        // --- top bar: QWERTY | candidates | DEL | ENTER ---
+        // --- top bar: QWERTY | candidates | PASTE | ENTER | DEL ---
         strip.orientation = HORIZONTAL
         scroll.isHorizontalScrollBarEnabled = false
-        scroll.setBackgroundColor(theme.strip)
+        if (theme.isRazr) scroll.background = RazrDisplayDrawable(density()) else scroll.setBackgroundColor(theme.strip)
         scroll.addView(strip, FrameLayout.LayoutParams(WRAP, MATCH))
 
-        val qwerty = theme.iconKey(context, KeyIcon.KEYBOARD, false, GAP_DP, GAP_DP, 10, "Full keyboard")
-        qwerty.setOnClickListener {
-            settings.feedback(it)
-            listener.onKeypadQwerty()
-        }
+        val barHeight = if (theme.isRazr) 44 else 52
 
         val del = theme.iconKey(context, KeyIcon.BACKSPACE, true, GAP_DP, GAP_DP, 10, "Backspace")
-        del.setOnTouchListener { v, e ->
-            when (e.actionMasked) {
-                MotionEvent.ACTION_DOWN -> {
-                    v.isPressed = true
-                    settings.feedback(v)
-                    listener.onKeypadBackspace()
-                    uiHandler.postDelayed(repeatBackspace, 400L)
-                }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    v.isPressed = false
-                    uiHandler.removeCallbacks(repeatBackspace)
-                }
-            }
+        // Tap or hold to delete; slide left to select text and let go to delete it.
+        del.setOnTouchListener(
+            BackspaceTouch(
+                settings,
+                onDelete = { listener.onKeypadBackspace() },
+                onSlide = { listener.onKeypadBackspaceSlide(it) },
+                onSlideEnd = { listener.onKeypadBackspaceSlideEnd(it) },
+            ),
+        )
+
+        val paste = theme.iconKey(context, KeyIcon.PASTE, false, GAP_DP, GAP_DP, 10, "Paste")
+        paste.setOnClickListener {
+            settings.feedback(it)
+            listener.onKeypadPaste()
+        }
+        // Hold paste to copy the selected text.
+        paste.setOnLongClickListener {
+            settings.feedback(it, isLong = true)
+            listener.onKeypadCopy()
             true
         }
 
-        val enter = theme.iconKey(context, KeyIcon.ENTER, true, GAP_DP, GAP_DP, 10, "Enter")
-        enter.setOnClickListener {
-            settings.feedback(it)
-            listener.onKeypadEnter()
-        }
+        if (theme.isRazr) {
+            // The suggestion strip is the phone's screen; below it, the V3's soft keys and
+            // navigation ring (keyboard switch, enter, and candidate navigation).
+            val screen = newRow()
+            screen.gravity = Gravity.CENTER_VERTICAL
+            screen.addView(scroll, LinearLayout.LayoutParams(0, dp(barHeight)).apply { weight = 1f })
+            screen.addView(paste, LinearLayout.LayoutParams(dp(46), dp(barHeight)))
+            screen.addView(del, LinearLayout.LayoutParams(dp(60), dp(barHeight)))
+            addView(screen, LinearLayout.LayoutParams(MATCH, WRAP))
 
-        val top = newRow()
-        top.gravity = Gravity.CENTER_VERTICAL
-        top.addView(qwerty, LinearLayout.LayoutParams(dp(60), dp(52)))
-        top.addView(scroll, LinearLayout.LayoutParams(0, dp(52)).apply { weight = 1f })
-        top.addView(enter, LinearLayout.LayoutParams(dp(68), dp(52)))
-        top.addView(del, LinearLayout.LayoutParams(dp(60), dp(52)))
-        addView(top, LinearLayout.LayoutParams(MATCH, WRAP))
+            val cluster = RazrControlCluster(
+                context,
+                settings,
+                onQwerty = { listener.onKeypadQwerty() },
+                onEnter = { listener.onKeypadEnter() },
+                onMove = { delta -> moveCandidate(delta) },
+                onSelect = { selectCandidate() },
+            )
+            addView(cluster, LinearLayout.LayoutParams(MATCH, dp(68)))
+        } else {
+            val qwerty = theme.iconKey(context, KeyIcon.KEYBOARD, false, GAP_DP, GAP_DP, 10, "Full keyboard")
+            qwerty.setOnClickListener {
+                settings.feedback(it)
+                listener.onKeypadQwerty()
+            }
+
+            val enter = theme.iconKey(context, KeyIcon.ENTER, true, GAP_DP, GAP_DP, 10, "Enter")
+            enter.setOnClickListener {
+                settings.feedback(it)
+                listener.onKeypadEnter()
+            }
+
+            val top = newRow()
+            top.gravity = Gravity.CENTER_VERTICAL
+            top.addView(qwerty, LinearLayout.LayoutParams(dp(54), dp(barHeight)))
+            top.addView(scroll, LinearLayout.LayoutParams(0, dp(barHeight)).apply { weight = 1f })
+            top.addView(paste, LinearLayout.LayoutParams(dp(46), dp(barHeight)))
+            top.addView(enter, LinearLayout.LayoutParams(dp(62), dp(barHeight)))
+            top.addView(del, LinearLayout.LayoutParams(dp(56), dp(barHeight)))
+            addView(top, LinearLayout.LayoutParams(MATCH, WRAP))
+        }
 
         // --- 4x3 number grid ---
         grid.orientation = VERTICAL
-        for (rowKeys in listOf("123", "456", "789", "*0#")) {
+        for ((rowIndex, rowKeys) in listOf("123", "456", "789", "*0#").withIndex()) {
             val r = newRow()
-            for (k in rowKeys) {
-                val key = makeKey(labelFor(k))
+            for ((columnIndex, k) in rowKeys.withIndex()) {
+                val key = makeKey(labelFor(k), razrRow = rowIndex, razrColumn = columnIndex)
                 key.setOnClickListener {
                     settings.feedback(it)
                     listener.onKeypadKey(k)
@@ -124,6 +158,9 @@ class NumberPadView(
                     true
                 }
                 if (k == '#') hashKey = key
+                if (k in '2'..'9') letterKeys.add(Pair(key, k))
+                // Slide along the space key to move the cursor.
+                if (k == '0') key.setOnTouchListener(SpaceSlideTouch(settings) { listener.onKeypadCursorMove(it) })
                 r.addView(key, keyParams())
             }
             grid.addView(r, LinearLayout.LayoutParams(MATCH, WRAP))
@@ -152,13 +189,25 @@ class NumberPadView(
             settings.feedback(it)
             showSymbols(false)
         }
+        val emoji = makeKey(";)", 16f)
+        emoji.setOnClickListener {
+            settings.feedback(it)
+            listener.onKeypadEmoji()
+        }
+        val gear = theme.iconKey(context, KeyIcon.SETTINGS, false, GAP_DP, GAP_DP, 10, "Keyboard settings")
+        gear.setOnClickListener {
+            settings.feedback(it)
+            listener.onKeypadSettings()
+        }
         val space = makeKey(caps("space"), 16f)
         space.setOnClickListener {
             settings.feedback(it)
             listener.onKeypadKey('0')
         }
         bottom.addView(back, keyParams(1f))
-        bottom.addView(space, keyParams(3f))
+        bottom.addView(emoji, keyParams(1f))
+        bottom.addView(gear, keyParams(1f))
+        bottom.addView(space, keyParams(2f))
         symbolPanel.addView(bottom, LinearLayout.LayoutParams(MATCH, WRAP))
         addView(symbolPanel, LinearLayout.LayoutParams(MATCH, WRAP))
     }
@@ -172,8 +221,11 @@ class NumberPadView(
         grid.visibility = if (show) GONE else VISIBLE
     }
 
-    /** Shows candidate words; [selected] is highlighted. Pass an empty list to clear. */
+    /** Shows candidate words; [selected] is highlighted (-1: none). Pass an empty list to clear. */
     fun setCandidates(words: List<String>, selected: Int) {
+        if (words == candidateWords && selected == selectedCandidate && strip.childCount == words.size) return
+        candidateWords = words
+        selectedCandidate = selected
         strip.removeAllViews()
         words.forEachIndexed { i, w ->
             val tv = TextView(context)
@@ -190,6 +242,11 @@ class NumberPadView(
                 tv.setTextColor(theme.text)
             }
             tv.setOnClickListener { listener.onKeypadCandidate(i) }
+            tv.setOnLongClickListener {
+                settings.feedback(it, isLong = true)
+                listener.onKeypadCandidateLong(i)
+                true
+            }
             strip.addView(tv, LinearLayout.LayoutParams(WRAP, MATCH))
         }
         if (selected in words.indices) {
@@ -200,12 +257,36 @@ class NumberPadView(
         }
     }
 
+    /** Shows the letters on keys 2-9 as capitals (the next letter will be upper case) or lower case. */
+    fun setUpperCase(upper: Boolean) {
+        if (upper == upperLetters) return
+        upperLetters = upper
+        for ((key, k) in letterKeys) key.text = labelFor(k)
+    }
+
     /** Text under the # key, e.g. "Abc · predict". */
     fun setModeLabel(label: String) {
         hashKey.text = twoLine("#", label)
     }
 
     // ---- helpers ----
+
+    private fun moveCandidate(delta: Int) {
+        if (candidateWords.isEmpty()) return
+        val next = (selectedCandidate + delta).coerceIn(0, candidateWords.lastIndex)
+        if (next == selectedCandidate) return
+        selectedCandidate = next
+        setCandidates(candidateWords, next)
+        listener.onKeypadCandidateMove(next)
+        settings.feedback(this)
+    }
+
+    private fun selectCandidate() {
+        if (selectedCandidate in candidateWords.indices) {
+            listener.onKeypadCandidate(selectedCandidate)
+            settings.feedback(this)
+        }
+    }
 
     private fun density(): Float = resources.displayMetrics.density
 
@@ -231,7 +312,7 @@ class NumberPadView(
         '0' -> twoLine("0", caps("space"))
         '*' -> twoLine("*", caps("next"))
         '#' -> twoLine("#", "")
-        else -> twoLine(k.toString(), KeypadMap.keyLetters.getValue(k).uppercase())
+        else -> twoLine(k.toString(), KeypadMap.keyLetters.getValue(k).let { if (upperLetters) it.uppercase() else it })
     }
 
     private fun twoLine(big: String, small: String): CharSequence {
@@ -242,14 +323,26 @@ class NumberPadView(
         return s
     }
 
-    private fun makeKey(label: CharSequence, size: Float = 20f, action: Boolean = false): TextView {
+    private fun makeKey(
+        label: CharSequence,
+        size: Float = 20f,
+        action: Boolean = false,
+        razrRow: Int = -1,
+        razrColumn: Int = -1,
+    ): TextView {
         val tv = TextView(context)
         tv.text = label
         tv.textSize = size
         tv.typeface = theme.typeface
         tv.gravity = Gravity.CENTER
         tv.setTextColor(if (action) theme.actionText else theme.text)
-        tv.background = theme.keyBackground(density(), action, GAP_DP, GAP_DP, 10)
+        tv.background = theme.keyBackground(
+            density(), action, GAP_DP, GAP_DP, 10,
+            razrRow = razrRow,
+            razrColumn = razrColumn,
+        )
+        theme.bindKeyGlow(tv)
         return tv
     }
 }
+

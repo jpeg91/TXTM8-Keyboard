@@ -1,13 +1,14 @@
 // app/src/main/kotlin/com/m8/keyboard/KeyDrawables.kt
 package com.m8.keyboard
 
-import android.animation.ValueAnimator
 import android.graphics.Canvas
 import android.graphics.ColorFilter
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.LinearGradient
 import android.graphics.RadialGradient
 import android.graphics.Rect
+import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.PixelFormat
 import android.graphics.drawable.ColorDrawable
@@ -15,8 +16,8 @@ import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.InsetDrawable
 import android.graphics.drawable.StateListDrawable
+import android.os.SystemClock
 import android.view.View
-import android.view.animation.DecelerateInterpolator
 
 /**
  * One slanted key: a parallelogram (top edge pushed right, bottom edge left) with a white
@@ -86,6 +87,59 @@ class SlantKeyDrawable(
         paint.colorFilter = colorFilter
     }
 
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+}
+
+/** Raised, slightly domed plastic keycaps inspired by the original Nokia 3310 keypad. */
+class NokiaKeyDrawable(
+    private val fill: Int,
+    private val shadow: Int,
+    private val insetX: Float,
+    private val insetY: Float,
+    private val radius: Float,
+) : Drawable() {
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val rect = RectF()
+
+    override fun draw(canvas: Canvas) {
+        val b = bounds
+        val l = b.left + insetX
+        val t = b.top + insetY
+        val r = b.right - insetX
+        val bottom = b.bottom - insetY
+        if (r <= l || bottom <= t) return
+        val keyRadius = radius
+
+        // A deeper lower lip and soft cast shadow make the key stand proud of the shell.
+        paint.style = Paint.Style.FILL
+        paint.shader = null
+        paint.color = shadow
+        rect.set(l + 0.5f, t + 2.8f, r + 0.5f, bottom + 0.5f)
+        canvas.drawRoundRect(rect, keyRadius, keyRadius, paint)
+
+        // Gentle vertical shading suggests a convex moulded plastic surface.
+        rect.set(l, t, r, bottom - 2f)
+        paint.shader = LinearGradient(l, t, l, bottom - 2f,
+            intArrayOf(0xFFFFFFFF.toInt(), fill, fill), null, Shader.TileMode.CLAMP)
+        canvas.drawRoundRect(rect, keyRadius, keyRadius, paint)
+        paint.shader = null
+
+        // Fine inset rim and a narrow highlight along the upper edge.
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = 0.8f
+        paint.color = 0x66515D61
+        rect.set(l + 0.8f, t + 0.8f, r - 0.8f, bottom - 2.8f)
+        canvas.drawRoundRect(rect, maxOf(1f, keyRadius - 1f), maxOf(1f, keyRadius - 1f), paint)
+        paint.strokeWidth = 1.1f
+        paint.color = 0x99FFFFFF.toInt()
+        rect.set(l + 1.5f, t + 1.1f, r - 1.5f, t + 3f)
+        canvas.drawRoundRect(rect, keyRadius, keyRadius, paint)
+        paint.style = Paint.Style.FILL
+    }
+
+    override fun setAlpha(alpha: Int) { paint.alpha = alpha }
+    override fun setColorFilter(colorFilter: ColorFilter?) { paint.colorFilter = colorFilter }
     @Suppress("OVERRIDE_DEPRECATION")
     override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
 }
@@ -196,7 +250,9 @@ class BackdropDrawable(
 
 /** The keyboard's background for this theme (plain colour, or the pinstriped backdrop). */
 fun KeyboardTheme.backgroundDrawable(view: View): Drawable =
-    if (isSlanted) {
+    if (isRazr) {
+        RazrBackdropDrawable(view.resources.displayMetrics.density)
+    } else if (isSlanted) {
         BackdropDrawable(
             base = background,
             stripe = 0x08FFFFFF,
@@ -225,7 +281,8 @@ class PulseBackground(
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var level = 0f
-    private var animator: ValueAnimator? = null
+    private var startedAt = 0L
+    private var running = false
 
     override fun onBoundsChange(bounds: Rect) {
         base.bounds = bounds
@@ -242,25 +299,31 @@ class PulseBackground(
 
     override fun draw(canvas: Canvas) {
         base.draw(canvas)
+        if (running) {
+            // Drawn by hand from the clock, not with a ValueAnimator: Android's animation-speed
+            // settings (including "off") must not change how this looks.
+            val t = (SystemClock.uptimeMillis() - startedAt) / FADE_MS.toFloat()
+            if (t >= 1f) {
+                running = false
+                level = 0f
+            } else {
+                level = (1f - t.coerceAtLeast(0f)).let { it * it } // fades out, slowing down
+            }
+        }
         if (level > 0f && strength > 0f) {
             paint.alpha = (255f * strength * level).toInt().coerceIn(0, 255)
             canvas.drawRect(bounds, paint)
         }
+        if (running) invalidateSelf() // ask for the next frame
     }
 
     /** Flash now and fade out. */
     fun pulse() {
         if (strength <= 0f) return
-        animator?.cancel()
-        animator = ValueAnimator.ofFloat(1f, 0f).apply {
-            duration = 450L
-            interpolator = DecelerateInterpolator()
-            addUpdateListener {
-                level = it.animatedValue as Float
-                invalidateSelf()
-            }
-            start()
-        }
+        startedAt = SystemClock.uptimeMillis()
+        running = true
+        level = 1f
+        invalidateSelf()
     }
 
     override fun setAlpha(alpha: Int) {}
@@ -269,6 +332,10 @@ class PulseBackground(
 
     @Suppress("OVERRIDE_DEPRECATION")
     override fun getOpacity(): Int = PixelFormat.OPAQUE
+
+    private companion object {
+        const val FADE_MS = 450L
+    }
 }
 
 /**
@@ -283,11 +350,33 @@ fun KeyboardTheme.keyBackground(
     cornerDp: Int,
     leftFrac: Float = 0f,
     rightFrac: Float = 0f,
-): StateListDrawable {
+    razrRow: Int = -1,
+    razrColumn: Int = -1,
+): Drawable {
+    if (isRazr) {
+        // One self-animating drawable: it lights when pressed and fades by itself.
+        return RazrKeyDrawable(
+            density = density,
+            insetX = gapXDp * density,
+            insetY = gapYDp * density,
+            fill = if (action) actionKey else key,
+            row = razrRow,
+            column = razrColumn,
+        )
+    }
     val normal = if (action) actionKey else key
     val pressed = if (action) actionKeyPressed else keyPressed
 
     fun layer(color: Int): Drawable {
+        if (isNokia) {
+            return NokiaKeyDrawable(
+                fill = color,
+                shadow = this.shadow,
+                insetX = gapXDp * density,
+                insetY = gapYDp * density,
+                radius = 7f * density,
+            )
+        }
         if (isSlanted) {
             return SlantKeyDrawable(
                 fill = color,
@@ -320,6 +409,25 @@ fun KeyboardTheme.keyBackground(
 
 /** Highlight behind the selected candidate word. */
 fun KeyboardTheme.candidateBackground(density: Float): Drawable {
+    if (isRazr) {
+        // A lit blue chip on the dark glass of the display.
+        val chip = GradientDrawable(
+            GradientDrawable.Orientation.TOP_BOTTOM,
+            intArrayOf(0xFF63D0FF.toInt(), 0xFF1E8FD0.toInt()),
+        ).apply {
+            cornerRadius = 5f * density
+            setStroke((1f * density).toInt().coerceAtLeast(1), 0xFFB4EEFF.toInt())
+        }
+        val gx = (4f * density).toInt()
+        val gy = (7f * density).toInt()
+        return InsetDrawable(chip, gx, gy, gx, gy)
+    }
+    if (isNokia) {
+        return GradientDrawable().apply {
+            setColor(accent)
+            cornerRadius = 3f * density
+        }
+    }
     if (isSlanted) {
         return SlantKeyDrawable(
             fill = accent,
