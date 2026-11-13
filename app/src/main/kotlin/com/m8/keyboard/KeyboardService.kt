@@ -122,6 +122,7 @@ class KeyboardService :
         store.load(e)
         engine = e
         session = PredictiveSession(e)
+        session.learning = settings.learnWords
         lastSaved = e.changeCount
     }
 
@@ -138,6 +139,7 @@ class KeyboardService :
         super.onStartInputView(info, restarting)
         resetState()
         reloadSettings()
+        session.learning = settings.learnWords
         emojiOpen = false
 
         val type = info.inputType
@@ -152,7 +154,7 @@ class KeyboardService :
         forceMultiTap = isPassword
         learningEnabled = !isPassword
         fullKeyboard = (userFull || isPassword) && !digitsOnly
-        caseMode = if (cursorWantsCaps(type)) CaseMode.CAP_NEXT else CaseMode.LOWER
+        caseMode = if (settings.autoCap && cursorWantsCaps(type)) CaseMode.CAP_NEXT else CaseMode.LOWER
 
         if (shownView != null) showView()
         padView?.showSymbols(false)
@@ -695,7 +697,7 @@ class KeyboardService :
         val prev = previousWordBefore(ic)
         ic.commitText(displayWord(word), 1)
         if (caseMode == CaseMode.CAP_NEXT) caseMode = CaseMode.LOWER
-        if (learningEnabled) {
+        if (learningEnabled && settings.learnWords) {
             engine.learn(word)
             if (prev != null) engine.learnPair(prev, word)
             scheduleSave()
@@ -813,7 +815,7 @@ class KeyboardService :
     private fun insertSpace() {
         val ic = currentInputConnection ?: return
         val now = SystemClock.uptimeMillis()
-        if (learningEnabled && spaceTapAt != 0L && now - spaceTapAt <= DOUBLE_SPACE_MS) {
+        if (learningEnabled && settings.doubleSpace && spaceTapAt != 0L && now - spaceTapAt <= DOUBLE_SPACE_MS) {
             val before = ic.getTextBeforeCursor(2, 0)?.toString().orEmpty()
             if (before.length == 2 && before[1] == ' ' && (before[0].isLetterOrDigit() || before[0] in ")]\"'")) {
                 ic.deleteSurroundingText(1, 0)
@@ -831,7 +833,7 @@ class KeyboardService :
      * and so on, when space or enter finishes the word. Capitalisation is kept.
      */
     private fun fixContraction() {
-        if (!learningEnabled) return // not in password fields
+        if (!learningEnabled || !settings.fixContractions) return // not in password fields
         val ic = currentInputConnection ?: return
         val before = ic.getTextBeforeCursor(30, 0)?.toString() ?: return
         val raw = before.takeLastWhile { it.isLetter() }
@@ -849,7 +851,7 @@ class KeyboardService :
 
     /** Words typed letter by letter (multi-tap or QWERTY) are added to the user dictionary. */
     private fun learnTrailingWord() {
-        if (!learningEnabled) return
+        if (!learningEnabled || !settings.learnWords) return
         val before = currentInputConnection?.getTextBeforeCursor(60, 0)?.toString() ?: return
         val raw = before.takeLastWhile { it.isLetter() || it == '\'' }
         val word = raw.trim('\'').lowercase()
@@ -912,7 +914,7 @@ class KeyboardService :
     }
 
     private fun updateAutoCap() {
-        if (caseMode != CaseMode.LOWER) return
+        if (!settings.autoCap || caseMode != CaseMode.LOWER) return
         val type = currentInputEditorInfo?.inputType ?: return
         if (cursorWantsCaps(type)) caseMode = CaseMode.CAP_NEXT
     }

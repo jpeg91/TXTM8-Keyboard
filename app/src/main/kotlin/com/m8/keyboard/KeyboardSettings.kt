@@ -17,6 +17,12 @@ data class KeyboardSettings(
     val pulse: Boolean = true,
     val pulseIntensity: Int = 50, // 0..100
     val nextWord: Boolean = true,
+    val autoCap: Boolean = true,
+    val doubleSpace: Boolean = true,
+    val fixContractions: Boolean = true,
+    val learnWords: Boolean = true,
+    val slideGestures: Boolean = true,
+    val slideSpeed: Int = 1, // 0 slow, 1 normal, 2 fast
 ) {
     /** How strong the typing pulse is, 0 (off) to 0.85. */
     val pulseStrength: Float
@@ -42,6 +48,12 @@ data class KeyboardSettings(
         const val KEY_PULSE = "pulse"
         const val KEY_PULSE_LEVEL = "pulse_level"
         const val KEY_NEXT_WORD = "next_word"
+        const val KEY_AUTO_CAP = "auto_cap"
+        const val KEY_DOUBLE_SPACE = "double_space"
+        const val KEY_CONTRACTIONS = "fix_contractions"
+        const val KEY_LEARN = "learn_words"
+        const val KEY_SLIDE = "slide_gestures"
+        const val KEY_SLIDE_SPEED = "slide_speed"
         const val KEY_CLEAR_TOKEN = "clear_token"
 
         const val THEME_SYSTEM = 0
@@ -64,6 +76,12 @@ data class KeyboardSettings(
                 pulse = p.getBoolean(KEY_PULSE, true),
                 pulseIntensity = p.getInt(KEY_PULSE_LEVEL, 50),
                 nextWord = p.getBoolean(KEY_NEXT_WORD, true),
+                autoCap = p.getBoolean(KEY_AUTO_CAP, true),
+                doubleSpace = p.getBoolean(KEY_DOUBLE_SPACE, true),
+                fixContractions = p.getBoolean(KEY_CONTRACTIONS, true),
+                learnWords = p.getBoolean(KEY_LEARN, true),
+                slideGestures = p.getBoolean(KEY_SLIDE, true),
+                slideSpeed = p.getInt(KEY_SLIDE_SPEED, 1),
             )
         }
     }
@@ -85,4 +103,11 @@ fun KeyboardSettings.feedback(view: View, isLong: Boolean = false) {
 /** A light tick for each step of a slide (cursor or selection), if vibration is on. */
 fun KeyboardSettings.tick(view: View) {
     if (haptic) view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+}
+
+/** How far a finger slides for one step (one character), in dp: a shorter distance is a faster slide. */
+fun KeyboardSettings.slideStepDp(): Float = when (slideSpeed) {
+    0 -> 16f
+    2 -> 7f
+    else -> 11f
 }

@@ -10,9 +10,6 @@ import kotlin.math.abs
 /** Distance the finger must travel before a press turns into a slide. */
 private const val SLIDE_START_DP = 12f
 
-/** Distance for one step of a slide (one character). */
-private const val SLIDE_STEP_DP = 11f
-
 /**
  * Touch handling for the backspace key.
  *
@@ -55,7 +52,7 @@ class BackspaceTouch(
                 handler.removeCallbacks(repeatTask)
                 handler.postDelayed(repeatTask, 400L)
             }
-            MotionEvent.ACTION_MOVE -> if (!repeating) {
+            MotionEvent.ACTION_MOVE -> if (!repeating && settings.slideGestures) {
                 val dx = downX - e.x // positive: the finger moved left
                 if (!sliding && dx > SLIDE_START_DP * density) {
                     sliding = true
@@ -63,7 +60,7 @@ class BackspaceTouch(
                     v.parent?.requestDisallowInterceptTouchEvent(true)
                 }
                 if (sliding) {
-                    val target = (dx / (SLIDE_STEP_DP * density)).toInt().coerceAtLeast(0)
+                    val target = (dx / (settings.slideStepDp() * density)).toInt().coerceAtLeast(0)
                     if (target != applied) {
                         onSlide(target - applied)
                         applied = target
@@ -116,6 +113,7 @@ class SpaceSlideTouch(
                 applied = 0
             }
             MotionEvent.ACTION_MOVE -> {
+                if (!settings.slideGestures) return false
                 val dx = e.x - downX
                 if (!sliding && abs(dx) > SLIDE_START_DP * density) {
                     sliding = true
@@ -127,7 +125,7 @@ class SpaceSlideTouch(
                     v.parent?.requestDisallowInterceptTouchEvent(true)
                 }
                 if (sliding) {
-                    val target = (dx / (SLIDE_STEP_DP * density)).toInt()
+                    val target = (dx / (settings.slideStepDp() * density)).toInt()
                     if (target != applied) {
                         onMove(target - applied)
                         applied = target
