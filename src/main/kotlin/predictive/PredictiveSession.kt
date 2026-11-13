@@ -56,11 +56,14 @@ class PredictiveSession(private val engine: PredictiveEngine) {
         if (i in candidates.indices) index = i
     }
 
+    /** When false, finishing a word does not teach the engine anything. */
+    var learning: Boolean = true
+
     /** Finishes the word, teaches the engine, and returns the text to insert. */
     fun commit(): String? {
         if (digits.isEmpty()) return null
         val word = displayText
-        if (candidates.isNotEmpty()) {
+        if (learning && candidates.isNotEmpty()) {
             engine.learn(word)
             previousWord?.let { engine.learnPair(it, word) }
         }
