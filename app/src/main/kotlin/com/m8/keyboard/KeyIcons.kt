@@ -7,8 +7,8 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.widget.TextView
 
-/** Symbols drawn on the DEL / ENTER / full-keyboard keys (drawn, so no font has to supply them). */
-enum class KeyIcon { BACKSPACE, ENTER, KEYBOARD }
+/** Symbols drawn on the DEL / ENTER / full-keyboard / paste keys (drawn, so no font has to supply them). */
+enum class KeyIcon { BACKSPACE, ENTER, KEYBOARD, PASTE }
 
 /**
  * Draws [icon] centred on ([cx], [cy]); one icon unit is [u] pixels and the line is [strokePx] thick.
@@ -30,6 +30,7 @@ internal fun drawKeyIcon(
         KeyIcon.BACKSPACE -> 1.3f to 0.9f
         KeyIcon.ENTER -> 1.1f to 0.9f
         KeyIcon.KEYBOARD -> 1.5f to 0.95f
+        KeyIcon.PASTE -> 0.85f to 1.05f
     }
 
     canvas.save()
@@ -77,6 +78,16 @@ internal fun drawKeyIcon(
             paint.style = Paint.Style.STROKE
             path.moveTo(0.35f, 0.72f)
             path.lineTo(1.15f, 0.72f)
+            canvas.drawPath(path, paint)
+        }
+        KeyIcon.PASTE -> {
+            // A clipboard: a board with a clip at the top and two lines of text.
+            canvas.drawRoundRect(0f, 0.12f, 0.85f, 1.05f, 0.1f, 0.1f, paint)
+            canvas.drawRoundRect(0.27f, 0f, 0.58f, 0.24f, 0.07f, 0.07f, paint)
+            path.moveTo(0.2f, 0.52f)
+            path.lineTo(0.65f, 0.52f)
+            path.moveTo(0.2f, 0.76f)
+            path.lineTo(0.5f, 0.76f)
             canvas.drawPath(path, paint)
         }
     }

@@ -16,6 +16,7 @@ data class KeyboardSettings(
     val reopenWord: Boolean = true,
     val pulse: Boolean = true,
     val pulseIntensity: Int = 50, // 0..100
+    val nextWord: Boolean = true,
 ) {
     /** How strong the typing pulse is, 0 (off) to 0.85. */
     val pulseStrength: Float
@@ -40,6 +41,7 @@ data class KeyboardSettings(
         const val KEY_REOPEN = "reopen_word"
         const val KEY_PULSE = "pulse"
         const val KEY_PULSE_LEVEL = "pulse_level"
+        const val KEY_NEXT_WORD = "next_word"
         const val KEY_CLEAR_TOKEN = "clear_token"
 
         const val THEME_SYSTEM = 0
@@ -61,6 +63,7 @@ data class KeyboardSettings(
                 reopenWord = p.getBoolean(KEY_REOPEN, true),
                 pulse = p.getBoolean(KEY_PULSE, true),
                 pulseIntensity = p.getInt(KEY_PULSE_LEVEL, 50),
+                nextWord = p.getBoolean(KEY_NEXT_WORD, true),
             )
         }
     }
@@ -77,4 +80,9 @@ fun KeyboardSettings.feedback(view: View, isLong: Boolean = false) {
         val am = view.context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         am.playSoundEffect(AudioManager.FX_KEYPRESS_STANDARD)
     }
+}
+
+/** A light tick for each step of a slide (cursor or selection), if vibration is on. */
+fun KeyboardSettings.tick(view: View) {
+    if (haptic) view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
 }

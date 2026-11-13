@@ -2,14 +2,11 @@
 package com.m8.keyboard
 
 import android.content.Context
-import android.os.Handler
-import android.os.Looper
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
 import android.text.style.RelativeSizeSpan
 import android.view.Gravity
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -26,7 +23,7 @@ private const val MATCH = ViewGroup.LayoutParams.MATCH_PARENT
 private const val GAP_DP = 3
 
 /**
- * The number pad: [keyboard icon] [candidate strip] [enter] [backspace] on top, followed by
+ * The number pad: [keyboard icon] [candidate strip] [paste] [enter] [backspace] on top, followed by
  * (in the RAZR theme: the suggestion screen, then the soft keys and navigation ring), then a 4x3 key grid.
  * The grid can be swapped for a symbol picker with [showSymbols].
  */
@@ -41,13 +38,18 @@ class NumberPadView(
         fun onKeypadKey(key: Char)
         fun onKeypadLongKey(key: Char)
         fun onKeypadBackspace()
+        fun onKeypadBackspaceSlide(steps: Int)
+        fun onKeypadBackspaceSlideEnd(delete: Boolean)
         fun onKeypadEnter()
+        fun onKeypadCursorMove(steps: Int)
+        fun onKeypadPaste()
         fun onKeypadCandidate(index: Int)
+        fun onKeypadCandidateMove(index: Int)
+        fun onKeypadCandidateLong(index: Int)
         fun onKeypadSymbol(symbol: String)
         fun onKeypadQwerty()
     }
 
-    private val uiHandler = Handler(Looper.getMainLooper())
     private val strip = LinearLayout(context)
     private val scroll = HorizontalScrollView(context)
     private val grid = LinearLayout(context)
@@ -57,19 +59,12 @@ class NumberPadView(
     private var candidateWords: List<String> = emptyList()
     private var selectedCandidate: Int = -1
 
-    private val repeatBackspace = object : Runnable {
-        override fun run() {
-            listener.onKeypadBackspace()
-            uiHandler.postDelayed(this, 60L)
-        }
-    }
-
     init {
         orientation = VERTICAL
         background = pulseBackground
         setPadding(0, dp(4), 0, 0) // no side padding: the outer keys reach the screen edge
 
-        // --- top bar: QWERTY | candidates | DEL | ENTER ---
+        // --- top bar: QWERTY | candidates | PASTE | ENTER | DEL ---
         strip.orientation = HORIZONTAL
         scroll.isHorizontalScrollBarEnabled = false
         if (theme.isRazr) scroll.background = RazrDisplayDrawable(density()) else scroll.setBackgroundColor(theme.strip)
@@ -78,20 +73,20 @@ class NumberPadView(
         val barHeight = if (theme.isRazr) 44 else 52
 
         val del = theme.iconKey(context, KeyIcon.BACKSPACE, true, GAP_DP, GAP_DP, 10, "Backspace")
-        del.setOnTouchListener { v, e ->
-            when (e.actionMasked) {
-                MotionEvent.ACTION_DOWN -> {
-                    v.isPressed = true
-                    settings.feedback(v)
-                    listener.onKeypadBackspace()
-                    uiHandler.postDelayed(repeatBackspace, 400L)
-                }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                    v.isPressed = false
-                    uiHandler.removeCallbacks(repeatBackspace)
-                }
-            }
-            true
+        // Tap or hold to delete; slide left to select text and let go to delete it.
+        del.setOnTouchListener(
+            BackspaceTouch(
+                settings,
+                onDelete = { listener.onKeypadBackspace() },
+                onSlide = { listener.onKeypadBackspaceSlide(it) },
+                onSlideEnd = { listener.onKeypadBackspaceSlideEnd(it) },
+            ),
+        )
+
+        val paste = theme.iconKey(context, KeyIcon.PASTE, false, GAP_DP, GAP_DP, 10, "Paste")
+        paste.setOnClickListener {
+            settings.feedback(it)
+            listener.onKeypadPaste()
         }
 
         if (theme.isRazr) {
@@ -100,6 +95,7 @@ class NumberPadView(
             val screen = newRow()
             screen.gravity = Gravity.CENTER_VERTICAL
             screen.addView(scroll, LinearLayout.LayoutParams(0, dp(barHeight)).apply { weight = 1f })
+            screen.addView(paste, LinearLayout.LayoutParams(dp(46), dp(barHeight)))
             screen.addView(del, LinearLayout.LayoutParams(dp(60), dp(barHeight)))
             addView(screen, LinearLayout.LayoutParams(MATCH, WRAP))
 
@@ -127,10 +123,11 @@ class NumberPadView(
 
             val top = newRow()
             top.gravity = Gravity.CENTER_VERTICAL
-            top.addView(qwerty, LinearLayout.LayoutParams(dp(60), dp(barHeight)))
+            top.addView(qwerty, LinearLayout.LayoutParams(dp(54), dp(barHeight)))
             top.addView(scroll, LinearLayout.LayoutParams(0, dp(barHeight)).apply { weight = 1f })
-            top.addView(enter, LinearLayout.LayoutParams(dp(68), dp(barHeight)))
-            top.addView(del, LinearLayout.LayoutParams(dp(60), dp(barHeight)))
+            top.addView(paste, LinearLayout.LayoutParams(dp(46), dp(barHeight)))
+            top.addView(enter, LinearLayout.LayoutParams(dp(62), dp(barHeight)))
+            top.addView(del, LinearLayout.LayoutParams(dp(56), dp(barHeight)))
             addView(top, LinearLayout.LayoutParams(MATCH, WRAP))
         }
 
@@ -150,6 +147,8 @@ class NumberPadView(
                     true
                 }
                 if (k == '#') hashKey = key
+                // Slide along the space key to move the cursor.
+                if (k == '0') key.setOnTouchListener(SpaceSlideTouch(settings) { listener.onKeypadCursorMove(it) })
                 r.addView(key, keyParams())
             }
             grid.addView(r, LinearLayout.LayoutParams(MATCH, WRAP))
@@ -198,8 +197,9 @@ class NumberPadView(
         grid.visibility = if (show) GONE else VISIBLE
     }
 
-    /** Shows candidate words; [selected] is highlighted. Pass an empty list to clear. */
+    /** Shows candidate words; [selected] is highlighted (-1: none). Pass an empty list to clear. */
     fun setCandidates(words: List<String>, selected: Int) {
+        if (words == candidateWords && selected == selectedCandidate && strip.childCount == words.size) return
         candidateWords = words
         selectedCandidate = selected
         strip.removeAllViews()
@@ -218,6 +218,11 @@ class NumberPadView(
                 tv.setTextColor(theme.text)
             }
             tv.setOnClickListener { listener.onKeypadCandidate(i) }
+            tv.setOnLongClickListener {
+                settings.feedback(it, isLong = true)
+                listener.onKeypadCandidateLong(i)
+                true
+            }
             strip.addView(tv, LinearLayout.LayoutParams(WRAP, MATCH))
         }
         if (selected in words.indices) {
@@ -241,7 +246,7 @@ class NumberPadView(
         if (next == selectedCandidate) return
         selectedCandidate = next
         setCandidates(candidateWords, next)
-        listener.onKeypadCandidate(next)
+        listener.onKeypadCandidateMove(next)
         settings.feedback(this)
     }
 

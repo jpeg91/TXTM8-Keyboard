@@ -1,6 +1,8 @@
 // app/src/main/kotlin/com/m8/keyboard/KeyboardService.kt
 package com.m8.keyboard
 
+import android.content.ClipboardManager
+import android.content.Context
 import android.inputmethodservice.InputMethodService
 import android.os.Handler
 import android.os.Looper
@@ -10,10 +12,12 @@ import android.view.KeyEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
+import android.widget.Toast
 import predictive.Contractions
 import predictive.PredictiveEngine
 import predictive.KeypadMap
 import predictive.PredictiveSession
+import kotlin.math.abs
 
 /**
  * The keyboard service. Two layouts: the number pad and a plain QWERTY keyboard.
@@ -21,6 +25,11 @@ import predictive.PredictiveSession
  * Predictive mode: digits go to [PredictiveSession] and the best word is shown as composing text.
  * Multi-tap mode: repeated presses cycle letters (then the digit) with a timeout.
  * Holding a number key types the digit and keeps cycling: hold 7, tap 4 more times for S.
+ *
+ * Editing gestures: slide along the space key to move the cursor; slide left from backspace to
+ * select text and let go to delete it; the paste key inserts the clipboard. With nothing being
+ * typed, the suggestion strip offers the words that usually follow the previous word; holding a
+ * suggestion removes it.
  */
 class KeyboardService : InputMethodService(), NumberPadView.Listener, QwertyKeypadView.Listener {
 
@@ -53,6 +62,10 @@ class KeyboardService : InputMethodService(), NumberPadView.Listener, QwertyKeyp
 
     // double-tap space -> ". "
     private var spaceTapAt = 0L
+
+    // next-word suggestions on show (dictionary forms), and backspace slide-to-select progress
+    private var nextWords: List<String> = emptyList()
+    private var slideSelected = 0
 
     // saving learned data
     private var lastSaved = 0
@@ -149,6 +162,8 @@ class KeyboardService : InputMethodService(), NumberPadView.Listener, QwertyKeyp
             resetState()
             currentInputConnection?.finishComposingText()
             refreshUi()
+        } else if (!busy) {
+            refreshUi() // the cursor moved or the text changed: the next-word suggestions may differ
         }
     }
 
@@ -246,12 +261,33 @@ class KeyboardService : InputMethodService(), NumberPadView.Listener, QwertyKeyp
 
     override fun onKeypadBackspace() = doBackspace()
 
+    override fun onKeypadBackspaceSlide(steps: Int) = slideSelect(steps)
+
+    override fun onKeypadBackspaceSlideEnd(delete: Boolean) = endSlideSelect(delete)
+
     override fun onKeypadEnter() = doEnter()
+
+    override fun onKeypadCursorMove(steps: Int) = moveCursor(steps)
+
+    override fun onKeypadPaste() = pasteClipboard()
+
+    /** Moving through the suggestions (RAZR pad) only highlights; the centre key picks. */
+    override fun onKeypadCandidateMove(index: Int) {
+        if (!session.isComposing) return
+        session.select(index)
+        showComposing()
+        refreshUi()
+    }
+
+    override fun onKeypadCandidateLong(index: Int) = removeSuggestion(index)
 
     /** Tapping a suggestion types that word and a space after it. */
     override fun onKeypadCandidate(index: Int) {
-        if (!session.isComposing) return
         spaceTapAt = 0L
+        if (!session.isComposing) {
+            acceptNextWord(index)
+            return
+        }
         pulse()
         session.select(index)
         commitWord()
@@ -295,6 +331,14 @@ class KeyboardService : InputMethodService(), NumberPadView.Listener, QwertyKeyp
     }
 
     override fun onQwertyBackspace() = doBackspace()
+
+    override fun onQwertyBackspaceSlide(steps: Int) = slideSelect(steps)
+
+    override fun onQwertyBackspaceSlideEnd(delete: Boolean) = endSlideSelect(delete)
+
+    override fun onQwertyCursorMove(steps: Int) = moveCursor(steps)
+
+    override fun onQwertyPaste() = pasteClipboard()
 
     override fun onQwertyEnter() = doEnter()
 
@@ -403,6 +447,125 @@ class KeyboardService : InputMethodService(), NumberPadView.Listener, QwertyKeyp
             }
         }
         updateAutoCap()
+        refreshUi()
+    }
+
+    /** Slide along space: move the cursor [steps] characters (negative = left). */
+    private fun moveCursor(steps: Int) {
+        if (steps == 0) return
+        commitWord() // finish any word in progress; the cursor is about to leave it
+        spaceTapAt = 0L
+        val ic = currentInputConnection ?: return
+        val code = if (steps < 0) KeyEvent.KEYCODE_DPAD_LEFT else KeyEvent.KEYCODE_DPAD_RIGHT
+        ic.beginBatchEdit()
+        repeat(abs(steps)) { sendDownUpKeyEvents(code) }
+        ic.endBatchEdit()
+    }
+
+    /**
+     * Slide left from backspace: [steps] > 0 selects that many more characters to the left,
+     * [steps] < 0 gives characters back. The selection is deleted when the finger lifts.
+     */
+    private fun slideSelect(steps: Int) {
+        val ic = currentInputConnection ?: return
+        if (steps > 0) {
+            if (slideSelected == 0) commitWord() // finish any word in progress first
+            spaceTapAt = 0L
+            sendShiftArrow(ic, KeyEvent.KEYCODE_DPAD_LEFT, steps)
+            slideSelected += steps
+        } else if (steps < 0) {
+            repeat(-steps) {
+                if (slideSelected > 0) {
+                    // Never step right unless something is selected, so the selection cannot flip over.
+                    if (ic.getSelectedText(0).isNullOrEmpty()) {
+                        slideSelected = 0
+                    } else {
+                        sendShiftArrow(ic, KeyEvent.KEYCODE_DPAD_RIGHT, 1)
+                        slideSelected--
+                    }
+                }
+            }
+        }
+    }
+
+    private fun endSlideSelect(delete: Boolean) {
+        val ic = currentInputConnection
+        val moved = slideSelected
+        slideSelected = 0
+        if (delete && ic != null && moved > 0 && !ic.getSelectedText(0).isNullOrEmpty()) {
+            sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL) // deletes the selection
+            updateAutoCap()
+        }
+        refreshUi()
+    }
+
+    /** Shift + arrow key, [count] times: extends (or shrinks) the selection in the editor. */
+    private fun sendShiftArrow(ic: InputConnection, code: Int, count: Int) {
+        val now = SystemClock.uptimeMillis()
+        val shift = KeyEvent.META_SHIFT_ON or KeyEvent.META_SHIFT_LEFT_ON
+        ic.beginBatchEdit()
+        ic.sendKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_SHIFT_LEFT, 0, shift))
+        repeat(count) {
+            ic.sendKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_DOWN, code, 0, shift))
+            ic.sendKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_UP, code, 0, shift))
+        }
+        ic.sendKeyEvent(KeyEvent(now, now, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_SHIFT_LEFT, 0, 0))
+        ic.endBatchEdit()
+    }
+
+    /** The paste key: types whatever text is on the clipboard. */
+    private fun pasteClipboard() {
+        val ic = currentInputConnection ?: return
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager ?: return
+        val clip = clipboard.primaryClip ?: return
+        if (clip.itemCount == 0) return
+        val text = clip.getItemAt(0).coerceToText(this)?.toString().orEmpty()
+        if (text.isEmpty()) return
+        spaceTapAt = 0L
+        pulse()
+        commitWord()
+        ic.commitText(text, 1)
+        if (caseMode == CaseMode.CAP_NEXT) caseMode = CaseMode.LOWER
+        updateAutoCap()
+        refreshUi()
+    }
+
+    /** Tapped a next-word suggestion: type it with a space after it, and learn the pair. */
+    private fun acceptNextWord(index: Int) {
+        val word = nextWords.getOrNull(index) ?: return
+        val ic = currentInputConnection ?: return
+        pulse()
+        val prev = previousWordBefore(ic)
+        ic.commitText(displayWord(word), 1)
+        if (caseMode == CaseMode.CAP_NEXT) caseMode = CaseMode.LOWER
+        if (learningEnabled) {
+            engine.learn(word)
+            if (prev != null) engine.learnPair(prev, word)
+            scheduleSave()
+        }
+        insertSpace()
+        updateAutoCap()
+        refreshUi()
+    }
+
+    /**
+     * Held a suggestion: forget it. While typing a word, that removes the word from the
+     * suggestions for good; on a next-word suggestion it only forgets that word pair.
+     */
+    private fun removeSuggestion(index: Int) {
+        if (session.isComposing) {
+            val word = session.candidateList.getOrNull(index)?.word ?: return
+            if (!engine.removeWord(word)) return
+            session.restore(session.digitString) // look the keys up again, without the word
+            showComposing()
+            Toast.makeText(this, "Removed \"$word\"", Toast.LENGTH_SHORT).show()
+        } else {
+            val word = nextWords.getOrNull(index) ?: return
+            val prev = previousWordBefore(currentInputConnection) ?: return
+            if (!engine.forgetPair(prev, word)) return
+            Toast.makeText(this, "Forgot \"$prev $word\"", Toast.LENGTH_SHORT).show()
+        }
+        scheduleSave()
         refreshUi()
     }
 
@@ -534,6 +697,12 @@ class KeyboardService : InputMethodService(), NumberPadView.Listener, QwertyKeyp
         scheduleSave()
     }
 
+    private fun findNextWords(): List<String> {
+        if (!settings.nextWord || digitsOnly || mtKey != null) return emptyList()
+        val prev = previousWordBefore(currentInputConnection) ?: return emptyList()
+        return engine.nextWords(prev)
+    }
+
     private fun previousWordBefore(ic: InputConnection?): String? {
         val before = ic?.getTextBeforeCursor(40, 0)?.toString() ?: return null
         return PREV_WORD.find(before)?.groupValues?.get(1)?.lowercase()
@@ -598,9 +767,15 @@ class KeyboardService : InputMethodService(), NumberPadView.Listener, QwertyKeyp
             CaseMode.UPPER -> "ABC"
         }
         padView?.let { k ->
-            if (mode == InputMode.MULTI_TAP || !session.isComposing) {
+            if (mode == InputMode.MULTI_TAP) {
+                nextWords = emptyList()
                 k.setCandidates(emptyList(), -1)
+            } else if (!session.isComposing) {
+                // Nothing being typed: offer the words that usually come next.
+                nextWords = findNextWords()
+                k.setCandidates(nextWords.map { displayWord(it) }, -1)
             } else {
+                nextWords = emptyList()
                 val words = session.candidateList.map { displayWord(it.word) }
                 k.setCandidates(
                     if (words.isEmpty()) listOf(displayWord(session.displayText)) else words,

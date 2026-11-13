@@ -55,7 +55,9 @@ class SetupActivity : Activity() {
                 "Predictive number-pad typing.\n\n" +
                     "Hold # to switch between predictive and multi-tap. " +
                     "Hold a number key to type the digit, then keep tapping it to reach the letters " +
-                    "(hold 7, tap 4 more times for S). Tap the keyboard icon for the full keyboard.",
+                    "(hold 7, tap 4 more times for S). Tap the keyboard icon for the full keyboard.\n\n" +
+                    "Slide along the space key to move the cursor. Slide left from backspace to select " +
+                    "text, and let go to delete it. Hold a suggestion to remove it.",
             ),
         )
 
@@ -110,13 +112,14 @@ class SetupActivity : Activity() {
         addToggle(root, "Vibrate on key press", KeyboardSettings.KEY_HAPTIC, true)
         addToggle(root, "Key click sound", KeyboardSettings.KEY_SOUND, false)
         addToggle(root, "Backspace re-opens the previous word", KeyboardSettings.KEY_REOPEN, true)
+        addToggle(root, "Suggest the next word", KeyboardSettings.KEY_NEXT_WORD, true)
         root.addView(label("Typing pulse"))
         addPulseControls(root)
 
         val clear = button("Clear learned words", action = false) {
             AlertDialog.Builder(this, AlertDialog.THEME_DEVICE_DEFAULT_DARK)
                 .setTitle("Clear learned words?")
-                .setMessage("This forgets the words and word pairs the keyboard has learned from you.")
+                .setMessage("This forgets the words and word pairs the keyboard has learned from you, and brings back any suggestions you removed.")
                 .setPositiveButton("Clear") { _, _ ->
                     UserDataStore(this).clear()
                     prefs.edit().putLong(KeyboardSettings.KEY_CLEAR_TOKEN, System.currentTimeMillis()).apply()

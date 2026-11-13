@@ -148,4 +148,50 @@ class PredictiveEngineTest {
         assertTrue(e.lookup("43").any { it.word == "i'd" })
         assertTrue(e.lookup("9373").any { it.word == "we're" })
     }
+
+    @Test
+    fun nextWordsAreRankedByHowOftenTheyFollowed() {
+        val e = engine()
+        e.learnPair("the", "home")
+        e.learnPair("the", "good")
+        e.learnPair("the", "good")
+        assertEquals(listOf("good", "home"), e.nextWords("the"))
+        assertEquals(listOf("good", "home"), e.nextWords("The"))
+        assertTrue(e.nextWords("home").isEmpty())
+        assertTrue(e.nextWords(null).isEmpty())
+    }
+
+    @Test
+    fun removedWordsDisappearAndStayGone() {
+        val a = engine()
+        a.learnPair("the", "home")
+        assertTrue(a.removeWord("home"))
+        assertFalse(a.lookup("4663").any { it.word == "home" })
+        assertFalse(a.lookup("466").any { it.word == "home" }) // as a completion too
+        assertTrue(a.nextWords("the").isEmpty())
+        assertFalse(a.removeWord("home"))
+
+        val b = engine()
+        b.importUserData(a.exportUserData().lineSequence())
+        assertFalse(b.lookup("4663").any { it.word == "home" })
+        assertTrue(b.lookup("4663").any { it.word == "good" })
+    }
+
+    @Test
+    fun typingARemovedWordBringsItBack() {
+        val e = engine()
+        e.removeWord("home")
+        e.addUserWord("home")
+        assertTrue(e.lookup("4663").any { it.word == "home" })
+    }
+
+    @Test
+    fun forgettingAPairKeepsTheWord() {
+        val e = engine()
+        e.learnPair("the", "home")
+        assertTrue(e.forgetPair("the", "home"))
+        assertTrue(e.nextWords("the").isEmpty())
+        assertTrue(e.lookup("4663").any { it.word == "home" })
+        assertFalse(e.forgetPair("the", "home"))
+    }
 }
