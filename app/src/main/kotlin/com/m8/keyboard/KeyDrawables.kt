@@ -250,9 +250,7 @@ class BackdropDrawable(
 
 /** The keyboard's background for this theme (plain colour, or the pinstriped backdrop). */
 fun KeyboardTheme.backgroundDrawable(view: View): Drawable =
-    if (isRazr) {
-        RazrBackdropDrawable(view.resources.displayMetrics.density)
-    } else if (isSlanted) {
+    if (isSlanted) {
         BackdropDrawable(
             base = background,
             stripe = 0x08FFFFFF,
@@ -350,20 +348,7 @@ fun KeyboardTheme.keyBackground(
     cornerDp: Int,
     leftFrac: Float = 0f,
     rightFrac: Float = 0f,
-    razrRow: Int = -1,
-    razrColumn: Int = -1,
 ): Drawable {
-    if (isRazr) {
-        // One self-animating drawable: it lights when pressed and fades by itself.
-        return RazrKeyDrawable(
-            density = density,
-            insetX = gapXDp * density,
-            insetY = gapYDp * density,
-            fill = if (action) actionKey else key,
-            row = razrRow,
-            column = razrColumn,
-        )
-    }
     val normal = if (action) actionKey else key
     val pressed = if (action) actionKeyPressed else keyPressed
 
@@ -409,19 +394,6 @@ fun KeyboardTheme.keyBackground(
 
 /** Highlight behind the selected candidate word. */
 fun KeyboardTheme.candidateBackground(density: Float): Drawable {
-    if (isRazr) {
-        // A lit blue chip on the dark glass of the display.
-        val chip = GradientDrawable(
-            GradientDrawable.Orientation.TOP_BOTTOM,
-            intArrayOf(0xFF63D0FF.toInt(), 0xFF1E8FD0.toInt()),
-        ).apply {
-            cornerRadius = 5f * density
-            setStroke((1f * density).toInt().coerceAtLeast(1), 0xFFB4EEFF.toInt())
-        }
-        val gx = (4f * density).toInt()
-        val gy = (7f * density).toInt()
-        return InsetDrawable(chip, gx, gy, gx, gy)
-    }
     if (isNokia) {
         return GradientDrawable().apply {
             setColor(accent)

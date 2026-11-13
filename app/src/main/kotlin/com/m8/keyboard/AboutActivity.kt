@@ -127,7 +127,10 @@ class AboutActivity : ThemedScreen() {
         )
         feature(
             root, "Select text",
-            "With text selected, sliding along space grows the selection to the left or right.\n\n" +
+            "With text selected, sliding along space adjusts the selection from either end. Slide off the space " +
+                "key to the left and you control the left end: keep sliding left to grow the selection, slide back " +
+                "right to shrink it. Slide off to the right and you control the right end in the same way. The " +
+                "selection always keeps at least one character.\n\n" +
                 "Slide left from backspace to select backwards a character at a time, slide back to give characters " +
                 "back, and lift your finger to delete the selection. Nothing is deleted until you let go, so " +
                 "changing your mind costs nothing. A plain tap deletes one character, and holding repeats.",
@@ -209,7 +212,7 @@ class AboutActivity : ThemedScreen() {
         rule.setBackgroundColor(look.accent)
         root.addView(rule, LinearLayout.LayoutParams(MATCH, dp(3)).apply { topMargin = dp(32) })
         val credits = TextView(this)
-        credits.text = "Created by jpeg91\nWith great thanks to my darling wife lauren\n\nMade in England"
+        credits.text = "Created by jpeg91\nWith great thanks to my darling wife Lauren\n\nMade in England"
         credits.textSize = 15f
         credits.gravity = Gravity.CENTER
         credits.setTextColor(look.text)

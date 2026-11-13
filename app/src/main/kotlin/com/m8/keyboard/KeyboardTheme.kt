@@ -28,7 +28,6 @@ class KeyboardTheme(
     val shadow: Int = 0,
     val deep: Int = 0,
     val isNokia: Boolean = false,
-    val isRazr: Boolean = false,
     val typeface: Typeface = Typeface.DEFAULT,
 ) {
     companion object {
@@ -102,28 +101,6 @@ class KeyboardTheme(
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
-        /**
-         * Motorola RAZR V3: a dark etched-metal keypad with electroluminescent blue numerals.
-         * See RazrTheme.kt for how the keys, the navigation ring and the glow are drawn.
-         */
-        val RAZR = KeyboardTheme(
-            background = 0xFF0D1115.toInt(),
-            strip = 0xFF020A11.toInt(),
-            key = 0xFF2C353C.toInt(),
-            keyPressed = 0xFF1C5F86.toInt(),
-            text = 0xFF7FD6FF.toInt(),           // numerals at rest: backlit pale blue
-            accent = 0xFF1E9BE0.toInt(),
-            accentText = 0xFF03131D.toInt(),     // dark text on the lit candidate chip
-            actionKey = 0xFF343D45.toInt(),
-            actionKeyPressed = 0xFF1C5F86.toInt(),
-            actionText = 0xFF8DDCFF.toInt(),
-            subText = 0xFF4C9CC4.toInt(),
-            shadow = 0xFF03060A.toInt(),
-            deep = 0xFF000000.toInt(),
-            isRazr = true,
-            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL),
-        )
-
         private fun heavyItalic(): Typeface =
             if (Build.VERSION.SDK_INT >= 28) {
                 Typeface.create(Typeface.SANS_SERIF, 900, true)
@@ -135,10 +112,9 @@ class KeyboardTheme(
             val night = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
                 Configuration.UI_MODE_NIGHT_YES
             return when (setting) {
-                KeyboardSettings.THEME_RED -> RED
+                KeyboardSettings.THEME_RED, KeyboardSettings.THEME_RETIRED_RAZR -> RED
                 KeyboardSettings.THEME_PURPLE -> PURPLE
                 KeyboardSettings.THEME_NOKIA -> NOKIA
-                KeyboardSettings.THEME_RAZR -> RAZR
                 KeyboardSettings.THEME_DARK -> DARK
                 KeyboardSettings.THEME_LIGHT -> LIGHT
                 else -> if (night) DARK else LIGHT

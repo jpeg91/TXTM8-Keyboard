@@ -93,16 +93,19 @@ class BackspaceTouch(
 
 /**
  * Sliding a finger along the space key moves the cursor, one step per character (negative =
- * left). Plain taps and long presses are left to the key's own click listeners.
+ * left). [onMove] is given the steps just moved and which way the slide started (-1 = left,
+ * 1 = right): with text selected, that says which end of the selection the slide controls.
+ * Plain taps and long presses are left to the key's own click listeners.
  */
 class SpaceSlideTouch(
     private val settings: KeyboardSettings,
-    private val onMove: (Int) -> Unit,
+    private val onMove: (steps: Int, startDirection: Int) -> Unit,
 ) : View.OnTouchListener {
 
     private var downX = 0f
     private var sliding = false
     private var applied = 0
+    private var startDirection = 0
 
     override fun onTouch(v: View, e: MotionEvent): Boolean {
         val density = v.resources.displayMetrics.density
@@ -117,6 +120,7 @@ class SpaceSlideTouch(
                 val dx = e.x - downX
                 if (!sliding && abs(dx) > SLIDE_START_DP * density) {
                     sliding = true
+                    startDirection = if (dx < 0) -1 else 1
                     // Cancel the key's own press, so neither a click nor a long press follows.
                     val cancel = MotionEvent.obtain(e)
                     cancel.action = MotionEvent.ACTION_CANCEL
@@ -127,7 +131,7 @@ class SpaceSlideTouch(
                 if (sliding) {
                     val target = (dx / (settings.slideStepDp() * density)).toInt()
                     if (target != applied) {
-                        onMove(target - applied)
+                        onMove(target - applied, startDirection)
                         applied = target
                         settings.tick(v)
                     }

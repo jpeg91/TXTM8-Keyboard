@@ -14,7 +14,7 @@ enum class KeyIcon { BACKSPACE, ENTER, KEYBOARD, PASTE, SETTINGS }
 
 /**
  * Draws [icon] centred on ([cx], [cy]); one icon unit is [u] pixels and the line is [strokePx] thick.
- * Shared by the icon keys and the RAZR soft keys.
+ * Used by the icon keys.
  */
 internal fun drawKeyIcon(
     canvas: Canvas,
@@ -118,9 +118,6 @@ class IconKeyView(
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val path = Path()
 
-    /** 0..1: how brightly the icon glows (RAZR theme only; set by [bindKeyGlow]). */
-    var glow = 0f
-
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val density = resources.displayMetrics.density
@@ -130,11 +127,7 @@ class IconKeyView(
         val cy = height / 2f
         val line = maxOf(1.8f * density, u * 0.1f)
 
-        if (glow > 0.02f) {
-            drawKeyIcon(canvas, icon, cx, cy, u, withAlpha(Razr.BLUE, 0.30f * glow), line * 3.2f, paint, path)
-            drawKeyIcon(canvas, icon, cx, cy, u, withAlpha(Razr.CYAN, 0.50f * glow), line * 1.9f, paint, path)
-        }
-        drawKeyIcon(canvas, icon, cx, cy, u, lerpColor(color, Razr.CORE, glow), line, paint, path)
+        drawKeyIcon(canvas, icon, cx, cy, u, color, line, paint, path)
     }
 }
 
@@ -152,6 +145,5 @@ fun KeyboardTheme.iconKey(
     val view = IconKeyView(context, icon, if (action) actionText else text)
     view.background = keyBackground(density, action, gapXDp, gapYDp, cornerDp)
     view.contentDescription = description
-    bindKeyGlow(view)
     return view
 }

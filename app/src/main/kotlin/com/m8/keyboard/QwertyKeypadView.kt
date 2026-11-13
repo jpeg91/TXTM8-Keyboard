@@ -31,7 +31,7 @@ class QwertyKeypadView(
         fun onQwertyBackspace()
         fun onQwertyBackspaceSlide(steps: Int)
         fun onQwertyBackspaceSlideEnd(delete: Boolean)
-        fun onQwertyCursorMove(steps: Int)
+        fun onQwertyCursorMove(steps: Int, startDirection: Int)
         fun onQwertyPaste()
         fun onQwertyCopy()
         fun onQwertySettings()
@@ -162,7 +162,7 @@ class QwertyKeypadView(
             listener.onQwertySpace()
         }
         // Slide along the space key to move the cursor.
-        space.setOnTouchListener(SpaceSlideTouch(settings) { listener.onQwertyCursorMove(it) })
+        space.setOnTouchListener(SpaceSlideTouch(settings) { steps, dir -> listener.onQwertyCursorMove(steps, dir) })
         val period = makeKey(".")
         period.setOnClickListener {
             settings.feedback(it)
@@ -250,7 +250,6 @@ class QwertyKeypadView(
         tv.gravity = Gravity.CENTER
         tv.setTextColor(if (action) theme.actionText else theme.text)
         tv.background = theme.keyBackground(density(), action, GAP_X_DP, GAP_Y_DP, 8, leftFrac, rightFrac)
-        theme.bindKeyGlow(tv)
         return tv
     }
 }

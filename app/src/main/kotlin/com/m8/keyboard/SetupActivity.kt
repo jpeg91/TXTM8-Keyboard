@@ -67,12 +67,11 @@ class SetupActivity : ThemedScreen() {
         root.addView(sectionTitle("Look"))
         addChoice(
             root, "Theme", KeyboardSettings.KEY_THEME,
-            listOf("Red", "Purple", "Nokia 3310", "Motorola RAZR V3", "Follow system", "Dark", "Light"),
+            listOf("Red", "Purple", "Nokia 3310", "Follow system", "Dark", "Light"),
             listOf(
                 KeyboardSettings.THEME_RED,
                 KeyboardSettings.THEME_PURPLE,
                 KeyboardSettings.THEME_NOKIA,
-                KeyboardSettings.THEME_RAZR,
                 KeyboardSettings.THEME_SYSTEM,
                 KeyboardSettings.THEME_DARK,
                 KeyboardSettings.THEME_LIGHT,
@@ -119,7 +118,7 @@ class SetupActivity : ThemedScreen() {
         root.addView(sectionTitle("Gestures"))
         addToggle(
             root, "Slide gestures", KeyboardSettings.KEY_SLIDE, true,
-            note = "Slide along space to move the cursor (or grow a selection). Slide left from backspace to select text, then let go to delete it. Switch off if they trigger by accident.",
+            note = "Slide along space to move the cursor, or to adjust a selection. Slide left from backspace to select text, then let go to delete it. Switch off if they trigger by accident.",
         )
         addChoice(
             root, "Slide speed", KeyboardSettings.KEY_SLIDE_SPEED,

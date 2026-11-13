@@ -311,21 +311,13 @@ class KeyboardService :
 
     override fun onKeypadEnter() = doEnter()
 
-    override fun onKeypadCursorMove(steps: Int) = moveCursor(steps)
+    override fun onKeypadCursorMove(steps: Int, startDirection: Int) = moveCursor(steps, startDirection)
 
     override fun onKeypadPaste() = pasteClipboard()
 
     override fun onKeypadCopy() = copySelection()
 
     override fun onKeypadSettings() = openSettings()
-
-    /** Moving through the suggestions (RAZR pad) only highlights; the centre key picks. */
-    override fun onKeypadCandidateMove(index: Int) {
-        if (!session.isComposing) return
-        session.select(index)
-        showComposing()
-        refreshUi()
-    }
 
     override fun onKeypadCandidateLong(index: Int) = removeSuggestion(index)
 
@@ -393,7 +385,7 @@ class KeyboardService :
 
     override fun onQwertyBackspaceSlideEnd(delete: Boolean) = endSlideSelect(delete)
 
-    override fun onQwertyCursorMove(steps: Int) = moveCursor(steps)
+    override fun onQwertyCursorMove(steps: Int, startDirection: Int) = moveCursor(steps, startDirection)
 
     override fun onQwertyPaste() = pasteClipboard()
 
@@ -542,14 +534,19 @@ class KeyboardService :
         refreshUi()
     }
 
-    /** Slide along space: move the cursor [steps] characters (negative = left). */
-    private fun moveCursor(steps: Int) {
+    /**
+     * Slide along space: move the cursor [steps] characters (negative = left). With text selected
+     * it moves one end of the selection instead: a slide that started leftwards controls the
+     * left end (left grows the selection, right shrinks it), and one that started rightwards
+     * controls the right end (right grows it, left shrinks it).
+     */
+    private fun moveCursor(steps: Int, startDirection: Int) {
         if (steps == 0) return
         val ic = currentInputConnection ?: return
         autoSpace = false
         // With text selected, sliding grows the selection (left or right) instead of moving the cursor.
         if (!ic.getSelectedText(0).isNullOrEmpty()) {
-            if (!extendSelection(ic, steps)) {
+            if (!moveSelectionEdge(ic, steps, startDirection)) {
                 sendShiftArrow(ic, if (steps < 0) KeyEvent.KEYCODE_DPAD_LEFT else KeyEvent.KEYCODE_DPAD_RIGHT, abs(steps))
             }
             return
@@ -563,16 +560,18 @@ class KeyboardService :
     }
 
     /**
-     * Grows the selection by [steps] characters: to the left when negative, to the right when
-     * positive. Returns false if the editor will not tell us where its text is.
+     * Moves one end of the selection by [steps] characters (negative = left, positive = right):
+     * the left end when [edge] is negative, the right end otherwise. The selection always keeps at
+     * least one character, so the two ends never cross. Returns false if the editor will not tell
+     * us where its text is.
      */
-    private fun extendSelection(ic: InputConnection, steps: Int): Boolean {
+    private fun moveSelectionEdge(ic: InputConnection, steps: Int, edge: Int): Boolean {
         val extracted = ic.getExtractedText(ExtractedTextRequest(), 0) ?: return false
         val length = extracted.text?.length ?: return false
         var start = min(extracted.selectionStart, extracted.selectionEnd)
         var end = max(extracted.selectionStart, extracted.selectionEnd)
         if (start == end) return false
-        if (steps < 0) start = max(0, start + steps) else end = min(length, end + steps)
+        if (edge < 0) start = (start + steps).coerceIn(0, end - 1) else end = (end + steps).coerceIn(start + 1, length)
         ic.setSelection(extracted.startOffset + start, extracted.startOffset + end)
         return true
     }
