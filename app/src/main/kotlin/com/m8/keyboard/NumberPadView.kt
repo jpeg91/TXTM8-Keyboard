@@ -43,6 +43,8 @@ class NumberPadView(
         fun onKeypadEnter()
         fun onKeypadCursorMove(steps: Int)
         fun onKeypadPaste()
+        fun onKeypadCopy()
+        fun onKeypadSettings()
         fun onKeypadCandidate(index: Int)
         fun onKeypadCandidateMove(index: Int)
         fun onKeypadCandidateLong(index: Int)
@@ -90,6 +92,12 @@ class NumberPadView(
         paste.setOnClickListener {
             settings.feedback(it)
             listener.onKeypadPaste()
+        }
+        // Hold paste to copy the selected text.
+        paste.setOnLongClickListener {
+            settings.feedback(it, isLong = true)
+            listener.onKeypadCopy()
+            true
         }
 
         if (theme.isRazr) {
@@ -186,6 +194,11 @@ class NumberPadView(
             settings.feedback(it)
             listener.onKeypadEmoji()
         }
+        val gear = theme.iconKey(context, KeyIcon.SETTINGS, false, GAP_DP, GAP_DP, 10, "Keyboard settings")
+        gear.setOnClickListener {
+            settings.feedback(it)
+            listener.onKeypadSettings()
+        }
         val space = makeKey(caps("space"), 16f)
         space.setOnClickListener {
             settings.feedback(it)
@@ -193,6 +206,7 @@ class NumberPadView(
         }
         bottom.addView(back, keyParams(1f))
         bottom.addView(emoji, keyParams(1f))
+        bottom.addView(gear, keyParams(1f))
         bottom.addView(space, keyParams(2f))
         symbolPanel.addView(bottom, LinearLayout.LayoutParams(MATCH, WRAP))
         addView(symbolPanel, LinearLayout.LayoutParams(MATCH, WRAP))

@@ -1,7 +1,6 @@
 // app/src/main/kotlin/com/m8/keyboard/KeyDrawables.kt
 package com.m8.keyboard
 
-import android.animation.ValueAnimator
 import android.graphics.Canvas
 import android.graphics.ColorFilter
 import android.graphics.Paint
@@ -17,8 +16,8 @@ import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.InsetDrawable
 import android.graphics.drawable.StateListDrawable
+import android.os.SystemClock
 import android.view.View
-import android.view.animation.DecelerateInterpolator
 
 /**
  * One slanted key: a parallelogram (top edge pushed right, bottom edge left) with a white
@@ -282,7 +281,8 @@ class PulseBackground(
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var level = 0f
-    private var animator: ValueAnimator? = null
+    private var startedAt = 0L
+    private var running = false
 
     override fun onBoundsChange(bounds: Rect) {
         base.bounds = bounds
@@ -299,25 +299,31 @@ class PulseBackground(
 
     override fun draw(canvas: Canvas) {
         base.draw(canvas)
+        if (running) {
+            // Drawn by hand from the clock, not with a ValueAnimator: Android's animation-speed
+            // settings (including "off") must not change how this looks.
+            val t = (SystemClock.uptimeMillis() - startedAt) / FADE_MS.toFloat()
+            if (t >= 1f) {
+                running = false
+                level = 0f
+            } else {
+                level = (1f - t.coerceAtLeast(0f)).let { it * it } // fades out, slowing down
+            }
+        }
         if (level > 0f && strength > 0f) {
             paint.alpha = (255f * strength * level).toInt().coerceIn(0, 255)
             canvas.drawRect(bounds, paint)
         }
+        if (running) invalidateSelf() // ask for the next frame
     }
 
     /** Flash now and fade out. */
     fun pulse() {
         if (strength <= 0f) return
-        animator?.cancel()
-        animator = ValueAnimator.ofFloat(1f, 0f).apply {
-            duration = 450L
-            interpolator = DecelerateInterpolator()
-            addUpdateListener {
-                level = it.animatedValue as Float
-                invalidateSelf()
-            }
-            start()
-        }
+        startedAt = SystemClock.uptimeMillis()
+        running = true
+        level = 1f
+        invalidateSelf()
     }
 
     override fun setAlpha(alpha: Int) {}
@@ -326,6 +332,10 @@ class PulseBackground(
 
     @Suppress("OVERRIDE_DEPRECATION")
     override fun getOpacity(): Int = PixelFormat.OPAQUE
+
+    private companion object {
+        const val FADE_MS = 450L
+    }
 }
 
 /**

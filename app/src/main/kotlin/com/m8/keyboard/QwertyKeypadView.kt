@@ -33,6 +33,8 @@ class QwertyKeypadView(
         fun onQwertyBackspaceSlideEnd(delete: Boolean)
         fun onQwertyCursorMove(steps: Int)
         fun onQwertyPaste()
+        fun onQwertyCopy()
+        fun onQwertySettings()
         fun onQwertyEnter()
         fun onQwertyShift()
         fun onQwertyPad()
@@ -84,7 +86,7 @@ class QwertyKeypadView(
         } else {
             addKeysRow("1234567890", isLetter = false)
             addKeysRow("@#\$%&-+()/", isLetter = false)
-            addKeysRow("*\"':;!?", isLetter = false, trailing = makeEnterKey())
+            addKeysRow("*\"':;!?", isLetter = false, leading = makeSettingsKey(), trailing = makeEnterKey())
         }
         addBottomRow()
     }
@@ -142,6 +144,12 @@ class QwertyKeypadView(
             settings.feedback(it)
             listener.onQwertyPaste()
         }
+        // Hold paste to copy the selected text.
+        paste.setOnLongClickListener {
+            settings.feedback(it, isLong = true)
+            listener.onQwertyCopy()
+            true
+        }
         // The symbols page also has the emoji key.
         val emoji = if (symbolsPage) makeKey(";)", 14f) else null
         emoji?.setOnClickListener {
@@ -185,6 +193,15 @@ class QwertyKeypadView(
             ),
         )
         return del
+    }
+
+    private fun makeSettingsKey(): TextView {
+        val gear = theme.iconKey(context, KeyIcon.SETTINGS, true, GAP_X_DP, GAP_Y_DP, 8, "Keyboard settings")
+        gear.setOnClickListener {
+            settings.feedback(it)
+            listener.onQwertySettings()
+        }
+        return gear
     }
 
     private fun makeEnterKey(): TextView {

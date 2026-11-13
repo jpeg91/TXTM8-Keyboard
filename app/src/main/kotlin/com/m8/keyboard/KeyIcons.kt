@@ -6,9 +6,11 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
 import android.widget.TextView
+import kotlin.math.cos
+import kotlin.math.sin
 
-/** Symbols drawn on the DEL / ENTER / full-keyboard / paste keys (drawn, so no font has to supply them). */
-enum class KeyIcon { BACKSPACE, ENTER, KEYBOARD, PASTE }
+/** Symbols drawn on the DEL / ENTER / full-keyboard / paste / settings keys (drawn, so no font has to supply them). */
+enum class KeyIcon { BACKSPACE, ENTER, KEYBOARD, PASTE, SETTINGS }
 
 /**
  * Draws [icon] centred on ([cx], [cy]); one icon unit is [u] pixels and the line is [strokePx] thick.
@@ -31,6 +33,7 @@ internal fun drawKeyIcon(
         KeyIcon.ENTER -> 1.1f to 0.9f
         KeyIcon.KEYBOARD -> 1.5f to 0.95f
         KeyIcon.PASTE -> 0.85f to 1.05f
+        KeyIcon.SETTINGS -> 1.0f to 1.0f
     }
 
     canvas.save()
@@ -88,6 +91,17 @@ internal fun drawKeyIcon(
             path.lineTo(0.65f, 0.52f)
             path.moveTo(0.2f, 0.76f)
             path.lineTo(0.5f, 0.76f)
+            canvas.drawPath(path, paint)
+        }
+        KeyIcon.SETTINGS -> {
+            // A cog: a ring with a hub, and eight teeth.
+            canvas.drawCircle(0.5f, 0.5f, 0.15f, paint)
+            canvas.drawCircle(0.5f, 0.5f, 0.31f, paint)
+            for (i in 0 until 8) {
+                val a = (i * Math.PI / 4).toFloat()
+                path.moveTo(0.5f + cos(a) * 0.31f, 0.5f + sin(a) * 0.31f)
+                path.lineTo(0.5f + cos(a) * 0.48f, 0.5f + sin(a) * 0.48f)
+            }
             canvas.drawPath(path, paint)
         }
     }
