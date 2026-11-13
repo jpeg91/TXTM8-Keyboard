@@ -31,7 +31,11 @@ import kotlin.math.abs
  * typed, the suggestion strip offers the words that usually follow the previous word; holding a
  * suggestion removes it.
  */
-class KeyboardService : InputMethodService(), NumberPadView.Listener, QwertyKeypadView.Listener {
+class KeyboardService :
+    InputMethodService(),
+    NumberPadView.Listener,
+    QwertyKeypadView.Listener,
+    EmojiKeyboardView.Listener {
 
     private enum class CaseMode { LOWER, CAP_NEXT, UPPER }
     private enum class InputMode { PREDICTIVE, MULTI_TAP }
@@ -45,8 +49,10 @@ class KeyboardService : InputMethodService(), NumberPadView.Listener, QwertyKeyp
     private var kbTheme = KeyboardTheme.DARK
     private var padView: NumberPadView? = null
     private var qwertyView: QwertyKeypadView? = null
+    private var emojiView: EmojiKeyboardView? = null
     private var shownView: View? = null
 
+    private var emojiOpen = false       // the emoji page is showing (over either layout)
     private var fullKeyboard = false    // QWERTY layout showing
     private var userFull = false        // the user's own choice of layout
     private var caseMode = CaseMode.LOWER
@@ -121,6 +127,7 @@ class KeyboardService : InputMethodService(), NumberPadView.Listener, QwertyKeyp
         super.onStartInputView(info, restarting)
         resetState()
         reloadSettings()
+        emojiOpen = false
 
         val type = info.inputType
         val cls = type and InputType.TYPE_MASK_CLASS
@@ -170,7 +177,9 @@ class KeyboardService : InputMethodService(), NumberPadView.Listener, QwertyKeyp
     // ---------------------------------------------------------------- views & settings
 
     private fun currentView(): View {
-        return if (fullKeyboard) {
+        return if (emojiOpen) {
+            emojiView ?: EmojiKeyboardView(this, this, settings, kbTheme).also { emojiView = it }
+        } else if (fullKeyboard) {
             qwertyView ?: QwertyKeypadView(this, this, settings, kbTheme).also { qwertyView = it }
         } else {
             padView ?: NumberPadView(this, this, settings, kbTheme).also { padView = it }
@@ -193,6 +202,7 @@ class KeyboardService : InputMethodService(), NumberPadView.Listener, QwertyKeyp
             kbTheme = th
             padView = null
             qwertyView = null
+            emojiView = null
         }
         val token = getSharedPreferences(KeyboardSettings.PREFS, MODE_PRIVATE)
             .getLong(KeyboardSettings.KEY_CLEAR_TOKEN, 0L)
@@ -202,6 +212,20 @@ class KeyboardService : InputMethodService(), NumberPadView.Listener, QwertyKeyp
             uiHandler.removeCallbacks(saveTask)
             loadEngine()
         }
+    }
+
+    private fun openEmoji() {
+        commitWord()
+        spaceTapAt = 0L
+        emojiOpen = true
+        showView()
+        refreshUi()
+    }
+
+    private fun closeEmoji() {
+        emojiOpen = false
+        showView()
+        refreshUi()
     }
 
     private fun switchLayout(full: Boolean) {
@@ -306,6 +330,8 @@ class KeyboardService : InputMethodService(), NumberPadView.Listener, QwertyKeyp
 
     override fun onKeypadQwerty() = switchLayout(true)
 
+    override fun onKeypadEmoji() = openEmoji()
+
     // ---------------------------------------------------------------- QWERTY events
 
     override fun onQwertyText(text: String, isLetter: Boolean) {
@@ -348,6 +374,31 @@ class KeyboardService : InputMethodService(), NumberPadView.Listener, QwertyKeyp
     }
 
     override fun onQwertyPad() = switchLayout(false)
+
+    override fun onQwertyEmoji() = openEmoji()
+
+    // ---------------------------------------------------------------- emoji page events
+
+    override fun onEmojiText(text: String) {
+        val ic = currentInputConnection ?: return
+        spaceTapAt = 0L
+        pulse()
+        commitWord()
+        ic.commitText(text, 1)
+        refreshUi()
+    }
+
+    override fun onEmojiBack() = closeEmoji()
+
+    override fun onEmojiSpace() = onQwertySpace()
+
+    override fun onEmojiBackspace() = doBackspace()
+
+    override fun onEmojiBackspaceSlide(steps: Int) = slideSelect(steps)
+
+    override fun onEmojiBackspaceSlideEnd(delete: Boolean) = endSlideSelect(delete)
+
+    override fun onEmojiEnter() = doEnter()
 
     // ---------------------------------------------------------------- key actions
 
@@ -574,7 +625,7 @@ class KeyboardService : InputMethodService(), NumberPadView.Listener, QwertyKeyp
      * strip shows the alternatives. Pressing DEL again then removes keys as usual.
      */
     private fun tryReopenWord(ic: InputConnection): Boolean {
-        if (!settings.reopenWord || fullKeyboard || mode != InputMode.PREDICTIVE) return false
+        if (!settings.reopenWord || fullKeyboard || emojiOpen || mode != InputMode.PREDICTIVE) return false
         if (!ic.getSelectedText(0).isNullOrEmpty()) return false
         val before = ic.getTextBeforeCursor(40, 0)?.toString() ?: return false
         val word = before.takeLastWhile { it.isLetter() || it == '\'' }
@@ -758,6 +809,7 @@ class KeyboardService : InputMethodService(), NumberPadView.Listener, QwertyKeyp
     private fun pulse() {
         padView?.pulse()
         qwertyView?.pulse()
+        emojiView?.pulse()
     }
 
     private fun refreshUi() {
@@ -767,6 +819,12 @@ class KeyboardService : InputMethodService(), NumberPadView.Listener, QwertyKeyp
             CaseMode.UPPER -> "ABC"
         }
         padView?.let { k ->
+            // Letters on the keys show the case the next letter will have. While a predictive
+            // word is being typed the case is already fixed, so a one-shot capital is not shown.
+            k.setUpperCase(
+                caseMode == CaseMode.UPPER ||
+                    (caseMode == CaseMode.CAP_NEXT && !(mode == InputMode.PREDICTIVE && session.isComposing)),
+            )
             if (mode == InputMode.MULTI_TAP) {
                 nextWords = emptyList()
                 k.setCandidates(emptyList(), -1)

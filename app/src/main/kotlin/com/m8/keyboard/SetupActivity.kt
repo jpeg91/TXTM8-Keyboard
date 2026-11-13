@@ -57,7 +57,7 @@ class SetupActivity : Activity() {
                     "Hold a number key to type the digit, then keep tapping it to reach the letters " +
                     "(hold 7, tap 4 more times for S). Tap the keyboard icon for the full keyboard.\n\n" +
                     "Slide along the space key to move the cursor. Slide left from backspace to select " +
-                    "text, and let go to delete it. Hold a suggestion to remove it.",
+                    "text, and let go to delete it. Hold a suggestion to remove it. Tap ;) on a symbol page for emoji and text smileys.",
             ),
         )
 

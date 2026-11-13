@@ -36,6 +36,7 @@ class QwertyKeypadView(
         fun onQwertyEnter()
         fun onQwertyShift()
         fun onQwertyPad()
+        fun onQwertyEmoji()
     }
 
     private val pulseBackground = PulseBackground(theme.backgroundDrawable(this), theme.accent, settings.pulseStrength)
@@ -141,6 +142,12 @@ class QwertyKeypadView(
             settings.feedback(it)
             listener.onQwertyPaste()
         }
+        // The symbols page also has the emoji key.
+        val emoji = if (symbolsPage) makeKey(";)", 14f) else null
+        emoji?.setOnClickListener {
+            settings.feedback(it)
+            listener.onQwertyEmoji()
+        }
         val space = makeKey(if (theme.isSlanted) "SPACE" else "space", 14f)
         space.setOnClickListener {
             settings.feedback(it)
@@ -158,8 +165,9 @@ class QwertyKeypadView(
         row.addView(page, keyParams(1.4f))
         row.addView(pad, keyParams(1.2f))
         row.addView(paste, keyParams(1.2f))
+        if (emoji != null) row.addView(emoji, keyParams(1.2f))
         row.addView(comma, keyParams(1f))
-        row.addView(space, keyParams(3.4f))
+        row.addView(space, keyParams(if (emoji != null) 2.4f else 3.4f))
         row.addView(period, keyParams(1f))
         row.addView(del, keyParams(1.6f))
         addView(row, LinearLayout.LayoutParams(MATCH, WRAP))

@@ -48,6 +48,7 @@ class NumberPadView(
         fun onKeypadCandidateLong(index: Int)
         fun onKeypadSymbol(symbol: String)
         fun onKeypadQwerty()
+        fun onKeypadEmoji()
     }
 
     private val strip = LinearLayout(context)
@@ -58,6 +59,8 @@ class NumberPadView(
     private lateinit var hashKey: TextView
     private var candidateWords: List<String> = emptyList()
     private var selectedCandidate: Int = -1
+    private val letterKeys = ArrayList<Pair<TextView, Char>>()
+    private var upperLetters = false // the letters on the keys follow the case the next letter will have
 
     init {
         orientation = VERTICAL
@@ -147,6 +150,7 @@ class NumberPadView(
                     true
                 }
                 if (k == '#') hashKey = key
+                if (k in '2'..'9') letterKeys.add(Pair(key, k))
                 // Slide along the space key to move the cursor.
                 if (k == '0') key.setOnTouchListener(SpaceSlideTouch(settings) { listener.onKeypadCursorMove(it) })
                 r.addView(key, keyParams())
@@ -177,13 +181,19 @@ class NumberPadView(
             settings.feedback(it)
             showSymbols(false)
         }
+        val emoji = makeKey(";)", 16f)
+        emoji.setOnClickListener {
+            settings.feedback(it)
+            listener.onKeypadEmoji()
+        }
         val space = makeKey(caps("space"), 16f)
         space.setOnClickListener {
             settings.feedback(it)
             listener.onKeypadKey('0')
         }
         bottom.addView(back, keyParams(1f))
-        bottom.addView(space, keyParams(3f))
+        bottom.addView(emoji, keyParams(1f))
+        bottom.addView(space, keyParams(2f))
         symbolPanel.addView(bottom, LinearLayout.LayoutParams(MATCH, WRAP))
         addView(symbolPanel, LinearLayout.LayoutParams(MATCH, WRAP))
     }
@@ -231,6 +241,13 @@ class NumberPadView(
         } else {
             scroll.scrollTo(0, 0)
         }
+    }
+
+    /** Shows the letters on keys 2-9 as capitals (the next letter will be upper case) or lower case. */
+    fun setUpperCase(upper: Boolean) {
+        if (upper == upperLetters) return
+        upperLetters = upper
+        for ((key, k) in letterKeys) key.text = labelFor(k)
     }
 
     /** Text under the # key, e.g. "Abc · predict". */
@@ -281,7 +298,7 @@ class NumberPadView(
         '0' -> twoLine("0", caps("space"))
         '*' -> twoLine("*", caps("next"))
         '#' -> twoLine("#", "")
-        else -> twoLine(k.toString(), KeypadMap.keyLetters.getValue(k).uppercase())
+        else -> twoLine(k.toString(), KeypadMap.keyLetters.getValue(k).let { if (upperLetters) it.uppercase() else it })
     }
 
     private fun twoLine(big: String, small: String): CharSequence {
