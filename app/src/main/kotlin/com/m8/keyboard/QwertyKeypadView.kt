@@ -34,6 +34,7 @@ class QwertyKeypadView(
         fun onQwertyCursorMove(steps: Int, startDirection: Int)
         fun onQwertyPaste()
         fun onQwertyCopy()
+        fun onQwertyPasteSlide(steps: Int, startDirection: Int)
         fun onQwertySettings()
         fun onQwertyEnter()
         fun onQwertyShift()
@@ -140,16 +141,15 @@ class QwertyKeypadView(
             listener.onQwertyText(",", false)
         }
         val paste = theme.iconKey(context, KeyIcon.PASTE, false, GAP_X_DP, GAP_Y_DP, 8, "Paste")
-        paste.setOnClickListener {
-            settings.feedback(it)
-            listener.onQwertyPaste()
-        }
-        // Hold paste to copy the selected text.
-        paste.setOnLongClickListener {
-            settings.feedback(it, isLong = true)
-            listener.onQwertyCopy()
-            true
-        }
+        // Tap to paste. Hold and let go to copy the selection. Hold and slide to select from the cursor.
+        paste.setOnTouchListener(
+            PasteTouch(
+                settings,
+                onPaste = { listener.onQwertyPaste() },
+                onCopy = { listener.onQwertyCopy() },
+                onSelect = { steps, dir -> listener.onQwertyPasteSlide(steps, dir) },
+            ),
+        )
         // The symbols page also has the emoji key.
         val emoji = if (symbolsPage) makeKey(";)", 14f) else null
         emoji?.setOnClickListener {

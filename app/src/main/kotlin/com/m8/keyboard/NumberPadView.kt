@@ -44,6 +44,7 @@ class NumberPadView(
         fun onKeypadCursorMove(steps: Int, startDirection: Int)
         fun onKeypadPaste()
         fun onKeypadCopy()
+        fun onKeypadPasteSlide(steps: Int, startDirection: Int)
         fun onKeypadSettings()
         fun onKeypadCandidate(index: Int)
         fun onKeypadCandidateLong(index: Int)
@@ -88,16 +89,15 @@ class NumberPadView(
         )
 
         val paste = theme.iconKey(context, KeyIcon.PASTE, false, GAP_DP, GAP_DP, 10, "Paste")
-        paste.setOnClickListener {
-            settings.feedback(it)
-            listener.onKeypadPaste()
-        }
-        // Hold paste to copy the selected text.
-        paste.setOnLongClickListener {
-            settings.feedback(it, isLong = true)
-            listener.onKeypadCopy()
-            true
-        }
+        // Tap to paste. Hold and let go to copy the selection. Hold and slide to select from the cursor.
+        paste.setOnTouchListener(
+            PasteTouch(
+                settings,
+                onPaste = { listener.onKeypadPaste() },
+                onCopy = { listener.onKeypadCopy() },
+                onSelect = { steps, dir -> listener.onKeypadPasteSlide(steps, dir) },
+            ),
+        )
 
         val qwerty = theme.iconKey(context, KeyIcon.KEYBOARD, false, GAP_DP, GAP_DP, 10, "Full keyboard")
         qwerty.setOnClickListener {

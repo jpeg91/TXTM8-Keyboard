@@ -317,6 +317,8 @@ class KeyboardService :
 
     override fun onKeypadCopy() = copySelection()
 
+    override fun onKeypadPasteSlide(steps: Int, startDirection: Int) = selectFromPasteKey(steps, startDirection)
+
     override fun onKeypadSettings() = openSettings()
 
     override fun onKeypadCandidateLong(index: Int) = removeSuggestion(index)
@@ -390,6 +392,8 @@ class KeyboardService :
     override fun onQwertyPaste() = pasteClipboard()
 
     override fun onQwertyCopy() = copySelection()
+
+    override fun onQwertyPasteSlide(steps: Int, startDirection: Int) = selectFromPasteKey(steps, startDirection)
 
     override fun onQwertySettings() = openSettings()
 
@@ -546,7 +550,7 @@ class KeyboardService :
         autoSpace = false
         // With text selected, sliding grows the selection (left or right) instead of moving the cursor.
         if (!ic.getSelectedText(0).isNullOrEmpty()) {
-            if (!moveSelectionEdge(ic, steps, startDirection)) {
+            if (!moveSelectionEdge(ic, steps, startDirection, allowEmpty = false)) {
                 sendShiftArrow(ic, if (steps < 0) KeyEvent.KEYCODE_DPAD_LEFT else KeyEvent.KEYCODE_DPAD_RIGHT, abs(steps))
             }
             return
@@ -561,22 +565,39 @@ class KeyboardService :
 
     /**
      * Moves one end of the selection by [steps] characters (negative = left, positive = right):
-     * the left end when [edge] is negative, the right end otherwise. The selection always keeps at
-     * least one character, so the two ends never cross. Returns false if the editor will not tell
-     * us where its text is.
+     * the left end when [edge] is negative, the right end otherwise. The two ends never cross.
+     * With [allowEmpty] false the selection keeps at least one character, and nothing happens if
+     * there is no selection; with it true a bare cursor counts as an empty selection, so a
+     * selection can start from the cursor and shrink back to it. Returns false if the editor will
+     * not tell us where its text is.
      */
-    private fun moveSelectionEdge(ic: InputConnection, steps: Int, edge: Int): Boolean {
+    private fun moveSelectionEdge(ic: InputConnection, steps: Int, edge: Int, allowEmpty: Boolean): Boolean {
         val extracted = ic.getExtractedText(ExtractedTextRequest(), 0) ?: return false
         val length = extracted.text?.length ?: return false
         var start = min(extracted.selectionStart, extracted.selectionEnd)
         var end = max(extracted.selectionStart, extracted.selectionEnd)
-        if (start == end) return false
-        if (edge < 0) start = (start + steps).coerceIn(0, end - 1) else end = (end + steps).coerceIn(start + 1, length)
+        if (start == end && !allowEmpty) return false
+        val least = if (allowEmpty) 0 else 1
+        if (edge < 0) start = (start + steps).coerceIn(0, end - least) else end = (end + steps).coerceIn(start + least, length)
         ic.setSelection(extracted.startOffset + start, extracted.startOffset + end)
         return true
     }
 
-    /** Hold paste: copies the selected text. */
+    /**
+     * Hold paste and slide: starts a selection from the cursor (or moves an end of the current
+     * one). Sliding left from the start controls the left end, sliding right the right end.
+     */
+    private fun selectFromPasteKey(steps: Int, startDirection: Int) {
+        val ic = currentInputConnection ?: return
+        autoSpace = false
+        spaceTapAt = 0L
+        commitWord() // finish any word in progress: the selection starts at the cursor after it
+        if (!moveSelectionEdge(ic, steps, startDirection, allowEmpty = true)) {
+            sendShiftArrow(ic, if (steps < 0) KeyEvent.KEYCODE_DPAD_LEFT else KeyEvent.KEYCODE_DPAD_RIGHT, abs(steps))
+        }
+    }
+
+    /** Hold paste (and let go): copies the selected text. */
     private fun copySelection() {
         val ic = currentInputConnection ?: return
         val selected = ic.getSelectedText(0)?.toString().orEmpty()

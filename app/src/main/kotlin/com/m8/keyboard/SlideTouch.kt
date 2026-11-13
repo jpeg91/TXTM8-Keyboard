@@ -5,6 +5,7 @@ import android.os.Handler
 import android.os.Looper
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import kotlin.math.abs
 
 /** Distance the finger must travel before a press turns into a slide. */
@@ -146,5 +147,101 @@ class SpaceSlideTouch(
             }
         }
         return false
+    }
+}
+
+/**
+ * Touch handling for the paste key.
+ *
+ *  - Tap: paste.
+ *  - Hold, then let go without moving: copy the selected text.
+ *  - Hold, then slide: start selecting from the cursor. [onSelect] is given the steps just moved
+ *    and which way the slide started (-1 = left, 1 = right), which says which end of the selection
+ *    the slide controls. Sliding back shrinks the selection; letting go leaves it selected.
+ *
+ * Moving a finger away before the hold has registered cancels the press (nothing is pasted).
+ */
+class PasteTouch(
+    private val settings: KeyboardSettings,
+    private val onPaste: () -> Unit,
+    private val onCopy: () -> Unit,
+    private val onSelect: (steps: Int, startDirection: Int) -> Unit,
+) : View.OnTouchListener {
+
+    private val handler = Handler(Looper.getMainLooper())
+    private var view: View? = null
+    private var downX = 0f
+    private var armed = false     // held long enough to count as a hold
+    private var sliding = false
+    private var cancelled = false
+    private var applied = 0
+    private var startDirection = 0
+
+    private val armTask = Runnable {
+        armed = true
+        view?.let { settings.feedback(it, isLong = true) }
+    }
+
+    override fun onTouch(v: View, e: MotionEvent): Boolean {
+        val density = v.resources.displayMetrics.density
+        when (e.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                view = v
+                downX = e.x
+                armed = false
+                sliding = false
+                cancelled = false
+                applied = 0
+                v.isPressed = true
+                settings.feedback(v)
+                handler.removeCallbacks(armTask)
+                handler.postDelayed(armTask, ViewConfiguration.getLongPressTimeout().toLong())
+            }
+            MotionEvent.ACTION_MOVE -> if (settings.slideGestures && !cancelled) {
+                val dx = e.x - downX
+                if (!sliding && abs(dx) > SLIDE_START_DP * density) {
+                    if (armed) {
+                        sliding = true
+                        startDirection = if (dx < 0) -1 else 1
+                        v.parent?.requestDisallowInterceptTouchEvent(true)
+                    } else {
+                        cancelled = true // moved before the hold registered
+                        handler.removeCallbacks(armTask)
+                        v.isPressed = false
+                    }
+                }
+                if (sliding) {
+                    val target = (dx / (settings.slideStepDp() * density)).toInt()
+                    if (target != applied) {
+                        onSelect(target - applied, startDirection)
+                        applied = target
+                        settings.tick(v)
+                    }
+                }
+            }
+            MotionEvent.ACTION_UP -> {
+                handler.removeCallbacks(armTask)
+                v.isPressed = false
+                when {
+                    sliding || cancelled -> {}
+                    armed -> onCopy()
+                    else -> onPaste()
+                }
+                reset()
+            }
+            MotionEvent.ACTION_CANCEL -> {
+                handler.removeCallbacks(armTask)
+                v.isPressed = false
+                reset()
+            }
+        }
+        return true
+    }
+
+    private fun reset() {
+        armed = false
+        sliding = false
+        cancelled = false
+        applied = 0
     }
 }

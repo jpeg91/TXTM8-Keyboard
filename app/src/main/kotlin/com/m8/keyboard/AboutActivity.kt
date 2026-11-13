@@ -137,7 +137,10 @@ class AboutActivity : ThemedScreen() {
         )
         feature(
             root, "Copy and paste",
-            "The clipboard key pastes whatever you last copied. Hold it to copy the selected text.",
+            "The clipboard key pastes whatever you last copied. Hold it and let go to copy the selected text.\n\n" +
+                "Hold it and slide to start selecting from the cursor: slide left to select leftwards, or right to " +
+                "select rightwards, and slide back to shrink the selection. Let go and the text stays selected, " +
+                "ready to copy, paste over or delete. If you slide before the hold registers, nothing happens.",
         )
         feature(
             root, "Slide settings",

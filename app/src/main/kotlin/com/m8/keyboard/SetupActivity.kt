@@ -118,7 +118,7 @@ class SetupActivity : ThemedScreen() {
         root.addView(sectionTitle("Gestures"))
         addToggle(
             root, "Slide gestures", KeyboardSettings.KEY_SLIDE, true,
-            note = "Slide along space to move the cursor, or to adjust a selection. Slide left from backspace to select text, then let go to delete it. Switch off if they trigger by accident.",
+            note = "Slide along space to move the cursor, or to adjust a selection. Slide left from backspace to select text, then let go to delete it. Hold the paste key and slide to select from the cursor. Switch off if they trigger by accident.",
         )
         addChoice(
             root, "Slide speed", KeyboardSettings.KEY_SLIDE_SPEED,
