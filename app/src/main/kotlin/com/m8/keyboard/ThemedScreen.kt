@@ -199,20 +199,20 @@ abstract class ThemedScreen : Activity() {
     }
 
     /**
-     * The twelve accent colours of the P5 theme as a grid of swatches, grouped into primary,
-     * secondary and tertiary. Choosing one rebuilds the screen in that colour.
+     * The twelve accent colours of the P5 theme as a grid of named swatches (primaries, then
+     * secondaries, then tertiaries, in rows). Choosing one rebuilds the screen in that colour.
      */
     protected fun addAccentPicker(parent: LinearLayout) {
         parent.addView(label("P5 accent colour"))
         val selected = p5Accent()
         val groups = listOf(
-            "Primary" to (P5_PRIMARY_START until P5_SECONDARY_START),
-            "Secondary" to (P5_SECONDARY_START until P5_TERTIARY_START),
-            "Tertiary" to (P5_TERTIARY_START until P5_ACCENTS.size),
+            P5_PRIMARY_START until P5_SECONDARY_START,
+            P5_SECONDARY_START until P5_TERTIARY_START,
+            P5_TERTIARY_START until P5_ACCENTS.size,
         )
-        for ((groupName, range) in groups) {
-            parent.addView(hint(groupName.uppercase()).apply { setPadding(0, dp(8), 0, dp(2)) })
-            for (rowIndices in range.toList().chunked(3)) {
+        for ((groupIndex, range) in groups.withIndex()) {
+            // No group labels: the swatches stay in rows by group, with a little more space between groups.
+            for ((rowNumber, rowIndices) in range.toList().chunked(3).withIndex()) {
                 val row = LinearLayout(this)
                 row.orientation = LinearLayout.HORIZONTAL
                 for (index in rowIndices) {
@@ -251,7 +251,12 @@ abstract class ThemedScreen : Activity() {
                         setMargins(dp(4), 0, dp(4), 0)
                     })
                 }
-                parent.addView(row, LinearLayout.LayoutParams(MATCH, WRAP))
+                parent.addView(
+                    row,
+                    LinearLayout.LayoutParams(MATCH, WRAP).apply {
+                        if (groupIndex > 0 && rowNumber == 0) topMargin = dp(8)
+                    },
+                )
             }
         }
     }
