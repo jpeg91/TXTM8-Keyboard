@@ -70,6 +70,7 @@ class NumberPadView(
     init {
         orientation = VERTICAL
         background = pulseBackground
+        if (theme.isGlitter) foreground = GlitterTwinkleDrawable(this, resources.displayMetrics.density, settings.pulseStrength)
         setPadding(0, dp(4), 0, 0) // no side padding: the outer keys reach the screen edge
 
         // --- top bar: QWERTY | candidates | PASTE | ENTER | DEL ---
@@ -228,7 +229,7 @@ class NumberPadView(
                 tv.setTextColor(theme.accentText)
                 tv.background = theme.candidateBackground(density())
             } else {
-                tv.setTextColor(theme.text)
+                tv.setTextColor(if (theme.isGameBoyAdvance) 0xFFFFFFFF.toInt() else theme.text)
             }
             tv.setOnClickListener { listener.onKeypadCandidate(i) }
             tv.setOnLongClickListener {
@@ -284,15 +285,29 @@ class NumberPadView(
         '0' -> twoLine("0", caps("space"))
         '*' -> twoLine("*", caps("next"))
         '#' -> twoLine("#", "")
-        else -> twoLine(k.toString(), KeypadMap.keyLetters.getValue(k).let { if (upperLetters) it.uppercase() else it })
+        else -> twoLine(
+            k.toString(),
+            KeypadMap.keyLetters.getValue(k).let { if (upperLetters) it.uppercase() else it },
+            if (theme.isGameBoyAdvance) gbaLetterColour(k) else null,
+        )
     }
 
-    private fun twoLine(big: String, small: String): CharSequence {
+    private fun twoLine(big: String, small: String, smallColour: Int? = null): CharSequence {
         if (small.isEmpty()) return big
         val s = SpannableString("$big\n$small")
         s.setSpan(RelativeSizeSpan(0.55f), big.length + 1, s.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-        s.setSpan(ForegroundColorSpan(theme.subText), big.length + 1, s.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        s.setSpan(ForegroundColorSpan(smallColour ?: theme.subText), big.length + 1, s.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         return s
+    }
+
+    /** Bright GBA letter legends; yellow is deliberately excluded for contrast. */
+    private fun gbaLetterColour(key: Char): Int = when (key) {
+        '2', '5' -> GBA_PIXEL_COLOURS[0] // pink-red
+        '3', '6' -> GBA_PIXEL_COLOURS[2] // mint
+        '4', '7' -> GBA_PIXEL_COLOURS[3] // blue
+        '8' -> GBA_PIXEL_COLOURS[4] // violet
+        '9' -> GBA_PIXEL_COLOURS[5] // orange
+        else -> GBA_PIXEL_COLOURS[0]
     }
 
     private fun makeKey(

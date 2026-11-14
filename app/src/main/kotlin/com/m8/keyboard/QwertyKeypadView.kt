@@ -53,6 +53,7 @@ class QwertyKeypadView(
     init {
         orientation = VERTICAL
         background = pulseBackground
+        if (theme.isGlitter) foreground = GlitterTwinkleDrawable(this, resources.displayMetrics.density, settings.pulseStrength)
         setPadding(0, dp(4), 0, 0) // no side padding: the outer keys reach the screen edge
         buildPage()
     }
@@ -110,7 +111,8 @@ class QwertyKeypadView(
             val weight = 1f + (if (first) pad else 0f) + (if (last) pad else 0f)
             val leftFrac = if (first) pad / weight else 0f
             val rightFrac = if (last) pad / weight else 0f
-            val key = makeKey(if (isLetter) shown(ch) else ch.toString(), 20f, leftFrac, rightFrac)
+            val keyColour = if (theme.isGameBoyAdvance && isLetter) gbaKeyColour(ch) else null
+            val key = makeKey(if (isLetter) shown(ch) else ch.toString(), 20f, leftFrac, rightFrac, keyColour = keyColour)
             key.setOnClickListener {
                 settings.feedback(it)
                 listener.onQwertyText(ch.toString(), isLetter)
@@ -233,6 +235,14 @@ class QwertyKeypadView(
             this.weight = weight
         }
 
+    /** GBA letter caps use the same vivid pixel palette as the candidate display. */
+    private fun gbaKeyColour(ch: Char): Int = when (ch.lowercaseChar()) {
+        'a' -> GBA_PIXEL_COLOURS[0] // A: red
+        's' -> GBA_PIXEL_COLOURS[1] // S: yellow
+        'd' -> GBA_PIXEL_COLOURS[3] // D: blue
+        else -> GBA_PIXEL_COLOURS[(ch.lowercaseChar() - 'a').coerceAtLeast(0) % GBA_PIXEL_COLOURS.size]
+    }
+
     /**
      * [leftFrac]/[rightFrac] shift the drawn shape inwards for the wide end keys of indented rows;
      * [action] uses the theme's action-key colours (shift, DEL, ENTER).
@@ -243,6 +253,7 @@ class QwertyKeypadView(
         leftFrac: Float = 0f,
         rightFrac: Float = 0f,
         action: Boolean = false,
+        keyColour: Int? = null,
     ): TextView {
         val tv = KeyTextView(context, leftFrac, rightFrac)
         tv.text = label
@@ -250,7 +261,17 @@ class QwertyKeypadView(
         tv.typeface = theme.typeface
         tv.gravity = Gravity.CENTER
         tv.setTextColor(if (action) theme.actionText else theme.text)
-        tv.background = theme.keyBackground(density(), action, GAP_X_DP, GAP_Y_DP, 8, leftFrac, rightFrac)
+        val pressedColour = keyColour?.let { colour ->
+            android.graphics.Color.rgb(
+                (android.graphics.Color.red(colour) * 0.78f).toInt(),
+                (android.graphics.Color.green(colour) * 0.78f).toInt(),
+                (android.graphics.Color.blue(colour) * 0.78f).toInt(),
+            )
+        }
+        tv.background = theme.keyBackground(
+            density(), action, GAP_X_DP, GAP_Y_DP, 8, leftFrac, rightFrac,
+            keyColor = keyColour, pressedKeyColor = pressedColour,
+        )
         return tv
     }
 }

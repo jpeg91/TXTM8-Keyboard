@@ -62,6 +62,7 @@ class EmojiKeyboardView(
     init {
         orientation = VERTICAL
         background = pulseBackground
+        if (theme.isGlitter) foreground = GlitterTwinkleDrawable(this, resources.displayMetrics.density, settings.pulseStrength)
         addView(topBar(), LinearLayout.LayoutParams(MATCH, rowPx))
 
         val content = LinearLayout(context)

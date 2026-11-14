@@ -16,10 +16,10 @@ import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.InsetDrawable
 import android.graphics.drawable.StateListDrawable
-import android.os.Handler
-import android.os.Looper
 import android.os.SystemClock
 import android.view.View
+import android.view.ViewGroup
+import kotlin.random.Random
 
 /**
  * One slanted key: a parallelogram (top edge pushed right, bottom edge left) with a white
@@ -146,16 +146,23 @@ class NokiaKeyDrawable(
     override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
 }
 
+/** Shared bright pixel colours used by the Game Boy Advance theme. */
+internal val GBA_PIXEL_COLOURS = intArrayOf(
+    0xFFFF6B8A.toInt(), // pink-red
+    0xFFFFD45C.toInt(), // yellow
+    0xFF65D6C4.toInt(), // mint
+    0xFF78A7FF.toInt(), // blue
+    0xFFC58BFF.toInt(), // violet
+    0xFFFFA45C.toInt(), // orange
+)
+
 /** Small block-colour pixel pattern used behind the Game Boy Advance candidate strip. */
 class PixelScreenDrawable(
     private val base: Int,
     private val density: Float,
 ) : Drawable() {
     private val paint = Paint().apply { isAntiAlias = false }
-    private val pixels = intArrayOf(
-        0xFFFF6B8A.toInt(), 0xFFFFD45C.toInt(), 0xFF65D6C4.toInt(),
-        0xFF78A7FF.toInt(), 0xFFC58BFF.toInt(), 0xFFFFA45C.toInt(),
-    )
+    private val pixels = GBA_PIXEL_COLOURS
 
     override fun draw(canvas: Canvas) {
         val b = bounds
@@ -439,93 +446,172 @@ class GlitterPatternDrawable(
     override fun getOpacity(): Int = PixelFormat.OPAQUE
 }
 
-/**
- * A short burst of pixel sparkles after a key press. Frames are deliberately stepped at about
- * nine frames per second rather than following the display refresh rate. Nothing animates while
- * idle, and the existing typing-pulse setting controls whether the effect is enabled.
- */
+/** The keyboard's optional typing pulse interface. */
 interface KeyboardPulseEffect {
     fun pulse()
 }
 
+/**
+ * Glitter theme background. The old fixed-position pulse has been retired; the random twinkles
+ * now live in a foreground drawable so they appear over the keycaps instead of behind them.
+ */
 class GlitterPulseBackground(
     private val base: Drawable,
-    private val strength: Float,
-    private val density: Float,
+    @Suppress("unused") private val strength: Float,
+    @Suppress("unused") private val density: Float,
 ) : Drawable(), KeyboardPulseEffect {
-    private val paint = Paint().apply { isAntiAlias = false }
-    private var startedAt = 0L
-    private var running = false
-    private var frame = 0
-    private val frameHandler = Handler(Looper.getMainLooper())
-    private val frameCallback = Runnable {
-        if (running) invalidateSelf()
-    }
-    private val colours = intArrayOf(
+    override fun onBoundsChange(bounds: Rect) { base.bounds = bounds }
+    override fun draw(canvas: Canvas) = base.draw(canvas)
+    override fun pulse() = Unit
+    override fun setAlpha(alpha: Int) { base.alpha = alpha }
+    override fun setColorFilter(colorFilter: ColorFilter?) { base.colorFilter = colorFilter }
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun getOpacity(): Int = base.opacity
+}
+
+/**
+ * Random, low-frame-rate star flashes drawn as a view foreground, above the keys and their labels.
+ * Each flash chooses a fresh clickable key corner, size, colour and lifetime. A new set is not
+ * replayed: stars are continuously spawned and expire independently.
+ */
+class GlitterTwinkleDrawable(
+    private val host: ViewGroup,
+    private val density: Float,
+    private val strength: Float = 1f,
+    private val colours: IntArray = intArrayOf(
         0xFFFFFFFF.toInt(), 0xFFFFE76A.toInt(), 0xFFFFC7E8.toInt(), 0xFFFF79C6.toInt(),
-    )
-    private val positions = arrayOf(
-        0.08f to 0.22f, 0.22f to 0.48f, 0.39f to 0.16f, 0.55f to 0.68f,
-        0.72f to 0.28f, 0.88f to 0.53f, 0.94f to 0.15f, 0.13f to 0.78f,
-        0.34f to 0.88f, 0.67f to 0.86f, 0.82f to 0.72f,
+    ),
+) : Drawable() {
+    private data class Twinkle(
+        val key: View,
+        val corner: Int,
+        val bornFrame: Int,
+        val lifetime: Int,
+        val radius: Float,
+        val colour: Int,
     )
 
-    override fun onBoundsChange(bounds: Rect) { base.bounds = bounds }
+    private val random = Random(System.nanoTime())
+    private val paint = Paint().apply { isAntiAlias = false; style = Paint.Style.FILL }
+    private val path = Path()
+    private val twinkles = ArrayList<Twinkle>()
+    private var frame = 0
+    private var running = false
+    private val frameTask = Runnable { invalidateSelf() }
+    private val attachListener = object : View.OnAttachStateChangeListener {
+        override fun onViewAttachedToWindow(v: View) { start() }
+        override fun onViewDetachedFromWindow(v: View) { stop() }
+    }
+
+    init {
+        host.addOnAttachStateChangeListener(attachListener)
+        if (host.isAttachedToWindow) start()
+    }
+
+    fun start() {
+        if (running || strength <= 0f) return
+        running = true
+        scheduleSelf(frameTask, android.os.SystemClock.uptimeMillis() + FRAME_MS)
+    }
+
+    fun stop() {
+        running = false
+        unscheduleSelf(frameTask)
+    }
 
     override fun draw(canvas: Canvas) {
-        base.draw(canvas)
-        if (!running || strength <= 0f) return
-        val elapsed = (SystemClock.uptimeMillis() - startedAt).coerceAtLeast(0L)
-        frame = (elapsed / FRAME_MS).toInt()
-        if (frame >= FRAME_COUNT) {
-            running = false
-            frameHandler.removeCallbacks(frameCallback)
-            return
-        }
+        if (!running || strength <= 0f || colours.isEmpty()) return
+        frame++
+        val keys = clickableLeaves(host)
+        twinkles.removeAll { frame - it.bornFrame >= it.lifetime || !it.key.isShown }
 
-        val b = bounds
-        val pixel = maxOf(2f * density, 2f)
-        positions.forEachIndexed { index, pos ->
-            val phase = (frame + index * 2) % FRAME_COUNT
-            if (phase == 0 || phase == 3 || phase == 5) {
-                val alpha = (255f * strength * when (phase) {
-                    0 -> 0.95f
-                    3 -> 0.65f
-                    else -> 0.35f
-                }).toInt().coerceIn(0, 255)
-                paint.color = colours[(index + frame) % colours.size]
-                paint.alpha = alpha
-                val cx = b.left + b.width() * pos.first
-                val cy = b.top + b.height() * pos.second
-                // Four-point sparkle made from square pixels, never a smooth vector star.
-                canvas.drawRect(cx - pixel / 2, cy - pixel * 1.5f, cx + pixel / 2, cy + pixel * 1.5f, paint)
-                canvas.drawRect(cx - pixel * 1.5f, cy - pixel / 2, cx + pixel * 1.5f, cy + pixel / 2, paint)
-                if (phase == 0) canvas.drawRect(cx - pixel / 2, cy - pixel / 2, cx + pixel / 2, cy + pixel / 2, paint)
+        // Spawn in small irregular bursts. The lifetime and position are independent per star.
+        if (keys.isNotEmpty() && random.nextFloat() < 0.82f) {
+            val count = if (random.nextFloat() < 0.24f) 2 else 1
+            repeat(count) {
+                val key = keys[random.nextInt(keys.size)]
+                twinkles.add(
+                    Twinkle(
+                        key = key,
+                        corner = random.nextInt(4),
+                        bornFrame = frame,
+                        lifetime = random.nextInt(6, 10),
+                        radius = random.nextFloat() * 7f * density + 12f * density,
+                        colour = colours[random.nextInt(colours.size)],
+                    ),
+                )
             }
         }
+
+        val hostLocation = IntArray(2)
+        host.getLocationOnScreen(hostLocation)
+        for (twinkle in twinkles) {
+            val key = twinkle.key
+            if (key.width <= 0 || key.height <= 0 || !key.isShown) continue
+            val location = IntArray(2)
+            key.getLocationOnScreen(location)
+            val inset = 3f * density
+            val x = when (twinkle.corner) {
+                0, 2 -> location[0] - hostLocation[0] + inset
+                else -> location[0] - hostLocation[0] + key.width - inset
+            }
+            val y = when (twinkle.corner) {
+                0, 1 -> location[1] - hostLocation[1] + inset
+                else -> location[1] - hostLocation[1] + key.height - inset
+            }
+            val age = frame - twinkle.bornFrame
+            val fadeAlpha = when (age) {
+                0 -> 145
+                1 -> 255 // fast appearance
+                else -> (255f * (1f - (age - 1f) / (twinkle.lifetime - 1f))).toInt().coerceIn(0, 255)
+            }
+            val alpha = (fadeAlpha * (0.72f + strength.coerceIn(0f, 1f) * 0.28f)).toInt()
+            if (alpha <= 0) continue
+            paint.color = twinkle.colour
+            paint.alpha = alpha
+            drawStar(canvas, x, y, twinkle.radius, paint)
+        }
         paint.alpha = 255
-        frameHandler.removeCallbacks(frameCallback)
-        frameHandler.postDelayed(frameCallback, FRAME_MS)
+        scheduleSelf(frameTask, android.os.SystemClock.uptimeMillis() + FRAME_MS)
     }
 
-    override fun pulse() {
-        if (strength <= 0f) return
-        frameHandler.removeCallbacks(frameCallback)
-        startedAt = SystemClock.uptimeMillis()
-        frame = 0
-        running = true
-        invalidateSelf()
+    private fun clickableLeaves(parent: ViewGroup): List<View> {
+        val found = ArrayList<View>()
+        fun visit(view: View) {
+            if (view is ViewGroup) {
+                for (i in 0 until view.childCount) visit(view.getChildAt(i))
+            } else if (view.hasOnClickListeners() && view.width > 0 && view.height > 0 && view.isShown) {
+                found.add(view)
+            }
+        }
+        visit(parent)
+        return found
     }
 
-    override fun setAlpha(alpha: Int) {}
-    override fun setColorFilter(colorFilter: ColorFilter?) {}
+    private fun drawStar(canvas: Canvas, cx: Float, cy: Float, radius: Float, paint: Paint) {
+        path.reset()
+        // Four long points with four short shoulders make a sharp, classic twinkle.
+        for (i in 0 until 8) {
+            val angle = -Math.PI / 2.0 + i * Math.PI / 4.0
+            val r = if (i % 2 == 0) radius else radius * 0.19f
+            val x = cx + kotlin.math.cos(angle).toFloat() * r
+            val y = cy + kotlin.math.sin(angle).toFloat() * r
+            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+        path.close()
+        canvas.drawPath(path, paint)
+        // A tiny bright centre gives the flash a glassy, glittering point.
+        paint.alpha = (paint.alpha * 0.9f).toInt()
+        canvas.drawRect(cx - 1.5f * density, cy - 1.5f * density, cx + 1.5f * density, cy + 1.5f * density, paint)
+    }
+
+    override fun onBoundsChange(bounds: Rect) = Unit
+    override fun setAlpha(alpha: Int) { paint.alpha = alpha }
+    override fun setColorFilter(colorFilter: ColorFilter?) { paint.colorFilter = colorFilter }
     @Suppress("OVERRIDE_DEPRECATION")
-    override fun getOpacity(): Int = PixelFormat.OPAQUE
+    override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
 
-    private companion object {
-        const val FRAME_MS = 110L
-        const val FRAME_COUNT = 7
-    }
+    private companion object { const val FRAME_MS = 125L }
 }
 
 /** The keyboard's background for this theme (plain colour, or the pinstriped backdrop). */
@@ -630,9 +716,11 @@ fun KeyboardTheme.keyBackground(
     cornerDp: Int,
     leftFrac: Float = 0f,
     rightFrac: Float = 0f,
+    keyColor: Int? = null,
+    pressedKeyColor: Int? = null,
 ): Drawable {
-    val normal = if (action) actionKey else key
-    val pressed = if (action) actionKeyPressed else keyPressed
+    val normal = keyColor ?: if (action) actionKey else key
+    val pressed = pressedKeyColor ?: if (action) actionKeyPressed else keyPressed
 
     fun layer(color: Int): Drawable {
         if (isGlitter || isGameBoy) {
@@ -647,10 +735,7 @@ fun KeyboardTheme.keyBackground(
                 insetX = gapXDp * density,
                 insetY = gapYDp * density,
                 density = density,
-                pixelColors = if (isGameBoyAdvance) intArrayOf(
-                    0xFFFF6B8A.toInt(), 0xFFFFD45C.toInt(), 0xFF65D6C4.toInt(),
-                    0xFF78A7FF.toInt(), 0xFFC58BFF.toInt(), 0xFFFFA45C.toInt(),
-                ) else null,
+                pixelColors = if (isGameBoyAdvance) GBA_PIXEL_COLOURS else null,
             )
         }
         if (isNokia) {
