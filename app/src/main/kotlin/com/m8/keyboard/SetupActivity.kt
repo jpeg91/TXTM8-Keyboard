@@ -67,10 +67,9 @@ class SetupActivity : ThemedScreen() {
         root.addView(sectionTitle("Look"))
         addChoice(
             root, "Theme", KeyboardSettings.KEY_THEME,
-            listOf("Red", "Purple", "Nokia 3310", "Game Boy", "Game Boy Advance", "Glitter Graphics", "Follow system", "Dark", "Light"),
+            listOf("P5", "Nokia 3310", "Game Boy", "Game Boy Advance", "Glitter Graphics", "Follow system", "Dark", "Light"),
             listOf(
-                KeyboardSettings.THEME_RED,
-                KeyboardSettings.THEME_PURPLE,
+                KeyboardSettings.THEME_P5,
                 KeyboardSettings.THEME_NOKIA,
                 KeyboardSettings.THEME_GAME_BOY,
                 KeyboardSettings.THEME_GAME_BOY_ADVANCE,
@@ -79,9 +78,13 @@ class SetupActivity : ThemedScreen() {
                 KeyboardSettings.THEME_DARK,
                 KeyboardSettings.THEME_LIGHT,
             ),
-            KeyboardSettings.THEME_RED,
+            KeyboardSettings.THEME_P5,
             recreateOnChange = true, // so this screen picks up the new accent
         )
+        // The P5 theme's accent colour: red, yellow, blue, purple, green, orange and six in-betweens.
+        if (prefs.getInt(KeyboardSettings.KEY_THEME, KeyboardSettings.THEME_P5) == KeyboardSettings.THEME_P5) {
+            addAccentPicker(root)
+        }
         addChoice(
             root, "Key size", KeyboardSettings.KEY_SIZE,
             listOf("Small", "Medium", "Large"), listOf(0, 1, 2), 1,

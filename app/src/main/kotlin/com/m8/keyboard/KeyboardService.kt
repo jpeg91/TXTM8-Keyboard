@@ -98,7 +98,7 @@ class KeyboardService :
         super.onCreate()
         store = UserDataStore(this)
         settings = KeyboardSettings.load(this)
-        kbTheme = KeyboardTheme.resolve(this, settings.theme)
+        kbTheme = KeyboardTheme.resolve(this, settings.theme, settings.p5Accent)
         clearToken = getSharedPreferences(KeyboardSettings.PREFS, MODE_PRIVATE)
             .getLong(KeyboardSettings.KEY_CLEAR_TOKEN, 0L)
         loadEngine()
@@ -209,7 +209,7 @@ class KeyboardService :
 
     private fun reloadSettings() {
         val s = KeyboardSettings.load(this)
-        val th = KeyboardTheme.resolve(this, s.theme)
+        val th = KeyboardTheme.resolve(this, s.theme, s.p5Accent)
         if (s != settings || th !== kbTheme) {
             settings = s
             kbTheme = th

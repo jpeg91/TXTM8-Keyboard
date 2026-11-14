@@ -171,7 +171,10 @@ class AboutActivity : ThemedScreen() {
         root.addView(sectionTitle("Look and feel"))
         feature(
             root, "Themes",
-            "Choose a theme, or follow the system's light and dark mode. Key size can be small, medium or large.",
+            "Choose a theme, or follow the system's light and dark mode. The P5 theme is bold black and white " +
+                "with one bright accent colour, and you pick the accent from twelve: the primaries (red, yellow, " +
+                "blue), the secondaries (purple, green, orange) and six tertiary colours in between. Key size can " +
+                "be small, medium or large.",
         )
         feature(
             root, "Typing pulse",

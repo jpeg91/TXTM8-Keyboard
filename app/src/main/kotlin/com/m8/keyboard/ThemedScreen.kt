@@ -4,6 +4,7 @@ package com.m8.keyboard
 import android.app.Activity
 import android.content.res.ColorStateList
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
@@ -31,10 +32,15 @@ abstract class ThemedScreen : Activity() {
 
     protected fun dp(v: Int): Int = (v * density).toInt()
 
+    /** The chosen accent colour for the P5 theme (an index into [P5_ACCENTS]). */
+    protected fun p5Accent(): Int =
+        prefs.getInt(KeyboardSettings.KEY_P5_ACCENT, KeyboardSettings.P5_ACCENT_RED).coerceIn(0, P5_ACCENTS.lastIndex)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val chosen = prefs.getInt(KeyboardSettings.KEY_THEME, KeyboardSettings.THEME_RED)
-        look = KeyboardTheme.resolve(this, chosen)
+        KeyboardSettings.migrateThemes(prefs)
+        val chosen = prefs.getInt(KeyboardSettings.KEY_THEME, KeyboardSettings.THEME_P5)
+        look = KeyboardTheme.resolve(this, chosen, p5Accent())
         window.statusBarColor = look.background
         window.navigationBarColor = look.background
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
@@ -94,7 +100,7 @@ abstract class ThemedScreen : Activity() {
         tv.text = text.uppercase()
         tv.textSize = 17f
         tv.typeface = look.typeface
-        tv.setTextColor(look.text)
+        tv.setTextColor(look.accentText) // the banner is filled with the accent colour
         tv.setPadding(dp(20), dp(5), dp(24), dp(9))
         tv.background = SlantKeyDrawable(
             fill = look.accent,
@@ -135,7 +141,7 @@ abstract class ThemedScreen : Activity() {
         tv.textSize = 15f
         tv.typeface = look.typeface
         tv.gravity = Gravity.CENTER
-        tv.setTextColor(look.text)
+        tv.setTextColor(if (action) look.actionText else look.text)
         tv.minHeight = dp(58)
         tv.setPadding(dp(16), 0, dp(16), 0)
         tv.background = look.keyBackground(density, action, 4, 4, 10)
@@ -189,6 +195,64 @@ abstract class ThemedScreen : Activity() {
                 if (recreateOnChange) recreate()
             }
             parent.addView(row)
+        }
+    }
+
+    /**
+     * The twelve accent colours of the P5 theme as a grid of swatches, grouped into primary,
+     * secondary and tertiary. Choosing one rebuilds the screen in that colour.
+     */
+    protected fun addAccentPicker(parent: LinearLayout) {
+        parent.addView(label("P5 accent colour"))
+        val selected = p5Accent()
+        val groups = listOf(
+            "Primary" to (P5_PRIMARY_START until P5_SECONDARY_START),
+            "Secondary" to (P5_SECONDARY_START until P5_TERTIARY_START),
+            "Tertiary" to (P5_TERTIARY_START until P5_ACCENTS.size),
+        )
+        for ((groupName, range) in groups) {
+            parent.addView(hint(groupName.uppercase()).apply { setPadding(0, dp(8), 0, dp(2)) })
+            for (rowIndices in range.toList().chunked(3)) {
+                val row = LinearLayout(this)
+                row.orientation = LinearLayout.HORIZONTAL
+                for (index in rowIndices) {
+                    val accent = P5_ACCENTS[index]
+                    val cell = LinearLayout(this)
+                    cell.orientation = LinearLayout.VERTICAL
+                    cell.gravity = Gravity.CENTER_HORIZONTAL
+
+                    val swatch = View(this)
+                    val chip = GradientDrawable()
+                    chip.setColor(accent.main)
+                    chip.cornerRadius = dp(4).toFloat()
+                    if (index == selected) {
+                        chip.setStroke(dp(3), 0xFFFFFFFF.toInt())
+                    } else {
+                        chip.setStroke(dp(1), 0xFF727272.toInt())
+                    }
+                    swatch.background = chip
+                    cell.addView(swatch, LinearLayout.LayoutParams(MATCH, dp(40)))
+
+                    val caption = TextView(this)
+                    caption.text = accent.name
+                    caption.textSize = 12f
+                    caption.gravity = Gravity.CENTER
+                    caption.setTextColor(if (index == selected) look.text else look.subText)
+                    if (index == selected) caption.typeface = Typeface.DEFAULT_BOLD
+                    caption.setPadding(0, dp(3), 0, dp(6))
+                    cell.addView(caption, LinearLayout.LayoutParams(MATCH, WRAP))
+
+                    cell.setOnClickListener {
+                        prefs.edit().putInt(KeyboardSettings.KEY_P5_ACCENT, index).apply()
+                        recreate()
+                    }
+                    row.addView(cell, LinearLayout.LayoutParams(0, WRAP).apply {
+                        weight = 1f
+                        setMargins(dp(4), 0, dp(4), 0)
+                    })
+                }
+                parent.addView(row, LinearLayout.LayoutParams(MATCH, WRAP))
+            }
         }
     }
 

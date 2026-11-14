@@ -2,13 +2,15 @@
 package com.m8.keyboard
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.media.AudioManager
 import android.view.HapticFeedbackConstants
 import android.view.View
 
 /** User-adjustable options, stored in SharedPreferences by [SetupActivity]. */
 data class KeyboardSettings(
-    val theme: Int = THEME_RED,
+    val theme: Int = THEME_P5,
+    val p5Accent: Int = P5_ACCENT_RED,
     val keySize: Int = 1,
     val multiTapMs: Int = 800,
     val haptic: Boolean = true,
@@ -55,23 +57,43 @@ data class KeyboardSettings(
         const val KEY_SLIDE = "slide_gestures"
         const val KEY_SLIDE_SPEED = "slide_speed"
         const val KEY_CLEAR_TOKEN = "clear_token"
+        const val KEY_P5_ACCENT = "p5_accent"
 
         const val THEME_SYSTEM = 0
         const val THEME_DARK = 1
         const val THEME_LIGHT = 2
-        const val THEME_RED = 3
-        const val THEME_PURPLE = 4
+        const val THEME_P5 = 3 // was the red theme: its accent colour is now chosen separately
+        /** Was the purple theme, now the P5 theme with the purple accent. */
+        const val THEME_RETIRED_PURPLE = 4
         const val THEME_NOKIA = 5
-        /** Was the Motorola RAZR theme, which has been removed: anyone who had it gets the red theme. */
+        /** Was the Motorola RAZR theme, which has been removed: anyone who had it gets the P5 theme. */
         const val THEME_RETIRED_RAZR = 6
         const val THEME_GAME_BOY = 7
         const val THEME_GAME_BOY_ADVANCE = 8
         const val THEME_GLITTER = 9
 
+        /** Index in [P5_ACCENTS] of the original red (the default) and of the purple. */
+        const val P5_ACCENT_RED = 0
+        const val P5_ACCENT_PURPLE = 3
+
+        /**
+         * Moves anyone on a theme that no longer exists to its replacement: the purple theme
+         * becomes P5 with the purple accent, and the removed RAZR theme becomes P5.
+         */
+        fun migrateThemes(p: SharedPreferences) {
+            val stored = p.getInt(KEY_THEME, THEME_P5)
+            if (stored != THEME_RETIRED_PURPLE && stored != THEME_RETIRED_RAZR) return
+            val edit = p.edit().putInt(KEY_THEME, THEME_P5)
+            if (stored == THEME_RETIRED_PURPLE) edit.putInt(KEY_P5_ACCENT, P5_ACCENT_PURPLE)
+            edit.apply()
+        }
+
         fun load(context: Context): KeyboardSettings {
             val p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            migrateThemes(p)
             return KeyboardSettings(
-                theme = p.getInt(KEY_THEME, THEME_RED),
+                theme = p.getInt(KEY_THEME, THEME_P5),
+                p5Accent = p.getInt(KEY_P5_ACCENT, P5_ACCENT_RED).coerceIn(0, P5_ACCENTS.lastIndex),
                 keySize = p.getInt(KEY_SIZE, 1),
                 multiTapMs = p.getInt(KEY_TIMEOUT, 800),
                 haptic = p.getBoolean(KEY_HAPTIC, true),

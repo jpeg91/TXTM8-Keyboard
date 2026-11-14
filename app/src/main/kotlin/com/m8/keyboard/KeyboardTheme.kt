@@ -8,7 +8,7 @@ import android.graphics.Typeface
 import android.os.Build
 
 /**
- * Colours (and, for the red and purple themes, shapes and type) for the keyboard views.
+ * Colours (and, for the P5 theme, shapes and type) for the keyboard views.
  * "Action" keys (DEL, ENTER, shift) can be drawn differently from ordinary keys.
  */
 class KeyboardTheme(
@@ -55,35 +55,34 @@ class KeyboardTheme(
         )
 
         /**
-         * The bold look shared by the red and purple themes: black, white outlines, a strong
-         * accent, slanted keys with a dark-accent drop shadow and heavy italic type. The three
-         * accent shades are the main colour, a brighter one (pressed action keys) and a deep one
-         * (shadows and corner wedges).
+         * The P5 theme: black, white outlines, one strong accent colour, slanted keys with a
+         * dark-accent drop shadow and heavy italic type. One theme per entry in [P5_ACCENTS], built
+         * once so the keyboard can tell whether the theme has changed by identity.
          */
-        private fun accented(red: Int, redBright: Int, redDeep: Int) = KeyboardTheme(
-            background = 0xFF080808.toInt(),        // near black
-            strip = Color.TRANSPARENT,              // candidates sit on the pinstriped backdrop
-            key = 0xFF151515.toInt(),               // ink
-            keyPressed = red,
-            text = 0xFFFFFFFF.toInt(),              // white
-            accent = red,
-            accentText = 0xFFFFFFFF.toInt(),
-            actionKey = red,
-            actionKeyPressed = redBright,
-            actionText = 0xFFFFFFFF.toInt(),
-            subText = 0xFFC4C4C4.toInt(),           // light grey
-            isSlanted = true,
-            border = 0xFFFFFFFF.toInt(),
-            shadow = redDeep,
-            deep = redDeep,
-            typeface = heavyItalic(),
-        )
+        private val P5_THEMES: List<KeyboardTheme> = P5_ACCENTS.map { accent ->
+            val onAccent = if (accent.darkText) 0xFF111111.toInt() else 0xFFFFFFFF.toInt()
+            KeyboardTheme(
+                background = 0xFF080808.toInt(),        // near black
+                strip = Color.TRANSPARENT,              // candidates sit on the pinstriped backdrop
+                key = 0xFF151515.toInt(),               // ink
+                keyPressed = accent.main,
+                text = 0xFFFFFFFF.toInt(),              // white
+                accent = accent.main,
+                accentText = onAccent,
+                actionKey = accent.main,
+                actionKeyPressed = accent.bright,
+                actionText = onAccent,
+                subText = 0xFFC4C4C4.toInt(),           // light grey
+                isSlanted = true,
+                border = 0xFFFFFFFF.toInt(),
+                shadow = accent.deep,
+                deep = accent.deep,
+                typeface = heavyItalic(),
+            )
+        }
 
-        /** The red theme. */
-        val RED = accented(0xFFE60012.toInt(), 0xFFFF4553.toInt(), 0xFF7A000B.toInt())
-
-        /** The purple theme: the same look with purple in place of red. */
-        val PURPLE = accented(0xFF755FBE.toInt(), 0xFFA897EC.toInt(), 0xFF3A2E6B.toInt())
+        /** The P5 theme in the accent colour at [accentIndex] of [P5_ACCENTS]. */
+        fun p5(accentIndex: Int): KeyboardTheme = P5_THEMES[accentIndex.coerceIn(0, P5_THEMES.lastIndex)]
 
         /** Original 3310-inspired blue-grey shell and soft green LCD. */
         val NOKIA = KeyboardTheme(
@@ -171,12 +170,13 @@ class KeyboardTheme(
                 Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD_ITALIC)
             }
 
-        fun resolve(context: Context, setting: Int): KeyboardTheme {
+        /** The theme for the [setting] (see [KeyboardSettings]); [p5Accent] only matters for the P5 theme. */
+        fun resolve(context: Context, setting: Int, p5Accent: Int = 0): KeyboardTheme {
             val night = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
                 Configuration.UI_MODE_NIGHT_YES
             return when (setting) {
-                KeyboardSettings.THEME_RED, KeyboardSettings.THEME_RETIRED_RAZR -> RED
-                KeyboardSettings.THEME_PURPLE -> PURPLE
+                KeyboardSettings.THEME_P5, KeyboardSettings.THEME_RETIRED_PURPLE, KeyboardSettings.THEME_RETIRED_RAZR ->
+                    p5(p5Accent)
                 KeyboardSettings.THEME_NOKIA -> NOKIA
                 KeyboardSettings.THEME_GAME_BOY -> GAME_BOY
                 KeyboardSettings.THEME_GAME_BOY_ADVANCE -> GAME_BOY_ADVANCE
@@ -188,3 +188,41 @@ class KeyboardTheme(
         }
     }
 }
+
+/** One selectable accent colour for the P5 theme: the main colour, a brighter one (pressed action keys) and a deep one (shadows). */
+class P5Accent(
+    val name: String,
+    val main: Int,
+    val bright: Int,
+    val deep: Int,
+    /** True for light colours, which need dark text and icons on top. */
+    val darkText: Boolean = false,
+)
+
+/** Where each group of accents starts in [P5_ACCENTS]: primary 0-2, secondary 3-5, tertiary 6-11. */
+const val P5_PRIMARY_START = 0
+const val P5_SECONDARY_START = 3
+const val P5_TERTIARY_START = 6
+
+/**
+ * The twelve colours of the red-yellow-blue colour wheel: the three primaries, the three
+ * secondaries (what you get mixing two primaries) and the six tertiaries (a primary mixed with the
+ * secondary next to it). The first is the original red of the theme.
+ */
+val P5_ACCENTS: List<P5Accent> = listOf(
+    // primary
+    P5Accent("Red", 0xFFE60012.toInt(), 0xFFFF4553.toInt(), 0xFF7A000B.toInt()),
+    P5Accent("Yellow", 0xFFFFD400.toInt(), 0xFFFFE766.toInt(), 0xFF7A6500.toInt(), darkText = true),
+    P5Accent("Blue", 0xFF0057D9.toInt(), 0xFF4F8EFF.toInt(), 0xFF002D73.toInt()),
+    // secondary
+    P5Accent("Purple", 0xFF755FBE.toInt(), 0xFFA897EC.toInt(), 0xFF3A2E6B.toInt()),
+    P5Accent("Green", 0xFF12A53A.toInt(), 0xFF4CD86F.toInt(), 0xFF06501B.toInt()),
+    P5Accent("Orange", 0xFFFF7A00.toInt(), 0xFFFFA040.toInt(), 0xFF7A3A00.toInt(), darkText = true),
+    // tertiary
+    P5Accent("Red-orange", 0xFFF2380F.toInt(), 0xFFFF6F4D.toInt(), 0xFF7C1A05.toInt()),
+    P5Accent("Yellow-orange", 0xFFFFAE00.toInt(), 0xFFFFCB4D.toInt(), 0xFF7A5200.toInt(), darkText = true),
+    P5Accent("Yellow-green", 0xFF9ACD1F.toInt(), 0xFFC2EB5C.toInt(), 0xFF4A6410.toInt(), darkText = true),
+    P5Accent("Blue-green", 0xFF00A19B.toInt(), 0xFF3DD6CF.toInt(), 0xFF004F4B.toInt()),
+    P5Accent("Blue-purple", 0xFF4B3FD6.toInt(), 0xFF8077F5.toInt(), 0xFF241C7A.toInt()),
+    P5Accent("Red-purple", 0xFFD6178F.toInt(), 0xFFFF59BF.toInt(), 0xFF6B0A48.toInt()),
+)
