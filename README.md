@@ -1,6 +1,6 @@
 # TXTM8 Keyboard
 
-An Android keyboard for the old way of typing on phones: a number pad with predictive text, one press per letter.
+An Android keyboard for the old and more efficient way of typing on a phone: a number pad with T9 style predictive text
 
 Press each number once for the letter you want. The keyboard works out the word, learns which words you use, and gets better at putting them first.
 
@@ -8,7 +8,7 @@ You can also switch to multi-tap, where repeated presses cycle through the lette
 
 The predictive engine starts with a 40,000-word English dictionary, ranked by frequency. It also learns from your typing, including which words tend to follow each other.
 
-There are several themes to choose from, including a Nokia 3310-inspired theme.
+There are several themes to choose from, including a Nokia 3310-inspired theme, as well as lots of quality of life and usability features.
 
 Everything runs locally. There is no internet permission, and anything the keyboard learns stays on your phone.
 
