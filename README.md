@@ -36,6 +36,8 @@ The letter is entered when you press another key or the timeout expires. Words t
 
 Words you choose more often gradually move up the suggestions list.
 
+Type out a new word not yet in the dictionary using Multi-tap, and the word will be automatically added to the predictive dictionary for next time.
+
 It also remembers which words tend to follow each other. After a space, the suggestion strip can offer likely next words based on what you've typed before.
 
 You can remove suggestions by holding them. Removed words stay out of the list, even after restarting the keyboard.
