@@ -16,6 +16,8 @@ import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.InsetDrawable
 import android.graphics.drawable.StateListDrawable
+import android.os.Handler
+import android.os.Looper
 import android.os.SystemClock
 import android.view.View
 
@@ -428,7 +430,10 @@ class GlitterPulseBackground(
     private var startedAt = 0L
     private var running = false
     private var frame = 0
-    private val frameCallback = Runnable { invalidateSelf() }
+    private val frameHandler = Handler(Looper.getMainLooper())
+    private val frameCallback = Runnable {
+        if (running) invalidateSelf()
+    }
     private val colours = intArrayOf(
         0xFFFFFFFF.toInt(), 0xFFFFE76A.toInt(), 0xFFFFC7E8.toInt(), 0xFFFF79C6.toInt(),
     )
@@ -447,7 +452,7 @@ class GlitterPulseBackground(
         frame = (elapsed / FRAME_MS).toInt()
         if (frame >= FRAME_COUNT) {
             running = false
-            unscheduleSelf(frameCallback)
+            frameHandler.removeCallbacks(frameCallback)
             return
         }
 
@@ -472,13 +477,13 @@ class GlitterPulseBackground(
             }
         }
         paint.alpha = 255
-        unscheduleSelf(frameCallback)
-        scheduleSelf(frameCallback, SystemClock.uptimeMillis() + FRAME_MS)
+        frameHandler.removeCallbacks(frameCallback)
+        frameHandler.postDelayed(frameCallback, FRAME_MS)
     }
 
     override fun pulse() {
         if (strength <= 0f) return
-        unscheduleSelf(frameCallback)
+        frameHandler.removeCallbacks(frameCallback)
         startedAt = SystemClock.uptimeMillis()
         frame = 0
         running = true
@@ -603,11 +608,11 @@ fun KeyboardTheme.keyBackground(
     val pressed = if (action) actionKeyPressed else keyPressed
 
     fun layer(color: Int): Drawable {
-        if (isGlitter) {
+        if (isGlitter || isGameBoy) {
             return PixelGlitterKeyDrawable(
                 fill = color,
                 shadow = this.shadow,
-                border = 0xFFFFE2F2.toInt(),
+                border = if (isGlitter) 0xFFFFE2F2.toInt() else this.shadow,
                 insetX = gapXDp * density,
                 insetY = gapYDp * density,
                 density = density,

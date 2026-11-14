@@ -29,6 +29,7 @@ class KeyboardTheme(
     val deep: Int = 0,
     val isNokia: Boolean = false,
     val isGameBoyAdvance: Boolean = false,
+    val isGameBoy: Boolean = false,
     val isGlitter: Boolean = false,
     val typeface: Typeface = Typeface.DEFAULT,
 ) {
@@ -120,7 +121,7 @@ class KeyboardTheme(
             subText = 0xFF34452B.toInt(),
             shadow = 0xFF777684.toInt(),
             deep = 0xFF777684.toInt(),
-            isNokia = true,
+            isGameBoy = true,
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
@@ -139,7 +140,7 @@ class KeyboardTheme(
             subText = 0xFFD0C2E8.toInt(),
             shadow = 0xFF302044.toInt(),
             deep = 0xFF302044.toInt(),
-            isNokia = true,
+            isGameBoy = true,
             isGameBoyAdvance = true,
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
