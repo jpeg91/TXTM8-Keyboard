@@ -2,6 +2,8 @@
 package com.m8.keyboard
 
 import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Paint
 import android.graphics.drawable.Drawable
 import android.text.SpannableString
 import android.text.Spanned
@@ -211,7 +213,11 @@ class NumberPadView(
         selectedCandidate = selected
         strip.removeAllViews()
         words.forEachIndexed { i, w ->
-            val tv = TextView(context)
+            val tv: TextView = if (theme.isGameBoy && !theme.isGameBoyAdvance) {
+                GameBoyPixelTextView(context)
+            } else {
+                TextView(context)
+            }
             tv.text = w
             tv.textSize = 18f
             tv.typeface = theme.typeface
@@ -305,3 +311,93 @@ class NumberPadView(
     }
 }
 
+
+
+/** 5x7, one-colour bitmap lettering for the original Game Boy suggestion LCD. */
+private class GameBoyPixelTextView(context: Context) : TextView(context) {
+    private val pixelPaint = Paint().apply {
+        style = Paint.Style.FILL
+        isAntiAlias = false
+        isFilterBitmap = false
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        val value = text?.toString()?.uppercase().orEmpty()
+        if (value.isEmpty()) return
+
+        val availableWidth = (width - paddingLeft - paddingRight).toFloat()
+        val availableHeight = (height - paddingTop - paddingBottom).toFloat()
+        if (availableWidth <= 0f || availableHeight <= 0f) return
+
+        // Each glyph is 5x7 pixels, with one blank pixel between characters.
+        val columns = value.length * 6 - 1
+        val pixel = minOf(textSize / 7f, availableHeight / 7f, availableWidth / columns.coerceAtLeast(1))
+        if (pixel <= 0f) return
+        val glyphWidth = columns * pixel
+        val left = paddingLeft + (availableWidth - glyphWidth) / 2f
+        val top = paddingTop + (availableHeight - 7f * pixel) / 2f
+
+        pixelPaint.color = currentTextColor
+        value.forEachIndexed { index, character ->
+            val glyph = GLYPHS[character] ?: GLYPHS['?']!!
+            val x = left + index * 6f * pixel
+            glyph.forEachIndexed { row, bits ->
+                bits.forEachIndexed { column, bit ->
+                    if (bit == '1') {
+                        val l = x + column * pixel
+                        val t = top + row * pixel
+                        canvas.drawRect(l, t, l + pixel, t + pixel, pixelPaint)
+                    }
+                }
+            }
+        }
+    }
+
+    companion object {
+        private val GLYPHS = mapOf(
+            'A' to arrayOf("01110", "10001", "10001", "11111", "10001", "10001", "10001"),
+            'B' to arrayOf("11110", "10001", "10001", "11110", "10001", "10001", "11110"),
+            'C' to arrayOf("01111", "10000", "10000", "10000", "10000", "10000", "01111"),
+            'D' to arrayOf("11110", "10001", "10001", "10001", "10001", "10001", "11110"),
+            'E' to arrayOf("11111", "10000", "10000", "11110", "10000", "10000", "11111"),
+            'F' to arrayOf("11111", "10000", "10000", "11110", "10000", "10000", "10000"),
+            'G' to arrayOf("01111", "10000", "10000", "10111", "10001", "10001", "01111"),
+            'H' to arrayOf("10001", "10001", "10001", "11111", "10001", "10001", "10001"),
+            'I' to arrayOf("11111", "00100", "00100", "00100", "00100", "00100", "11111"),
+            'J' to arrayOf("00111", "00010", "00010", "00010", "10010", "10010", "01100"),
+            'K' to arrayOf("10001", "10010", "10100", "11000", "10100", "10010", "10001"),
+            'L' to arrayOf("10000", "10000", "10000", "10000", "10000", "10000", "11111"),
+            'M' to arrayOf("10001", "11011", "10101", "10101", "10001", "10001", "10001"),
+            'N' to arrayOf("10001", "11001", "11001", "10101", "10011", "10011", "10001"),
+            'O' to arrayOf("01110", "10001", "10001", "10001", "10001", "10001", "01110"),
+            'P' to arrayOf("11110", "10001", "10001", "11110", "10000", "10000", "10000"),
+            'Q' to arrayOf("01110", "10001", "10001", "10001", "10101", "10010", "01101"),
+            'R' to arrayOf("11110", "10001", "10001", "11110", "10100", "10010", "10001"),
+            'S' to arrayOf("01111", "10000", "10000", "01110", "00001", "00001", "11110"),
+            'T' to arrayOf("11111", "00100", "00100", "00100", "00100", "00100", "00100"),
+            'U' to arrayOf("10001", "10001", "10001", "10001", "10001", "10001", "01110"),
+            'V' to arrayOf("10001", "10001", "10001", "10001", "10001", "01010", "00100"),
+            'W' to arrayOf("10001", "10001", "10001", "10101", "10101", "10101", "01010"),
+            'X' to arrayOf("10001", "10001", "01010", "00100", "01010", "10001", "10001"),
+            'Y' to arrayOf("10001", "10001", "01010", "00100", "00100", "00100", "00100"),
+            'Z' to arrayOf("11111", "00001", "00010", "00100", "01000", "10000", "11111"),
+            '0' to arrayOf("01110", "10001", "10011", "10101", "11001", "10001", "01110"),
+            '1' to arrayOf("00100", "01100", "00100", "00100", "00100", "00100", "01110"),
+            '2' to arrayOf("01110", "10001", "00001", "00010", "00100", "01000", "11111"),
+            '3' to arrayOf("11110", "00001", "00001", "01110", "00001", "00001", "11110"),
+            '4' to arrayOf("00010", "00110", "01010", "10010", "11111", "00010", "00010"),
+            '5' to arrayOf("11111", "10000", "10000", "11110", "00001", "00001", "11110"),
+            '6' to arrayOf("01110", "10000", "10000", "11110", "10001", "10001", "01110"),
+            '7' to arrayOf("11111", "00001", "00010", "00100", "01000", "01000", "01000"),
+            '8' to arrayOf("01110", "10001", "10001", "01110", "10001", "10001", "01110"),
+            '9' to arrayOf("01110", "10001", "10001", "01111", "00001", "00001", "01110"),
+            '.' to arrayOf("00000", "00000", "00000", "00000", "00000", "00110", "00110"),
+            ',' to arrayOf("00000", "00000", "00000", "00000", "00110", "00100", "01000"),
+            '!' to arrayOf("00100", "00100", "00100", "00100", "00100", "00000", "00100"),
+            '?' to arrayOf("01110", "10001", "00001", "00010", "00100", "00000", "00100"),
+            '-' to arrayOf("00000", "00000", "00000", "11111", "00000", "00000", "00000"),
+            '\'' to arrayOf("00100", "00100", "01000", "00000", "00000", "00000", "00000"),
+            ' ' to arrayOf("00000", "00000", "00000", "00000", "00000", "00000", "00000"),
+        )
+    }
+}
