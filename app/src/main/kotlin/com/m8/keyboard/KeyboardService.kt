@@ -305,19 +305,28 @@ class KeyboardService :
 
     override fun onKeypadBackspace() = doBackspace()
 
-    override fun onKeypadBackspaceSlide(steps: Int) = slideSelect(steps)
+    override fun onKeypadBackspaceSlide(steps: Int) {
+        pulse()
+        slideSelect(steps)
+    }
 
     override fun onKeypadBackspaceSlideEnd(delete: Boolean) = endSlideSelect(delete)
 
     override fun onKeypadEnter() = doEnter()
 
-    override fun onKeypadCursorMove(steps: Int, startDirection: Int) = moveCursor(steps, startDirection)
+    override fun onKeypadCursorMove(steps: Int, startDirection: Int) {
+        pulse()
+        moveCursor(steps, startDirection)
+    }
 
     override fun onKeypadPaste() = pasteClipboard()
 
     override fun onKeypadCopy() = copySelection()
 
-    override fun onKeypadPasteSlide(steps: Int, startDirection: Int) = selectFromPasteKey(steps, startDirection)
+    override fun onKeypadPasteSlide(steps: Int, startDirection: Int) {
+        pulse()
+        selectFromPasteKey(steps, startDirection)
+    }
 
     override fun onKeypadSettings() = openSettings()
 
@@ -383,17 +392,26 @@ class KeyboardService :
 
     override fun onQwertyBackspace() = doBackspace()
 
-    override fun onQwertyBackspaceSlide(steps: Int) = slideSelect(steps)
+    override fun onQwertyBackspaceSlide(steps: Int) {
+        pulse()
+        slideSelect(steps)
+    }
 
     override fun onQwertyBackspaceSlideEnd(delete: Boolean) = endSlideSelect(delete)
 
-    override fun onQwertyCursorMove(steps: Int, startDirection: Int) = moveCursor(steps, startDirection)
+    override fun onQwertyCursorMove(steps: Int, startDirection: Int) {
+        pulse()
+        moveCursor(steps, startDirection)
+    }
 
     override fun onQwertyPaste() = pasteClipboard()
 
     override fun onQwertyCopy() = copySelection()
 
-    override fun onQwertyPasteSlide(steps: Int, startDirection: Int) = selectFromPasteKey(steps, startDirection)
+    override fun onQwertyPasteSlide(steps: Int, startDirection: Int) {
+        pulse()
+        selectFromPasteKey(steps, startDirection)
+    }
 
     override fun onQwertySettings() = openSettings()
 
@@ -426,7 +444,10 @@ class KeyboardService :
 
     override fun onEmojiBackspace() = doBackspace()
 
-    override fun onEmojiBackspaceSlide(steps: Int) = slideSelect(steps)
+    override fun onEmojiBackspaceSlide(steps: Int) {
+        pulse()
+        slideSelect(steps)
+    }
 
     override fun onEmojiBackspaceSlideEnd(delete: Boolean) = endSlideSelect(delete)
 
@@ -490,6 +511,7 @@ class KeyboardService :
 
     private fun doBackspace() {
         val ic = currentInputConnection ?: return
+        pulse()
         spaceTapAt = 0L
         autoSpace = false
         when {

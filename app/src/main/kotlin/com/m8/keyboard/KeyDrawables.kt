@@ -182,7 +182,7 @@ class PixelScreenDrawable(
             }
         }
         // Dark translucent wash keeps candidate labels readable over the coloured pixels.
-        paint.color = 0x66201938
+        paint.color = 0x33201938
         canvas.drawRect(b, paint)
     }
 
@@ -304,6 +304,7 @@ class PixelGlitterKeyDrawable(
     private val insetX: Float,
     private val insetY: Float,
     private val density: Float,
+    private val pixelColors: IntArray? = null,
 ) : Drawable() {
     private val paint = Paint().apply { isAntiAlias = false }
     private val path = Path()
@@ -350,6 +351,32 @@ class PixelGlitterKeyDrawable(
         paint.color = 0x99FFFFFF.toInt()
         canvas.drawRect(l + 4f * density, t + 3f * density, l + 4f * density + px * 2, t + 3f * density + px, paint)
         canvas.drawRect(l + 4f * density, t + 3f * density + px, l + 4f * density + px, t + 3f * density + px * 2, paint)
+
+        // GBA keys carry the same bright pixel colours as the candidate strip. Keep the blocks
+        // around the edges so they decorate the cap without sitting behind its label.
+        pixelColors?.let { colours ->
+            val block = maxOf(2f * density, 2f)
+            val topX = r - 10f * density
+            val topY = t + 4f * density
+            val bottomX = l + 4f * density
+            val bottomY = bottom - 8f * density
+            val pixels = arrayOf(
+                floatArrayOf(0f, 0f), floatArrayOf(1f, 0f), floatArrayOf(1f, 1f),
+                floatArrayOf(2f, 1f), floatArrayOf(0f, 2f), floatArrayOf(1f, 2f),
+            )
+            pixels.forEachIndexed { index, offset ->
+                paint.color = colours[index % colours.size]
+                val x = if (index < 3) topX else bottomX
+                val y = if (index < 3) topY else bottomY
+                canvas.drawRect(
+                    x + offset[0] * block,
+                    y + offset[1] * block,
+                    x + (offset[0] + 1f) * block,
+                    y + (offset[1] + 1f) * block,
+                    paint,
+                )
+            }
+        }
     }
 
     override fun setAlpha(alpha: Int) { paint.alpha = alpha }
@@ -612,10 +639,18 @@ fun KeyboardTheme.keyBackground(
             return PixelGlitterKeyDrawable(
                 fill = color,
                 shadow = this.shadow,
-                border = if (isGlitter) 0xFFFFE2F2.toInt() else this.shadow,
+                border = when {
+                    isGlitter -> 0xFFFFE2F2.toInt()
+                    isGameBoyAdvance -> 0xFFE8D9FF.toInt()
+                    else -> this.shadow
+                },
                 insetX = gapXDp * density,
                 insetY = gapYDp * density,
                 density = density,
+                pixelColors = if (isGameBoyAdvance) intArrayOf(
+                    0xFFFF6B8A.toInt(), 0xFFFFD45C.toInt(), 0xFF65D6C4.toInt(),
+                    0xFF78A7FF.toInt(), 0xFFC58BFF.toInt(), 0xFFFFA45C.toInt(),
+                ) else null,
             )
         }
         if (isNokia) {
