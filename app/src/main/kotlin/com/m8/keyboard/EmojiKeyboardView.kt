@@ -3,6 +3,7 @@ package com.m8.keyboard
 
 import android.content.Context
 import android.graphics.Color
+import android.graphics.drawable.Drawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.StateListDrawable
 import android.view.Gravity
@@ -48,7 +49,7 @@ class EmojiKeyboardView(
 
     private class Row(val scroll: HorizontalScrollView, val section: EmojiSection, var built: Boolean = false)
 
-    private val pulseBackground = PulseBackground(theme.backgroundDrawable(this), theme.accent, settings.pulseStrength)
+    private val pulseBackground: Drawable = if (theme.isGlitter) GlitterPulseBackground(theme.backgroundDrawable(this), settings.pulseStrength, resources.displayMetrics.density) else PulseBackground(theme.backgroundDrawable(this), theme.accent, settings.pulseStrength)
 
     private val rowPx = dp(settings.keyHeightDp + 2 * GAP_Y_DP)
     private val headerPx = dp(24)
@@ -83,7 +84,7 @@ class EmojiKeyboardView(
     }
 
     /** Flashes the background in the accent colour (a character was typed). */
-    fun pulse() = pulseBackground.pulse()
+    fun pulse() = (pulseBackground as KeyboardPulseEffect).pulse()
 
     /**
      * Fills in the rows on screen, and the section after them. Rows further down are built when

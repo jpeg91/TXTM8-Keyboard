@@ -2,6 +2,7 @@
 package com.m8.keyboard
 
 import android.content.Context
+import android.graphics.drawable.Drawable
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
@@ -57,7 +58,7 @@ class NumberPadView(
     private val scroll = HorizontalScrollView(context)
     private val grid = LinearLayout(context)
     private val symbolPanel = LinearLayout(context)
-    private val pulseBackground = PulseBackground(theme.backgroundDrawable(this), theme.accent, settings.pulseStrength)
+    private val pulseBackground: Drawable = if (theme.isGlitter) GlitterPulseBackground(theme.backgroundDrawable(this), settings.pulseStrength, resources.displayMetrics.density) else PulseBackground(theme.backgroundDrawable(this), theme.accent, settings.pulseStrength)
     private lateinit var hashKey: TextView
     private var candidateWords: List<String> = emptyList()
     private var selectedCandidate: Int = -1
@@ -72,10 +73,10 @@ class NumberPadView(
         // --- top bar: QWERTY | candidates | PASTE | ENTER | DEL ---
         strip.orientation = HORIZONTAL
         scroll.isHorizontalScrollBarEnabled = false
-        scroll.background = if (theme.isGameBoyAdvance) {
-            PixelScreenDrawable(theme.strip, context.resources.displayMetrics.density)
-        } else {
-            android.graphics.drawable.ColorDrawable(theme.strip)
+        scroll.background = when {
+            theme.isGlitter -> GlitterPatternDrawable(theme.strip, context.resources.displayMetrics.density, stripMode = true)
+            theme.isGameBoyAdvance -> PixelScreenDrawable(theme.strip, context.resources.displayMetrics.density)
+            else -> android.graphics.drawable.ColorDrawable(theme.strip)
         }
         scroll.addView(strip, FrameLayout.LayoutParams(WRAP, MATCH))
 
@@ -195,7 +196,7 @@ class NumberPadView(
     }
 
     /** Flashes the background in the accent colour (a character was typed). */
-    fun pulse() = pulseBackground.pulse()
+    fun pulse() = (pulseBackground as KeyboardPulseEffect).pulse()
 
     /** Swaps the number grid for the symbol picker (or back). */
     fun showSymbols(show: Boolean) {

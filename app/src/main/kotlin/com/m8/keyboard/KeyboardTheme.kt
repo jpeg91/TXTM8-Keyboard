@@ -29,6 +29,7 @@ class KeyboardTheme(
     val deep: Int = 0,
     val isNokia: Boolean = false,
     val isGameBoyAdvance: Boolean = false,
+    val isGlitter: Boolean = false,
     val typeface: Typeface = Typeface.DEFAULT,
 ) {
     companion object {
@@ -143,6 +144,25 @@ class KeyboardTheme(
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
+        /** Hot-pink, early-2000s glitter-graphics inspired theme with chunky pixel keys. */
+        val GLITTER = KeyboardTheme(
+            background = 0xFFFF69B4.toInt(),
+            strip = 0xFF8F145C.toInt(),
+            key = 0xFFFFA6D2.toInt(),
+            keyPressed = 0xFFFF4FA8.toInt(),
+            text = 0xFFFFFFFF.toInt(),
+            accent = 0xFFFFD7F0.toInt(),
+            accentText = 0xFF74104C.toInt(),
+            actionKey = 0xFFFF3F9E.toInt(),
+            actionKeyPressed = 0xFFFFD24A.toInt(),
+            actionText = 0xFFFFFFFF.toInt(),
+            subText = 0xFFFFE2F2.toInt(),
+            shadow = 0xFF9B235F.toInt(),
+            deep = 0xFF8F145C.toInt(),
+            isGlitter = true,
+            typeface = Typeface.create("monospace", Typeface.BOLD),
+        )
+
         private fun heavyItalic(): Typeface =
             if (Build.VERSION.SDK_INT >= 28) {
                 Typeface.create(Typeface.SANS_SERIF, 900, true)
@@ -159,6 +179,7 @@ class KeyboardTheme(
                 KeyboardSettings.THEME_NOKIA -> NOKIA
                 KeyboardSettings.THEME_GAME_BOY -> GAME_BOY
                 KeyboardSettings.THEME_GAME_BOY_ADVANCE -> GAME_BOY_ADVANCE
+                KeyboardSettings.THEME_GLITTER -> GLITTER
                 KeyboardSettings.THEME_DARK -> DARK
                 KeyboardSettings.THEME_LIGHT -> LIGHT
                 else -> if (night) DARK else LIGHT

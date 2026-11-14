@@ -66,6 +66,7 @@ data class KeyboardSettings(
         const val THEME_RETIRED_RAZR = 6
         const val THEME_GAME_BOY = 7
         const val THEME_GAME_BOY_ADVANCE = 8
+        const val THEME_GLITTER = 9
 
         fun load(context: Context): KeyboardSettings {
             val p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

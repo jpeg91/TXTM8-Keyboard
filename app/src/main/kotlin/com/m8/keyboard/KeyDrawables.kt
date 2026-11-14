@@ -294,9 +294,213 @@ class BackdropDrawable(
     override fun getOpacity(): Int = PixelFormat.OPAQUE
 }
 
+/** Hard-edged keycap with stepped corners and a dark pixel-style lower/right edge. */
+class PixelGlitterKeyDrawable(
+    private val fill: Int,
+    private val shadow: Int,
+    private val border: Int,
+    private val insetX: Float,
+    private val insetY: Float,
+    private val density: Float,
+) : Drawable() {
+    private val paint = Paint().apply { isAntiAlias = false }
+    private val path = Path()
+
+    override fun draw(canvas: Canvas) {
+        val b = bounds
+        val l = b.left + insetX
+        val t = b.top + insetY
+        val r = b.right - insetX
+        val bottom = b.bottom - insetY
+        if (r - l < 8f * density || bottom - t < 8f * density) return
+        val step = 3f * density
+        fun shape(left: Float, top: Float, right: Float, low: Float) {
+            path.reset()
+            path.moveTo(left + step, top)
+            path.lineTo(right - step, top)
+            path.lineTo(right - step, top + step)
+            path.lineTo(right, top + step)
+            path.lineTo(right, low - step)
+            path.lineTo(right - step, low - step)
+            path.lineTo(right - step, low)
+            path.lineTo(left + step, low)
+            path.lineTo(left + step, low - step)
+            path.lineTo(left, low - step)
+            path.lineTo(left, top + step)
+            path.lineTo(left + step, top + step)
+            path.close()
+        }
+        paint.style = Paint.Style.FILL
+        paint.color = shadow
+        shape(l + 2f * density, t + 3f * density, r, bottom)
+        canvas.drawPath(path, paint)
+
+        paint.color = border
+        shape(l, t, r - 1f * density, bottom - 2f * density)
+        canvas.drawPath(path, paint)
+
+        paint.color = fill
+        shape(l + 2f * density, t + 2f * density, r - 3f * density, bottom - 4f * density)
+        canvas.drawPath(path, paint)
+
+        // Small square highlights give the cap a deliberately pixel-art finish.
+        val px = maxOf(1.5f * density, 2f)
+        paint.color = 0x99FFFFFF.toInt()
+        canvas.drawRect(l + 4f * density, t + 3f * density, l + 4f * density + px * 2, t + 3f * density + px, paint)
+        canvas.drawRect(l + 4f * density, t + 3f * density + px, l + 4f * density + px, t + 3f * density + px * 2, paint)
+    }
+
+    override fun setAlpha(alpha: Int) { paint.alpha = alpha }
+    override fun setColorFilter(colorFilter: ColorFilter?) { paint.colorFilter = colorFilter }
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+}
+
+/** Static, low-contrast pixel glitter used on the candidate strip and keyboard shell. */
+class GlitterPatternDrawable(
+    private val base: Int,
+    private val density: Float,
+    private val stripMode: Boolean = false,
+) : Drawable() {
+    private val paint = Paint().apply { isAntiAlias = false }
+    private val pinks = intArrayOf(0x55FFFFFF, 0x66FFD8EF, 0x66FFB5DC, 0x66FFE46A)
+
+    override fun draw(canvas: Canvas) {
+        val b = bounds
+        paint.color = base
+        canvas.drawRect(b, paint)
+        val cell = (if (stripMode) 5f else 9f) * density
+        val cols = (b.width() / cell).toInt() + 1
+        val rows = (b.height() / cell).toInt() + 1
+        for (y in 0 until rows) for (x in 0 until cols) {
+            val n = (x * 13 + y * 7 + x * y * 3) % 29
+            if (n == 2 || n == 11 || (!stripMode && n == 19)) {
+                paint.color = pinks[(x + y) % pinks.size]
+                val px = maxOf(1f, density * if (stripMode) 1.5f else 2f)
+                val left = b.left + x * cell
+                val top = b.top + y * cell
+                canvas.drawRect(left, top, left + px, top + px, paint)
+                if (n == 2) {
+                    canvas.drawRect(left + px * 2, top, left + px * 3, top + px, paint)
+                    canvas.drawRect(left + px, top + px, left + px * 2, top + px * 2, paint)
+                }
+            }
+        }
+        if (!stripMode) {
+            // Tiny 5x5 pixel hearts: decorative, but kept sparse so the keys remain the focus.
+            val heart = arrayOf("01010", "11111", "11111", "01110", "00100")
+            val px = maxOf(1.5f * density, 2f)
+            val anchors = listOf(0.04f to 0.42f, 0.91f to 0.37f, 0.12f to 0.91f, 0.83f to 0.94f)
+            anchors.forEachIndexed { index, anchor ->
+                paint.color = pinks[(index + 1) % pinks.size]
+                val left = b.left + b.width() * anchor.first
+                val top = b.top + b.height() * anchor.second
+                heart.forEachIndexed { row, bits ->
+                    bits.forEachIndexed { col, bit ->
+                        if (bit == '1') canvas.drawRect(left + col * px, top + row * px, left + (col + 1) * px, top + (row + 1) * px, paint)
+                    }
+                }
+            }
+        }
+    }
+
+    override fun setAlpha(alpha: Int) { paint.alpha = alpha }
+    override fun setColorFilter(colorFilter: ColorFilter?) { paint.colorFilter = colorFilter }
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun getOpacity(): Int = PixelFormat.OPAQUE
+}
+
+/**
+ * A short burst of pixel sparkles after a key press. Frames are deliberately stepped at about
+ * nine frames per second rather than following the display refresh rate. Nothing animates while
+ * idle, and the existing typing-pulse setting controls whether the effect is enabled.
+ */
+interface KeyboardPulseEffect {
+    fun pulse()
+}
+
+class GlitterPulseBackground(
+    private val base: Drawable,
+    private val strength: Float,
+    private val density: Float,
+) : Drawable(), KeyboardPulseEffect {
+    private val paint = Paint().apply { isAntiAlias = false }
+    private var startedAt = 0L
+    private var running = false
+    private var frame = 0
+    private val frameCallback = Runnable { invalidateSelf() }
+    private val colours = intArrayOf(
+        0xFFFFFFFF.toInt(), 0xFFFFE76A.toInt(), 0xFFFFC7E8.toInt(), 0xFFFF79C6.toInt(),
+    )
+    private val positions = arrayOf(
+        0.08f to 0.22f, 0.22f to 0.48f, 0.39f to 0.16f, 0.55f to 0.68f,
+        0.72f to 0.28f, 0.88f to 0.53f, 0.94f to 0.15f, 0.13f to 0.78f,
+        0.34f to 0.88f, 0.67f to 0.86f, 0.82f to 0.72f,
+    )
+
+    override fun onBoundsChange(bounds: Rect) { base.bounds = bounds }
+
+    override fun draw(canvas: Canvas) {
+        base.draw(canvas)
+        if (!running || strength <= 0f) return
+        val elapsed = (SystemClock.uptimeMillis() - startedAt).coerceAtLeast(0L)
+        frame = (elapsed / FRAME_MS).toInt()
+        if (frame >= FRAME_COUNT) {
+            running = false
+            unscheduleSelf(frameCallback)
+            return
+        }
+
+        val b = bounds
+        val pixel = maxOf(2f * density, 2f)
+        positions.forEachIndexed { index, pos ->
+            val phase = (frame + index * 2) % FRAME_COUNT
+            if (phase == 0 || phase == 3 || phase == 5) {
+                val alpha = (255f * strength * when (phase) {
+                    0 -> 0.95f
+                    3 -> 0.65f
+                    else -> 0.35f
+                }).toInt().coerceIn(0, 255)
+                paint.color = colours[(index + frame) % colours.size]
+                paint.alpha = alpha
+                val cx = b.left + b.width() * pos.first
+                val cy = b.top + b.height() * pos.second
+                // Four-point sparkle made from square pixels, never a smooth vector star.
+                canvas.drawRect(cx - pixel / 2, cy - pixel * 1.5f, cx + pixel / 2, cy + pixel * 1.5f, paint)
+                canvas.drawRect(cx - pixel * 1.5f, cy - pixel / 2, cx + pixel * 1.5f, cy + pixel / 2, paint)
+                if (phase == 0) canvas.drawRect(cx - pixel / 2, cy - pixel / 2, cx + pixel / 2, cy + pixel / 2, paint)
+            }
+        }
+        paint.alpha = 255
+        unscheduleSelf(frameCallback)
+        scheduleSelf(frameCallback, SystemClock.uptimeMillis() + FRAME_MS)
+    }
+
+    override fun pulse() {
+        if (strength <= 0f) return
+        unscheduleSelf(frameCallback)
+        startedAt = SystemClock.uptimeMillis()
+        frame = 0
+        running = true
+        invalidateSelf()
+    }
+
+    override fun setAlpha(alpha: Int) {}
+    override fun setColorFilter(colorFilter: ColorFilter?) {}
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun getOpacity(): Int = PixelFormat.OPAQUE
+
+    private companion object {
+        const val FRAME_MS = 110L
+        const val FRAME_COUNT = 7
+    }
+}
+
 /** The keyboard's background for this theme (plain colour, or the pinstriped backdrop). */
 fun KeyboardTheme.backgroundDrawable(view: View): Drawable =
-    if (isSlanted) {
+    if (isGlitter) {
+        GlitterPatternDrawable(background, view.resources.displayMetrics.density)
+    } else if (isSlanted) {
         BackdropDrawable(
             base = background,
             stripe = 0x08FFFFFF,
@@ -321,7 +525,7 @@ class PulseBackground(
     private val base: Drawable,
     private val accent: Int,
     private val strength: Float,
-) : Drawable() {
+) : Drawable(), KeyboardPulseEffect {
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private var level = 0f
@@ -362,7 +566,7 @@ class PulseBackground(
     }
 
     /** Flash now and fade out. */
-    fun pulse() {
+    override fun pulse() {
         if (strength <= 0f) return
         startedAt = SystemClock.uptimeMillis()
         running = true
@@ -399,6 +603,16 @@ fun KeyboardTheme.keyBackground(
     val pressed = if (action) actionKeyPressed else keyPressed
 
     fun layer(color: Int): Drawable {
+        if (isGlitter) {
+            return PixelGlitterKeyDrawable(
+                fill = color,
+                shadow = this.shadow,
+                border = 0xFFFFE2F2.toInt(),
+                insetX = gapXDp * density,
+                insetY = gapYDp * density,
+                density = density,
+            )
+        }
         if (isNokia) {
             return NokiaKeyDrawable(
                 fill = color,
@@ -440,6 +654,13 @@ fun KeyboardTheme.keyBackground(
 
 /** Highlight behind the selected candidate word. */
 fun KeyboardTheme.candidateBackground(density: Float): Drawable {
+    if (isGlitter) {
+        return GradientDrawable().apply {
+            setColor(accent)
+            setStroke(maxOf(1, (2f * density).toInt()), 0xFFFFFFFF.toInt())
+            cornerRadius = 0f
+        }
+    }
     if (isNokia) {
         return GradientDrawable().apply {
             setColor(accent)

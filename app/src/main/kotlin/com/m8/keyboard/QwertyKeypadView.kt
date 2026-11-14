@@ -3,6 +3,7 @@ package com.m8.keyboard
 
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.drawable.Drawable
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -42,7 +43,7 @@ class QwertyKeypadView(
         fun onQwertyEmoji()
     }
 
-    private val pulseBackground = PulseBackground(theme.backgroundDrawable(this), theme.accent, settings.pulseStrength)
+    private val pulseBackground: Drawable = if (theme.isGlitter) GlitterPulseBackground(theme.backgroundDrawable(this), settings.pulseStrength, resources.displayMetrics.density) else PulseBackground(theme.backgroundDrawable(this), theme.accent, settings.pulseStrength)
     private val letterKeys = ArrayList<Pair<TextView, Char>>()
     private var shiftKey: TextView? = null
     private var shiftLabel = "abc"
@@ -57,7 +58,7 @@ class QwertyKeypadView(
     }
 
     /** Flashes the background in the accent colour (a character was typed). */
-    fun pulse() = pulseBackground.pulse()
+    fun pulse() = (pulseBackground as KeyboardPulseEffect).pulse()
 
     /** [label] is the shift key text (abc / Abc / ABC); [upper] shows capital letters on the keys. */
     fun setCase(label: String, upper: Boolean) {
