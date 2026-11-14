@@ -481,6 +481,8 @@ class GlitterTwinkleDrawable(
     private val colours: IntArray = intArrayOf(
         0xFFFFFFFF.toInt(), 0xFFFFE76A.toInt(), 0xFFFFC7E8.toInt(), 0xFFFF79C6.toInt(),
     ),
+    /** 0..100: how many stars appear. 50 is the original amount; 0 is none and 100 is about double. */
+    private val starDensity: Int = 50,
 ) : Drawable() {
     private data class Twinkle(
         val key: View,
@@ -526,8 +528,12 @@ class GlitterTwinkleDrawable(
         twinkles.removeAll { frame - it.bornFrame >= it.lifetime || !it.key.isShown }
 
         // Spawn in small irregular bursts. The lifetime and position are independent per star.
-        if (keys.isNotEmpty() && random.nextFloat() < 0.82f) {
-            val count = if (random.nextFloat() < 0.24f) 2 else 1
+        // At the default density of 50 this averages about one new star per frame; the slider
+        // scales that from none (0) to about two per frame (100).
+        val expected = 1.02f * starDensity.coerceIn(0, 100) / 50f
+        val whole = expected.toInt()
+        val count = whole + if (random.nextFloat() < expected - whole) 1 else 0
+        if (keys.isNotEmpty() && count > 0) {
             repeat(count) {
                 val key = keys[random.nextInt(keys.size)]
                 twinkles.add(
@@ -614,9 +620,25 @@ class GlitterTwinkleDrawable(
     private companion object { const val FRAME_MS = 125L }
 }
 
+/** Night Sky's stars: mostly icy white, with some pale blue and the odd subtle cyan highlight. */
+private val NIGHT_SKY_STAR_COLOURS = intArrayOf(
+    0xFFE8F6FF.toInt(), 0xFFE8F6FF.toInt(), 0xFFE8F6FF.toInt(), 0xFFFFFFFF.toInt(),
+    0xFFBFDFFF.toInt(), 0xFFBFDFFF.toInt(), 0xFF9EEBFF.toInt(),
+)
+
+/** The twinkling stars drawn over [host], in this theme's colours and the chosen star density. */
+fun KeyboardTheme.twinkleDrawable(host: ViewGroup, settings: KeyboardSettings): GlitterTwinkleDrawable =
+    if (isNightSky) {
+        GlitterTwinkleDrawable(host, host.resources.displayMetrics.density, settings.pulseStrength, NIGHT_SKY_STAR_COLOURS, settings.starDensity)
+    } else {
+        GlitterTwinkleDrawable(host, host.resources.displayMetrics.density, settings.pulseStrength, starDensity = settings.starDensity)
+    }
+
 /** The keyboard's background for this theme (plain colour, or the pinstriped backdrop). */
 fun KeyboardTheme.backgroundDrawable(view: View): Drawable =
-    if (isGlitter) {
+    if (isNightSky) {
+        ColorDrawable(background)
+    } else if (isGlitter) {
         GlitterPatternDrawable(background, view.resources.displayMetrics.density)
     } else if (isSlanted) {
         BackdropDrawable(
@@ -728,6 +750,7 @@ fun KeyboardTheme.keyBackground(
                 fill = color,
                 shadow = this.shadow,
                 border = when {
+                    isNightSky -> NIGHT_SKY_ICY
                     isGlitter -> 0xFFFFE2F2.toInt()
                     isGameBoyAdvance -> 0xFFE8D9FF.toInt()
                     else -> this.shadow

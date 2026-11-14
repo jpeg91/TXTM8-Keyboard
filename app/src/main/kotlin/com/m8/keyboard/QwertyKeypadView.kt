@@ -53,7 +53,7 @@ class QwertyKeypadView(
     init {
         orientation = VERTICAL
         background = pulseBackground
-        if (theme.isGlitter) foreground = GlitterTwinkleDrawable(this, resources.displayMetrics.density, settings.pulseStrength)
+        if (theme.isGlitter) foreground = theme.twinkleDrawable(this, settings)
         setPadding(0, dp(4), 0, 0) // no side padding: the outer keys reach the screen edge
         buildPage()
     }

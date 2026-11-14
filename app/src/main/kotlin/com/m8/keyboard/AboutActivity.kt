@@ -177,6 +177,12 @@ class AboutActivity : ThemedScreen() {
                 "be small, medium or large.",
         )
         feature(
+            root, "Twinkling stars",
+            "The Glitter Graphics and Night Sky themes have pixel-edged keys with stars that flash at the " +
+                "corners of the keys. Night Sky is deep midnight blue with icy white borders and lettering. " +
+                "The Star density setting changes how many stars appear in both themes.",
+        )
+        feature(
             root, "Typing pulse",
             "The keyboard background flashes in the theme's accent colour as you type, with an adjustable " +
                 "strength. It is drawn by the keyboard itself, so Android's animation settings do not speed it up, " +

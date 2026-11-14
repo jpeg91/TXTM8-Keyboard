@@ -67,13 +67,14 @@ class SetupActivity : ThemedScreen() {
         root.addView(sectionTitle("Look"))
         addChoice(
             root, "Theme", KeyboardSettings.KEY_THEME,
-            listOf("P5", "Nokia 3310", "Game Boy", "Game Boy Advance", "Glitter Graphics", "Follow system", "Dark", "Light"),
+            listOf("P5", "Nokia 3310", "Game Boy", "Game Boy Advance", "Glitter Graphics", "Night Sky", "Follow system", "Dark", "Light"),
             listOf(
                 KeyboardSettings.THEME_P5,
                 KeyboardSettings.THEME_NOKIA,
                 KeyboardSettings.THEME_GAME_BOY,
                 KeyboardSettings.THEME_GAME_BOY_ADVANCE,
                 KeyboardSettings.THEME_GLITTER,
+                KeyboardSettings.THEME_NIGHT_SKY,
                 KeyboardSettings.THEME_SYSTEM,
                 KeyboardSettings.THEME_DARK,
                 KeyboardSettings.THEME_LIGHT,
@@ -91,6 +92,8 @@ class SetupActivity : ThemedScreen() {
         )
         root.addView(label("Typing pulse"))
         addPulseControls(root)
+        // Only the themes with twinkling stars (Glitter Graphics and Night Sky) have star density.
+        if (look.isGlitter) addStarDensityControl(root)
 
         // ---- Typing ----
         root.addView(sectionTitle("Typing"))

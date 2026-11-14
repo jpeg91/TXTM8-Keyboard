@@ -18,6 +18,7 @@ data class KeyboardSettings(
     val reopenWord: Boolean = true,
     val pulse: Boolean = true,
     val pulseIntensity: Int = 50, // 0..100
+    val starDensity: Int = 50, // 0..100: how many twinkling stars appear (Glitter Graphics and Night Sky)
     val nextWord: Boolean = true,
     val autoCap: Boolean = true,
     val doubleSpace: Boolean = true,
@@ -49,6 +50,7 @@ data class KeyboardSettings(
         const val KEY_REOPEN = "reopen_word"
         const val KEY_PULSE = "pulse"
         const val KEY_PULSE_LEVEL = "pulse_level"
+        const val KEY_STAR_DENSITY = "star_density"
         const val KEY_NEXT_WORD = "next_word"
         const val KEY_AUTO_CAP = "auto_cap"
         const val KEY_DOUBLE_SPACE = "double_space"
@@ -71,6 +73,7 @@ data class KeyboardSettings(
         const val THEME_GAME_BOY = 7
         const val THEME_GAME_BOY_ADVANCE = 8
         const val THEME_GLITTER = 9
+        const val THEME_NIGHT_SKY = 10
 
         /** Index in [P5_ACCENTS] of the original red (the default) and of the purple. */
         const val P5_ACCENT_RED = 0
@@ -101,6 +104,7 @@ data class KeyboardSettings(
                 reopenWord = p.getBoolean(KEY_REOPEN, true),
                 pulse = p.getBoolean(KEY_PULSE, true),
                 pulseIntensity = p.getInt(KEY_PULSE_LEVEL, 50),
+                starDensity = p.getInt(KEY_STAR_DENSITY, 50).coerceIn(0, 100),
                 nextWord = p.getBoolean(KEY_NEXT_WORD, true),
                 autoCap = p.getBoolean(KEY_AUTO_CAP, true),
                 doubleSpace = p.getBoolean(KEY_DOUBLE_SPACE, true),

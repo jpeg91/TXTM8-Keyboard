@@ -323,4 +323,41 @@ abstract class ThemedScreen : Activity() {
         parent.addView(seek, LinearLayout.LayoutParams(MATCH, WRAP))
         refresh()
     }
+
+    /** The star density slider, for the themes with twinkling stars (Glitter Graphics and Night Sky). */
+    protected fun addStarDensityControl(parent: LinearLayout) {
+        parent.addView(label("Star density"))
+
+        val valueText = TextView(this)
+        valueText.textSize = 14f
+        valueText.setTextColor(look.subText)
+        valueText.setPadding(dp(36), dp(4), 0, 0)
+
+        val seek = SeekBar(this)
+        seek.max = 100
+        seek.progress = prefs.getInt(KeyboardSettings.KEY_STAR_DENSITY, 50)
+        val tint = ColorStateList.valueOf(look.accent)
+        seek.progressTintList = tint
+        seek.thumbTintList = tint
+        seek.progressBackgroundTintList = ColorStateList.valueOf(0xFF727272.toInt()) // dim grey
+
+        fun refresh() {
+            valueText.text = "Stars: " + seek.progress + "%"
+        }
+        seek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(bar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) prefs.edit().putInt(KeyboardSettings.KEY_STAR_DENSITY, progress).apply()
+                refresh()
+            }
+
+            override fun onStartTrackingTouch(bar: SeekBar?) {}
+
+            override fun onStopTrackingTouch(bar: SeekBar?) {}
+        })
+
+        parent.addView(hint("How many stars twinkle on the keys. The stars are switched off while the typing pulse is off."))
+        parent.addView(valueText)
+        parent.addView(seek, LinearLayout.LayoutParams(MATCH, WRAP))
+        refresh()
+    }
 }

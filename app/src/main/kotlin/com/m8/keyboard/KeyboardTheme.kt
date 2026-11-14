@@ -31,6 +31,8 @@ class KeyboardTheme(
     val isGameBoyAdvance: Boolean = false,
     val isGameBoy: Boolean = false,
     val isGlitter: Boolean = false,
+    /** Night Sky reuses the Glitter pixel keys and twinkles, but with a plain midnight-blue look. */
+    val isNightSky: Boolean = false,
     val typeface: Typeface = Typeface.DEFAULT,
 ) {
     companion object {
@@ -163,6 +165,29 @@ class KeyboardTheme(
             typeface = Typeface.create("monospace", Typeface.BOLD),
         )
 
+        /**
+         * Night Sky: the Glitter Graphics pixel keys and twinkling stars in deep midnight blue. The
+         * background, candidate strip and keys are one colour, with icy white borders and lettering.
+         */
+        val NIGHT_SKY = KeyboardTheme(
+            background = NIGHT_SKY_MIDNIGHT,
+            strip = NIGHT_SKY_MIDNIGHT,
+            key = NIGHT_SKY_MIDNIGHT,
+            keyPressed = 0xFF223C7A.toInt(),
+            text = NIGHT_SKY_ICY,
+            accent = 0xFF3E6FD1.toInt(),
+            accentText = NIGHT_SKY_ICY,
+            actionKey = NIGHT_SKY_MIDNIGHT,
+            actionKeyPressed = 0xFF223C7A.toInt(),
+            actionText = NIGHT_SKY_ICY,
+            subText = NIGHT_SKY_ICY,
+            shadow = 0xFF050A1F.toInt(),
+            deep = 0xFF050A1F.toInt(),
+            isGlitter = true,
+            isNightSky = true,
+            typeface = Typeface.create("monospace", Typeface.BOLD),
+        )
+
         private fun heavyItalic(): Typeface =
             if (Build.VERSION.SDK_INT >= 28) {
                 Typeface.create(Typeface.SANS_SERIF, 900, true)
@@ -181,6 +206,7 @@ class KeyboardTheme(
                 KeyboardSettings.THEME_GAME_BOY -> GAME_BOY
                 KeyboardSettings.THEME_GAME_BOY_ADVANCE -> GAME_BOY_ADVANCE
                 KeyboardSettings.THEME_GLITTER -> GLITTER
+                KeyboardSettings.THEME_NIGHT_SKY -> NIGHT_SKY
                 KeyboardSettings.THEME_DARK -> DARK
                 KeyboardSettings.THEME_LIGHT -> LIGHT
                 else -> if (night) DARK else LIGHT
@@ -188,6 +214,10 @@ class KeyboardTheme(
         }
     }
 }
+
+/** Night Sky's deep midnight blue (background and keys) and its icy white (borders, lettering, stars). */
+const val NIGHT_SKY_MIDNIGHT = 0xFF0B1437.toInt()
+const val NIGHT_SKY_ICY = 0xFFE8F6FF.toInt()
 
 /** One selectable accent colour for the P5 theme: the main colour, a brighter one (pressed action keys) and a deep one (shadows). */
 class P5Accent(

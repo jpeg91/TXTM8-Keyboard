@@ -70,13 +70,14 @@ class NumberPadView(
     init {
         orientation = VERTICAL
         background = pulseBackground
-        if (theme.isGlitter) foreground = GlitterTwinkleDrawable(this, resources.displayMetrics.density, settings.pulseStrength)
+        if (theme.isGlitter) foreground = theme.twinkleDrawable(this, settings)
         setPadding(0, dp(4), 0, 0) // no side padding: the outer keys reach the screen edge
 
         // --- top bar: QWERTY | candidates | PASTE | ENTER | DEL ---
         strip.orientation = HORIZONTAL
         scroll.isHorizontalScrollBarEnabled = false
         scroll.background = when {
+            theme.isNightSky -> android.graphics.drawable.ColorDrawable(theme.strip)
             theme.isGlitter -> GlitterPatternDrawable(theme.strip, context.resources.displayMetrics.density, stripMode = true)
             theme.isGameBoyAdvance -> PixelScreenDrawable(theme.strip, context.resources.displayMetrics.density)
             else -> android.graphics.drawable.ColorDrawable(theme.strip)
