@@ -64,6 +64,8 @@ data class KeyboardSettings(
         const val THEME_NOKIA = 5
         /** Was the Motorola RAZR theme, which has been removed: anyone who had it gets the red theme. */
         const val THEME_RETIRED_RAZR = 6
+        const val THEME_GAME_BOY = 7
+        const val THEME_GAME_BOY_ADVANCE = 8
 
         fun load(context: Context): KeyboardSettings {
             val p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

@@ -144,6 +144,52 @@ class NokiaKeyDrawable(
     override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
 }
 
+/** Small block-colour pixel pattern used behind the Game Boy Advance candidate strip. */
+class PixelScreenDrawable(
+    private val base: Int,
+    private val density: Float,
+) : Drawable() {
+    private val paint = Paint().apply { isAntiAlias = false }
+    private val pixels = intArrayOf(
+        0xFFFF6B8A.toInt(), 0xFFFFD45C.toInt(), 0xFF65D6C4.toInt(),
+        0xFF78A7FF.toInt(), 0xFFC58BFF.toInt(), 0xFFFFA45C.toInt(),
+    )
+
+    override fun draw(canvas: Canvas) {
+        val b = bounds
+        paint.color = base
+        canvas.drawRect(b, paint)
+        val cell = 6f * density
+        val cols = (b.width() / cell).toInt().coerceAtLeast(1)
+        val rows = (b.height() / cell).toInt().coerceAtLeast(1)
+        for (y in 0 until rows) {
+            for (x in 0 until cols) {
+                // A fixed pattern keeps the tiny pixel-art blocks stable between redraws.
+                val n = (x * 7 + y * 11 + (x * y) % 5) % 13
+                if (n < 4) {
+                    paint.color = pixels[(x + y * 2) % pixels.size]
+                    val inset = cell * 0.12f
+                    canvas.drawRect(
+                        b.left + x * cell + inset,
+                        b.top + y * cell + inset,
+                        b.left + (x + 1) * cell - inset,
+                        b.top + (y + 1) * cell - inset,
+                        paint,
+                    )
+                }
+            }
+        }
+        // Dark translucent wash keeps candidate labels readable over the coloured pixels.
+        paint.color = 0x66201938
+        canvas.drawRect(b, paint)
+    }
+
+    override fun setAlpha(alpha: Int) { paint.alpha = alpha }
+    override fun setColorFilter(colorFilter: ColorFilter?) { paint.colorFilter = colorFilter }
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun getOpacity(): Int = PixelFormat.OPAQUE
+}
+
 /** The marker in front of a choice: a diamond, filled with the accent when picked. */
 class DiamondDrawable(
     private val selected: Boolean,

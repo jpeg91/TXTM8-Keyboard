@@ -72,7 +72,11 @@ class NumberPadView(
         // --- top bar: QWERTY | candidates | PASTE | ENTER | DEL ---
         strip.orientation = HORIZONTAL
         scroll.isHorizontalScrollBarEnabled = false
-        scroll.setBackgroundColor(theme.strip)
+        scroll.background = if (theme.isGameBoyAdvance) {
+            PixelScreenDrawable(theme.strip, context.resources.displayMetrics.density)
+        } else {
+            android.graphics.drawable.ColorDrawable(theme.strip)
+        }
         scroll.addView(strip, FrameLayout.LayoutParams(WRAP, MATCH))
 
         val barHeight = 52

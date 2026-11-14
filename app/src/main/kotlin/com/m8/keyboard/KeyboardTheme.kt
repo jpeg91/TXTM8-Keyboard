@@ -28,6 +28,7 @@ class KeyboardTheme(
     val shadow: Int = 0,
     val deep: Int = 0,
     val isNokia: Boolean = false,
+    val isGameBoyAdvance: Boolean = false,
     val typeface: Typeface = Typeface.DEFAULT,
 ) {
     companion object {
@@ -101,6 +102,47 @@ class KeyboardTheme(
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
+
+
+        /** Original Game Boy-inspired grey-violet shell, green LCD and pink action buttons. */
+        val GAME_BOY = KeyboardTheme(
+            background = 0xFFAAA9B5.toInt(),
+            strip = 0xFF9BBC0F.toInt(),
+            key = 0xFFD9D8E0.toInt(),
+            keyPressed = 0xFFBFC0CC.toInt(),
+            text = 0xFF303044.toInt(),
+            accent = 0xFF306230.toInt(),
+            accentText = 0xFFD8E8A5.toInt(),
+            actionKey = 0xFFCF7898.toInt(),
+            actionKeyPressed = 0xFFB9567B.toInt(),
+            actionText = 0xFF352536.toInt(),
+            subText = 0xFF34452B.toInt(),
+            shadow = 0xFF777684.toInt(),
+            deep = 0xFF777684.toInt(),
+            isNokia = true,
+            typeface = Typeface.create("sans-serif", Typeface.BOLD),
+        )
+
+        /** Purple Game Boy Advance shell with a bright, pixel-art inspired candidate display. */
+        val GAME_BOY_ADVANCE = KeyboardTheme(
+            background = 0xFF59417D.toInt(),
+            strip = 0xFF201A3B.toInt(),
+            key = 0xFF34264F.toInt(),
+            keyPressed = 0xFF514078.toInt(),
+            text = 0xFFF5F0FF.toInt(),
+            accent = 0xFFFF5C9A.toInt(),
+            accentText = 0xFF24152F.toInt(),
+            actionKey = 0xFFB65AA4.toInt(),
+            actionKeyPressed = 0xFFE5B94B.toInt(),
+            actionText = 0xFFFFFFFF.toInt(),
+            subText = 0xFFD0C2E8.toInt(),
+            shadow = 0xFF302044.toInt(),
+            deep = 0xFF302044.toInt(),
+            isNokia = true,
+            isGameBoyAdvance = true,
+            typeface = Typeface.create("sans-serif", Typeface.BOLD),
+        )
+
         private fun heavyItalic(): Typeface =
             if (Build.VERSION.SDK_INT >= 28) {
                 Typeface.create(Typeface.SANS_SERIF, 900, true)
@@ -115,6 +157,8 @@ class KeyboardTheme(
                 KeyboardSettings.THEME_RED, KeyboardSettings.THEME_RETIRED_RAZR -> RED
                 KeyboardSettings.THEME_PURPLE -> PURPLE
                 KeyboardSettings.THEME_NOKIA -> NOKIA
+                KeyboardSettings.THEME_GAME_BOY -> GAME_BOY
+                KeyboardSettings.THEME_GAME_BOY_ADVANCE -> GAME_BOY_ADVANCE
                 KeyboardSettings.THEME_DARK -> DARK
                 KeyboardSettings.THEME_LIGHT -> LIGHT
                 else -> if (night) DARK else LIGHT

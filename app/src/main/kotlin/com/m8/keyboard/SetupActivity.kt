@@ -67,11 +67,13 @@ class SetupActivity : ThemedScreen() {
         root.addView(sectionTitle("Look"))
         addChoice(
             root, "Theme", KeyboardSettings.KEY_THEME,
-            listOf("Red", "Purple", "Nokia 3310", "Follow system", "Dark", "Light"),
+            listOf("Red", "Purple", "Nokia 3310", "Game Boy", "Game Boy Advance", "Follow system", "Dark", "Light"),
             listOf(
                 KeyboardSettings.THEME_RED,
                 KeyboardSettings.THEME_PURPLE,
                 KeyboardSettings.THEME_NOKIA,
+                KeyboardSettings.THEME_GAME_BOY,
+                KeyboardSettings.THEME_GAME_BOY_ADVANCE,
                 KeyboardSettings.THEME_SYSTEM,
                 KeyboardSettings.THEME_DARK,
                 KeyboardSettings.THEME_LIGHT,
