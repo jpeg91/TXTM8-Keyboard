@@ -7,6 +7,7 @@ import android.graphics.drawable.Drawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.StateListDrawable
 import android.view.Gravity
+import android.view.MotionEvent
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
@@ -49,7 +50,8 @@ class EmojiKeyboardView(
 
     private class Row(val scroll: HorizontalScrollView, val section: EmojiSection, var built: Boolean = false)
 
-    private val pulseBackground: Drawable = if (theme.isGlitter) GlitterPulseBackground(theme.backgroundDrawable(this), settings.pulseStrength, resources.displayMetrics.density) else PulseBackground(theme.backgroundDrawable(this), theme.accent, settings.pulseStrength)
+    private val tapEffect: TapEffectDrawable? = theme.tapEffectDrawable(this, settings)
+    private val pulseBackground: Drawable = if (!theme.usesPulse) GlitterPulseBackground(theme.backgroundDrawable(this), settings.pulseStrength, resources.displayMetrics.density) else PulseBackground(theme.backgroundDrawable(this), theme.accent, settings.pulseStrength)
 
     private val rowPx = dp(settings.keyHeightDp + 2 * GAP_Y_DP)
     private val headerPx = dp(24)
@@ -62,7 +64,7 @@ class EmojiKeyboardView(
     init {
         orientation = VERTICAL
         background = pulseBackground
-        if (theme.isGlitter) foreground = theme.twinkleDrawable(this, settings)
+        if (theme.isGlitter) foreground = theme.twinkleDrawable(this, settings) else if (tapEffect != null) foreground = tapEffect
         addView(topBar(), LinearLayout.LayoutParams(MATCH, rowPx))
 
         val content = LinearLayout(context)
@@ -85,6 +87,18 @@ class EmojiKeyboardView(
     }
 
     /** Flashes the background in the accent colour (a character was typed). */
+    /** Starts the tap animation (bubbles, embers and so on) wherever a finger touches down. */
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        val effect = tapEffect
+        if (effect != null) {
+            val action = ev.actionMasked
+            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
+                effect.spawn(ev.getX(ev.actionIndex), ev.getY(ev.actionIndex))
+            }
+        }
+        return super.dispatchTouchEvent(ev)
+    }
+
     fun pulse() = (pulseBackground as KeyboardPulseEffect).pulse()
 
     /**
@@ -154,7 +168,7 @@ class EmojiKeyboardView(
             settings.feedback(it)
             listener.onEmojiEnter()
         }
-        val del = theme.iconKey(context, KeyIcon.BACKSPACE, true, GAP_X_DP, GAP_Y_DP, 10, "Backspace")
+        val del = theme.iconKey(context, KeyIcon.BACKSPACE, true, GAP_X_DP, GAP_Y_DP, 10, "Backspace", actionSlot = 1)
         del.setOnTouchListener(
             BackspaceTouch(
                 settings,

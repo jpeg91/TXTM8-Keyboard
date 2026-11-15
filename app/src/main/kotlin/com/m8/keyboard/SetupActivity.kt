@@ -70,6 +70,8 @@ class SetupActivity : ThemedScreen() {
             listOf(
                 "P5", "Nokia 3310", "Game Boy", "Game Boy Advance", "Glitter Graphics", "Night Sky", "Winter", "Aurora",
                 "Synthwave", "Gold on Black", "Amber Backlight", "Terminal Green", "Terminal Amber", "Retro Desktop",
+                "Bubbles", "Embers", "Sakura", "Neon Ripples", "SNES (US)", "SNES (EU)", "N64", "Saturn",
+                "PlayStation", "Dreamcast (US)", "Dreamcast (EU)", "Xbox", "GameCube",
                 "Follow system", "Dark", "Light",
             ),
             listOf(
@@ -87,6 +89,19 @@ class SetupActivity : ThemedScreen() {
                 KeyboardSettings.THEME_TERMINAL_GREEN,
                 KeyboardSettings.THEME_TERMINAL_AMBER,
                 KeyboardSettings.THEME_RETRO_DESKTOP,
+                KeyboardSettings.THEME_BUBBLES,
+                KeyboardSettings.THEME_EMBERS,
+                KeyboardSettings.THEME_SAKURA,
+                KeyboardSettings.THEME_RIPPLES,
+                KeyboardSettings.THEME_SNES,
+                KeyboardSettings.THEME_SNES_EU,
+                KeyboardSettings.THEME_N64,
+                KeyboardSettings.THEME_SATURN,
+                KeyboardSettings.THEME_PLAYSTATION,
+                KeyboardSettings.THEME_DREAMCAST,
+                KeyboardSettings.THEME_DREAMCAST_EU,
+                KeyboardSettings.THEME_XBOX,
+                KeyboardSettings.THEME_GAMECUBE,
                 KeyboardSettings.THEME_SYSTEM,
                 KeyboardSettings.THEME_DARK,
                 KeyboardSettings.THEME_LIGHT,
@@ -105,6 +120,9 @@ class SetupActivity : ThemedScreen() {
         if (look.isGlitter) {
             // The twinkling-star themes (Glitter Graphics, Night Sky, Winter, Aurora, Synthwave, Gold on Black) have stars instead of the typing pulse.
             addStarDensityControl(root)
+        } else if (look.tapEffect != null) {
+            // Bubbles, Embers, Sakura and Neon Ripples animate wherever you tap, instead of the typing pulse.
+            addEffectAmountControl(root)
         } else {
             root.addView(label("Typing pulse"))
             addPulseControls(root)

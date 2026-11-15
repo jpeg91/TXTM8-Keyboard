@@ -10,6 +10,7 @@ import android.text.Spanned
 import android.text.style.ForegroundColorSpan
 import android.text.style.RelativeSizeSpan
 import android.view.Gravity
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -60,7 +61,8 @@ class NumberPadView(
     private val scroll = HorizontalScrollView(context)
     private val grid = LinearLayout(context)
     private val symbolPanel = LinearLayout(context)
-    private val pulseBackground: Drawable = if (theme.isGlitter) GlitterPulseBackground(theme.backgroundDrawable(this), settings.pulseStrength, resources.displayMetrics.density) else PulseBackground(theme.backgroundDrawable(this), theme.accent, settings.pulseStrength)
+    private val tapEffect: TapEffectDrawable? = theme.tapEffectDrawable(this, settings)
+    private val pulseBackground: Drawable = if (!theme.usesPulse) GlitterPulseBackground(theme.backgroundDrawable(this), settings.pulseStrength, resources.displayMetrics.density) else PulseBackground(theme.backgroundDrawable(this), theme.accent, settings.pulseStrength)
     private lateinit var hashKey: TextView
     private var candidateWords: List<String> = emptyList()
     private var selectedCandidate: Int = -1
@@ -70,7 +72,7 @@ class NumberPadView(
     init {
         orientation = VERTICAL
         background = pulseBackground
-        if (theme.isGlitter) foreground = theme.twinkleDrawable(this, settings)
+        if (theme.isGlitter) foreground = theme.twinkleDrawable(this, settings) else if (tapEffect != null) foreground = tapEffect
         setPadding(0, dp(4), 0, 0) // no side padding: the outer keys reach the screen edge
 
         // --- top bar: QWERTY | candidates | PASTE | ENTER | DEL ---
@@ -86,7 +88,7 @@ class NumberPadView(
 
         val barHeight = 52
 
-        val del = theme.iconKey(context, KeyIcon.BACKSPACE, true, GAP_DP, GAP_DP, 10, "Backspace")
+        val del = theme.iconKey(context, KeyIcon.BACKSPACE, true, GAP_DP, GAP_DP, 10, "Backspace", actionSlot = 1)
         // Tap or hold to delete; slide left to select text and let go to delete it.
         del.setOnTouchListener(
             BackspaceTouch(
@@ -171,7 +173,7 @@ class NumberPadView(
             symbolPanel.addView(r, LinearLayout.LayoutParams(MATCH, WRAP))
         }
         val bottom = newRow()
-        val back = makeKey("ABC", 16f, action = true)
+        val back = makeKey("ABC", 16f, action = true, actionSlot = 2)
         back.setOnClickListener {
             settings.feedback(it)
             showSymbols(false)
@@ -200,6 +202,18 @@ class NumberPadView(
     }
 
     /** Flashes the background in the accent colour (a character was typed). */
+    /** Starts the tap animation (bubbles, embers and so on) wherever a finger touches down. */
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        val effect = tapEffect
+        if (effect != null) {
+            val action = ev.actionMasked
+            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
+                effect.spawn(ev.getX(ev.actionIndex), ev.getY(ev.actionIndex))
+            }
+        }
+        return super.dispatchTouchEvent(ev)
+    }
+
     fun pulse() = (pulseBackground as KeyboardPulseEffect).pulse()
 
     /** Swaps the number grid for the symbol picker (or back). */
@@ -315,14 +329,15 @@ class NumberPadView(
         label: CharSequence,
         size: Float = 20f,
         action: Boolean = false,
+        actionSlot: Int = 0,
     ): TextView {
         val tv = TextView(context)
         tv.text = label
         tv.textSize = size
         tv.typeface = theme.typeface
         tv.gravity = Gravity.CENTER
-        tv.setTextColor(if (action) theme.actionText else theme.text)
-        tv.background = theme.keyBackground(density(), action, GAP_DP, GAP_DP, 10)
+        tv.setTextColor(if (action) theme.actionLabel(actionSlot) else theme.text)
+        tv.background = theme.keyBackground(density(), action, GAP_DP, GAP_DP, 10, actionSlot = actionSlot)
         return tv
     }
 }

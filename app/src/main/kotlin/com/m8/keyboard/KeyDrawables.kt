@@ -672,6 +672,192 @@ class GlitterTwinkleDrawable(
     private companion object { const val FRAME_MS = 125L }
 }
 
+/** The animations that start where the keyboard is tapped. */
+enum class TapEffectKind { BUBBLES, EMBERS, PETALS, RIPPLES }
+
+/**
+ * An animation drawn over the keyboard that starts wherever a finger touches down (not just on a key):
+ * rising bubbles, floating embers, fluttering petals or spreading ripples. It is drawn by hand from the
+ * clock, so Android's animation-speed settings do not change it. [amount] is 0..100: 50 is the normal
+ * amount per tap, 0 is none and 100 is about double.
+ */
+class TapEffectDrawable(
+    private val kind: TapEffectKind,
+    private val density: Float,
+    private val colours: IntArray,
+    private val amount: Int,
+) : Drawable() {
+    private class Particle(
+        val x: Float,
+        val y: Float,
+        val vx: Float,
+        val vy: Float,
+        val size: Float,
+        val bornAt: Long,
+        val life: Long,
+        val colour: Int,
+        val phase: Float,
+        val spin: Float,
+    )
+
+    private val random = Random(System.nanoTime())
+    private val particles = ArrayList<Particle>()
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val oval = RectF()
+
+    private fun rnd(from: Float, to: Float): Float = from + random.nextFloat() * (to - from)
+
+    /** Start the effect at [x], [y] (in this view's own coordinates). */
+    fun spawn(x: Float, y: Float) {
+        val scale = amount.coerceIn(0, 100) / 50f
+        if (scale <= 0f || particles.size >= MAX_PARTICLES) return
+        val now = SystemClock.uptimeMillis()
+        val expected = scale * when (kind) {
+            TapEffectKind.BUBBLES -> 5f
+            TapEffectKind.EMBERS -> 8f
+            TapEffectKind.PETALS -> 6f
+            TapEffectKind.RIPPLES -> 2f
+        }
+        var count = expected.toInt() + if (random.nextFloat() < expected - expected.toInt()) 1 else 0
+        if (count < 1) count = 1
+        val d = density
+        repeat(count) { i ->
+            val colour = colours[random.nextInt(colours.size)]
+            particles.add(
+                when (kind) {
+                    TapEffectKind.BUBBLES -> Particle(
+                        x = x + rnd(-12f, 12f) * d, y = y + rnd(-6f, 6f) * d,
+                        vx = rnd(-10f, 10f) * d, vy = -rnd(45f, 95f) * d,
+                        size = rnd(3f, 9f) * d * (if (random.nextFloat() < 0.15f) 1.5f else 1f),
+                        bornAt = now + rnd(0f, 260f).toLong(), life = rnd(1300f, 2300f).toLong(),
+                        colour = colour, phase = rnd(0f, 6.28f), spin = 0f,
+                    )
+                    TapEffectKind.EMBERS -> Particle(
+                        x = x + rnd(-8f, 8f) * d, y = y + rnd(-4f, 4f) * d,
+                        vx = rnd(-45f, 45f) * d, vy = -rnd(80f, 190f) * d,
+                        size = rnd(1.5f, 3.2f) * d,
+                        bornAt = now + rnd(0f, 120f).toLong(), life = rnd(700f, 1400f).toLong(),
+                        colour = colour, phase = rnd(0f, 6.28f), spin = 0f,
+                    )
+                    TapEffectKind.PETALS -> Particle(
+                        x = x + rnd(-8f, 8f) * d, y = y,
+                        vx = rnd(-70f, 70f) * d, vy = -rnd(50f, 130f) * d,
+                        size = rnd(0.8f, 1.25f),
+                        bornAt = now + rnd(0f, 150f).toLong(), life = rnd(1700f, 2700f).toLong(),
+                        colour = colour, phase = rnd(0f, 6.28f), spin = rnd(-240f, 240f),
+                    )
+                    TapEffectKind.RIPPLES -> Particle(
+                        x = x, y = y, vx = 0f, vy = 0f,
+                        size = (34f + i * 14f + rnd(0f, 8f)) * d,
+                        bornAt = now + i * 150L, life = rnd(750f, 950f).toLong(),
+                        colour = colour, phase = 0f, spin = 0f,
+                    ),
+                },
+            )
+        }
+        invalidateSelf()
+    }
+
+    override fun draw(canvas: Canvas) {
+        if (particles.isEmpty()) return
+        val now = SystemClock.uptimeMillis()
+        val iterator = particles.iterator()
+        while (iterator.hasNext()) {
+            val p = iterator.next()
+            val age = now - p.bornAt
+            if (age >= p.life) {
+                iterator.remove()
+                continue
+            }
+            if (age < 0) continue // not born yet
+            val sec = age / 1000f
+            val t = age / p.life.toFloat()
+            // Fades in quickly and out over the last third of its life.
+            val fade = minOf(t / 0.1f, 1f).coerceIn(0f, 1f) * minOf((1f - t) / 0.35f, 1f).coerceIn(0f, 1f)
+            when (kind) {
+                TapEffectKind.BUBBLES -> drawBubble(canvas, p, sec, t, fade)
+                TapEffectKind.EMBERS -> drawEmber(canvas, p, sec, t)
+                TapEffectKind.PETALS -> drawPetal(canvas, p, sec, fade)
+                TapEffectKind.RIPPLES -> drawRipple(canvas, p, t)
+            }
+        }
+        if (particles.isNotEmpty()) invalidateSelf() // ask for the next frame
+    }
+
+    private fun drawBubble(canvas: Canvas, p: Particle, sec: Float, t: Float, fade: Float) {
+        val r = p.size * (0.85f + 0.35f * t) // bubbles swell a little as they rise
+        val cx = p.x + p.vx * sec + kotlin.math.sin(sec * 3.2f + p.phase) * 5f * density
+        val cy = p.y + p.vy * sec
+        paint.style = Paint.Style.FILL
+        paint.color = p.colour
+        paint.alpha = (fade * 45f).toInt()
+        canvas.drawCircle(cx, cy, r, paint)
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = maxOf(1f, 1.2f * density)
+        paint.color = p.colour
+        paint.alpha = (fade * 210f).toInt()
+        canvas.drawCircle(cx, cy, r, paint)
+        paint.style = Paint.Style.FILL
+        paint.color = 0xFFFFFFFF.toInt()
+        paint.alpha = (fade * 200f).toInt()
+        canvas.drawCircle(cx - r * 0.35f, cy - r * 0.35f, maxOf(1f, r * 0.18f), paint)
+    }
+
+    private fun drawEmber(canvas: Canvas, p: Particle, sec: Float, t: Float) {
+        val gravity = 90f * density // slows the climb
+        val cx = p.x + p.vx * sec + kotlin.math.sin(sec * 9f + p.phase) * 3f * density
+        val cy = p.y + p.vy * sec + 0.5f * gravity * sec * sec
+        val index = (t * colours.size).toInt().coerceIn(0, colours.size - 1)
+        val flicker = 0.65f + 0.35f * kotlin.math.sin(sec * 38f + p.phase)
+        paint.style = Paint.Style.FILL
+        paint.color = colours[index]
+        paint.alpha = ((1f - t * t) * flicker * 255f).toInt().coerceIn(0, 255)
+        val s = p.size * (1f - 0.5f * t)
+        canvas.drawRect(cx - s, cy - s, cx + s, cy + s, paint)
+    }
+
+    private fun drawPetal(canvas: Canvas, p: Particle, sec: Float, fade: Float) {
+        val gravity = 100f * density
+        val cx = p.x + p.vx * sec + kotlin.math.sin(sec * 3.5f + p.phase) * 12f * density
+        val cy = p.y + p.vy * sec + 0.5f * gravity * sec * sec
+        paint.style = Paint.Style.FILL
+        paint.color = p.colour
+        paint.alpha = (fade * 235f).toInt()
+        canvas.save()
+        canvas.translate(cx, cy)
+        canvas.rotate(p.phase * 57.3f + p.spin * sec)
+        // Tumbling: the petal narrows and widens as it turns over.
+        canvas.scale(kotlin.math.abs(kotlin.math.cos(sec * 4f + p.phase)).coerceAtLeast(0.25f), 1f)
+        oval.set(-3.2f * density * p.size, -5f * density * p.size, 3.2f * density * p.size, 5f * density * p.size)
+        canvas.drawOval(oval, paint)
+        canvas.restore()
+    }
+
+    private fun drawRipple(canvas: Canvas, p: Particle, t: Float) {
+        val ease = 1f - (1f - t) * (1f - t)
+        val start = 4f * density
+        val radius = start + (p.size - start) * ease
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = maxOf(1f, (2.5f * (1f - t) + 0.6f) * density)
+        paint.color = p.colour
+        paint.alpha = ((1f - t) * (1f - t) * 220f).toInt()
+        canvas.drawCircle(p.x, p.y, radius, paint)
+    }
+
+    override fun setAlpha(alpha: Int) {}
+    override fun setColorFilter(colorFilter: ColorFilter?) {}
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+
+    private companion object { const val MAX_PARTICLES = 160 }
+}
+
+/** The tap animation for this theme drawn over [host], or null when the theme has none. */
+fun KeyboardTheme.tapEffectDrawable(host: ViewGroup, settings: KeyboardSettings): TapEffectDrawable? =
+    tapEffect?.let {
+        TapEffectDrawable(it, host.resources.displayMetrics.density, effectColours ?: intArrayOf(0xFFFFFFFF.toInt()), settings.effectAmount)
+    }
+
 /** Fixed star brightness (the stars no longer follow the typing pulse); matches the old look at the default pulse. */
 private const val STAR_BRIGHTNESS = 0.425f
 
@@ -791,9 +977,10 @@ fun KeyboardTheme.keyBackground(
     rightFrac: Float = 0f,
     keyColor: Int? = null,
     pressedKeyColor: Int? = null,
+    actionSlot: Int = 0,
 ): Drawable {
-    val normal = keyColor ?: if (action) actionKey else key
-    val pressed = pressedKeyColor ?: if (action) actionKeyPressed else keyPressed
+    val normal = keyColor ?: if (action) actionFill(actionSlot) else key
+    val pressed = pressedKeyColor ?: if (action) actionFillPressed(actionSlot) else keyPressed
 
     fun layer(color: Int, isPressed: Boolean = false): Drawable {
         if (isRetro) {

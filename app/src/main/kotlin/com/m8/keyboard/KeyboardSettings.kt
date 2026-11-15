@@ -18,7 +18,8 @@ data class KeyboardSettings(
     val reopenWord: Boolean = true,
     val pulse: Boolean = true,
     val pulseIntensity: Int = 50, // 0..100
-    val starDensity: Int = 50, // 0..100: how many twinkling stars appear (Glitter Graphics and Night Sky)
+    val starDensity: Int = 50, // 0..100: how many twinkling stars appear (the twinkling-star themes)
+    val effectAmount: Int = 50, // 0..100: how much appears when you tap (the tap-animation themes)
     val nextWord: Boolean = true,
     val autoCap: Boolean = true,
     val doubleSpace: Boolean = true,
@@ -51,6 +52,7 @@ data class KeyboardSettings(
         const val KEY_PULSE = "pulse"
         const val KEY_PULSE_LEVEL = "pulse_level"
         const val KEY_STAR_DENSITY = "star_density"
+        const val KEY_EFFECT_AMOUNT = "effect_amount"
         const val KEY_NEXT_WORD = "next_word"
         const val KEY_AUTO_CAP = "auto_cap"
         const val KEY_DOUBLE_SPACE = "double_space"
@@ -82,6 +84,19 @@ data class KeyboardSettings(
         const val THEME_TERMINAL_GREEN = 16
         const val THEME_TERMINAL_AMBER = 17
         const val THEME_RETRO_DESKTOP = 18
+        const val THEME_BUBBLES = 19
+        const val THEME_EMBERS = 20
+        const val THEME_SAKURA = 21
+        const val THEME_RIPPLES = 22
+        const val THEME_SNES = 23
+        const val THEME_PLAYSTATION = 24
+        const val THEME_DREAMCAST = 25
+        const val THEME_GAMECUBE = 26
+        const val THEME_SNES_EU = 27
+        const val THEME_DREAMCAST_EU = 28
+        const val THEME_N64 = 29
+        const val THEME_XBOX = 30
+        const val THEME_SATURN = 31
 
         /** Index in [P5_ACCENTS] of the original red (the default) and of the purple. */
         const val P5_ACCENT_RED = 0
@@ -113,6 +128,7 @@ data class KeyboardSettings(
                 pulse = p.getBoolean(KEY_PULSE, true),
                 pulseIntensity = p.getInt(KEY_PULSE_LEVEL, 50),
                 starDensity = p.getInt(KEY_STAR_DENSITY, 50).coerceIn(0, 100),
+                effectAmount = p.getInt(KEY_EFFECT_AMOUNT, 50).coerceIn(0, 100),
                 nextWord = p.getBoolean(KEY_NEXT_WORD, true),
                 autoCap = p.getBoolean(KEY_AUTO_CAP, true),
                 doubleSpace = p.getBoolean(KEY_DOUBLE_SPACE, true),

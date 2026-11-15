@@ -176,7 +176,14 @@ class AboutActivity : ThemedScreen() {
                 "blue), the secondaries (purple, green, orange) and six tertiary colours in between. Key size can " +
                 "be small, medium or large. There are also retro and colourful themes: Amber Backlight (an old phone " +
                 "with an orange backlight), Terminal in green or amber, Retro Desktop (silver bevelled keys on teal), " +
-                "and the twinkling-star themes below.",
+                "and the twinkling-star themes below. Bubbles, Embers, Sakura and Neon Ripples animate wherever you " +
+                "tap. SNES, N64, Saturn, PlayStation, Dreamcast, Xbox and GameCube are inspired by 90s and 2000s game " +
+                "consoles, and SNES and Dreamcast come in US and EU versions with their own button colours.",
+        )
+        feature(
+            root, "Tap animations",
+            "Bubbles rise, embers float up, petals flutter down and ripples spread from every spot you touch, " +
+                "not just from the key. The Animation amount setting changes how much appears.",
         )
         feature(
             root, "Twinkling stars",
@@ -186,7 +193,7 @@ class AboutActivity : ThemedScreen() {
         )
         feature(
             root, "Typing pulse",
-            "The keyboard background flashes in the theme's accent colour as you type (the twinkling-star themes have stars instead), with an adjustable " +
+            "The keyboard background flashes in the theme's accent colour as you type (the twinkling-star and tap-animation themes have their own effects instead), with an adjustable " +
                 "strength. It is drawn by the keyboard itself, so Android's animation settings do not speed it up, " +
                 "slow it down or switch it off.",
         )
