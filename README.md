@@ -8,7 +8,7 @@ You can also switch to multi-tap, where repeated presses cycle through the lette
 
 The predictive engine starts with a 40,000-word English dictionary, ranked by frequency. It also learns from your typing, including which words tend to follow each other.
 
-There are plenty of themes to choose from, including Nokia 3310, Game Boy and game console-inspired themes, as well as a range of typing, editing and visual features.
+There are plenty of themes to choose from, including Nokia 3310, retro and game console-inspired themes, as well as a range of typing, editing and visual features.
 
 Everything runs locally. There is no internet permission, and anything the keyboard learns stays on your phone.
 
