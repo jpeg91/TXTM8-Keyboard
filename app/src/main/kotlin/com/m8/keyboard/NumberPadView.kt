@@ -77,7 +77,7 @@ class NumberPadView(
         strip.orientation = HORIZONTAL
         scroll.isHorizontalScrollBarEnabled = false
         scroll.background = when {
-            theme.isNightSky -> android.graphics.drawable.ColorDrawable(theme.strip)
+            theme.plainBackground -> android.graphics.drawable.ColorDrawable(theme.strip)
             theme.isGlitter -> GlitterPatternDrawable(theme.strip, context.resources.displayMetrics.density, stripMode = true)
             theme.isGameBoyAdvance -> PixelScreenDrawable(theme.strip, context.resources.displayMetrics.density)
             else -> android.graphics.drawable.ColorDrawable(theme.strip)

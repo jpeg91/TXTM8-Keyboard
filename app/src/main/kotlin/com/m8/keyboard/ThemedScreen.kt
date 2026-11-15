@@ -324,7 +324,7 @@ abstract class ThemedScreen : Activity() {
         refresh()
     }
 
-    /** The star density slider, for the themes with twinkling stars (Glitter Graphics and Night Sky). */
+    /** The star density slider, for the themes with twinkling stars. */
     protected fun addStarDensityControl(parent: LinearLayout) {
         parent.addView(label("Star density"))
 

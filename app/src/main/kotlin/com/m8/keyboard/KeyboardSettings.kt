@@ -74,6 +74,14 @@ data class KeyboardSettings(
         const val THEME_GAME_BOY_ADVANCE = 8
         const val THEME_GLITTER = 9
         const val THEME_NIGHT_SKY = 10
+        const val THEME_WINTER = 11
+        const val THEME_AURORA = 12
+        const val THEME_SYNTHWAVE = 13
+        const val THEME_GOLD_ON_BLACK = 14
+        const val THEME_AMBER_BACKLIGHT = 15
+        const val THEME_TERMINAL_GREEN = 16
+        const val THEME_TERMINAL_AMBER = 17
+        const val THEME_RETRO_DESKTOP = 18
 
         /** Index in [P5_ACCENTS] of the original red (the default) and of the purple. */
         const val P5_ACCENT_RED = 0

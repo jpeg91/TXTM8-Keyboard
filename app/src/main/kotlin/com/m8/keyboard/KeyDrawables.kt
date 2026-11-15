@@ -93,6 +93,58 @@ class SlantKeyDrawable(
     override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
 }
 
+/**
+ * A grey 90s-desktop button: a flat face with a one-pixel white and black bevel (raised), swapped
+ * round when [pressed] so the key looks pushed in.
+ */
+class RetroKeyDrawable(
+    private val fill: Int,
+    private val pressed: Boolean,
+    private val insetX: Float,
+    private val insetY: Float,
+    private val density: Float,
+) : Drawable() {
+    private val paint = Paint().apply { isAntiAlias = false; style = Paint.Style.FILL }
+
+    override fun draw(canvas: Canvas) {
+        val b = bounds
+        val l = b.left + insetX
+        val t = b.top + insetY
+        val r = b.right - insetX
+        val bottom = b.bottom - insetY
+        val px = maxOf(1f, density)
+        if (r - l < 6f * px || bottom - t < 6f * px) return
+
+        paint.color = fill
+        canvas.drawRect(l, t, r, bottom, paint)
+
+        val outerLight = if (pressed) 0xFF808080.toInt() else 0xFFFFFFFF.toInt()
+        val outerDark = if (pressed) 0xFFFFFFFF.toInt() else 0xFF000000.toInt()
+        val innerLight = if (pressed) 0xFF000000.toInt() else 0xFFDFDFDF.toInt()
+        val innerDark = if (pressed) 0xFFDFDFDF.toInt() else 0xFF808080.toInt()
+
+        // Inner bevel first, then the outer one on top of it.
+        paint.color = innerLight
+        canvas.drawRect(l + px, t + px, r - px, t + 2 * px, paint)
+        canvas.drawRect(l + px, t + px, l + 2 * px, bottom - px, paint)
+        paint.color = innerDark
+        canvas.drawRect(l + px, bottom - 2 * px, r - px, bottom - px, paint)
+        canvas.drawRect(r - 2 * px, t + px, r - px, bottom - px, paint)
+
+        paint.color = outerLight
+        canvas.drawRect(l, t, r, t + px, paint)
+        canvas.drawRect(l, t, l + px, bottom, paint)
+        paint.color = outerDark
+        canvas.drawRect(l, bottom - px, r, bottom, paint)
+        canvas.drawRect(r - px, t, r, bottom, paint)
+    }
+
+    override fun setAlpha(alpha: Int) { paint.alpha = alpha }
+    override fun setColorFilter(colorFilter: ColorFilter?) { paint.colorFilter = colorFilter }
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun getOpacity(): Int = PixelFormat.OPAQUE
+}
+
 /** Raised, slightly domed plastic keycaps inspired by the original Nokia 3310 keypad. */
 class NokiaKeyDrawable(
     private val fill: Int,
@@ -620,26 +672,22 @@ class GlitterTwinkleDrawable(
     private companion object { const val FRAME_MS = 125L }
 }
 
-/** Night Sky's stars: mostly icy white, with some pale blue and the odd subtle cyan highlight. */
-private val NIGHT_SKY_STAR_COLOURS = intArrayOf(
-    0xFFE8F6FF.toInt(), 0xFFE8F6FF.toInt(), 0xFFE8F6FF.toInt(), 0xFFFFFFFF.toInt(),
-    0xFFBFDFFF.toInt(), 0xFFBFDFFF.toInt(), 0xFF9EEBFF.toInt(),
-)
-
 /** Fixed star brightness (the stars no longer follow the typing pulse); matches the old look at the default pulse. */
 private const val STAR_BRIGHTNESS = 0.425f
 
 /** The twinkling stars drawn over [host], in this theme's colours and the chosen star density. */
 fun KeyboardTheme.twinkleDrawable(host: ViewGroup, settings: KeyboardSettings): GlitterTwinkleDrawable =
-    if (isNightSky) {
-        GlitterTwinkleDrawable(host, host.resources.displayMetrics.density, STAR_BRIGHTNESS, NIGHT_SKY_STAR_COLOURS, settings.starDensity)
+    if (starColours != null) {
+        GlitterTwinkleDrawable(host, host.resources.displayMetrics.density, STAR_BRIGHTNESS, starColours, settings.starDensity)
     } else {
         GlitterTwinkleDrawable(host, host.resources.displayMetrics.density, STAR_BRIGHTNESS, starDensity = settings.starDensity)
     }
 
 /** The keyboard's background for this theme (plain colour, or the pinstriped backdrop). */
 fun KeyboardTheme.backgroundDrawable(view: View): Drawable =
-    if (isNightSky) {
+    if (backgroundBottom != 0) {
+        GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(background, backgroundBottom))
+    } else if (plainBackground) {
         ColorDrawable(background)
     } else if (isGlitter) {
         GlitterPatternDrawable(background, view.resources.displayMetrics.density)
@@ -747,13 +795,22 @@ fun KeyboardTheme.keyBackground(
     val normal = keyColor ?: if (action) actionKey else key
     val pressed = pressedKeyColor ?: if (action) actionKeyPressed else keyPressed
 
-    fun layer(color: Int): Drawable {
+    fun layer(color: Int, isPressed: Boolean = false): Drawable {
+        if (isRetro) {
+            return RetroKeyDrawable(
+                fill = color,
+                pressed = isPressed,
+                insetX = gapXDp * density,
+                insetY = gapYDp * density,
+                density = density,
+            )
+        }
         if (isGlitter || isGameBoy) {
             return PixelGlitterKeyDrawable(
                 fill = color,
                 shadow = this.shadow,
                 border = when {
-                    isNightSky -> NIGHT_SKY_ICY
+                    pixelBorder != 0 -> pixelBorder
                     isGlitter -> 0xFFFFE2F2.toInt()
                     isGameBoyAdvance -> 0xFFE8D9FF.toInt()
                     else -> this.shadow
@@ -789,7 +846,8 @@ fun KeyboardTheme.keyBackground(
         }
         val shape = GradientDrawable().apply {
             setColor(color)
-            cornerRadius = cornerDp * density
+            cornerRadius = if (squareKeys) 0f else cornerDp * density
+            if (border != 0) setStroke(maxOf(1, (1.5f * density).toInt()), border) // outlined keys
         }
         val gx = (gapXDp * density).toInt()
         val gy = (gapYDp * density).toInt()
@@ -798,13 +856,19 @@ fun KeyboardTheme.keyBackground(
     }
 
     return StateListDrawable().apply {
-        addState(intArrayOf(android.R.attr.state_pressed), layer(pressed))
+        addState(intArrayOf(android.R.attr.state_pressed), layer(pressed, true))
         addState(intArrayOf(), layer(normal))
     }
 }
 
 /** Highlight behind the selected candidate word. */
 fun KeyboardTheme.candidateBackground(density: Float): Drawable {
+    if (isRetro || squareKeys) {
+        return GradientDrawable().apply {
+            setColor(accent)
+            cornerRadius = 0f
+        }
+    }
     if (isGlitter) {
         return GradientDrawable().apply {
             setColor(accent)

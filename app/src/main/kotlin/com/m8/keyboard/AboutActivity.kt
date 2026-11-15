@@ -174,17 +174,19 @@ class AboutActivity : ThemedScreen() {
             "Choose a theme, or follow the system's light and dark mode. The P5 theme is bold black and white " +
                 "with one bright accent colour, and you pick the accent from twelve: the primaries (red, yellow, " +
                 "blue), the secondaries (purple, green, orange) and six tertiary colours in between. Key size can " +
-                "be small, medium or large.",
+                "be small, medium or large. There are also retro and colourful themes: Amber Backlight (an old phone " +
+                "with an orange backlight), Terminal in green or amber, Retro Desktop (silver bevelled keys on teal), " +
+                "and the twinkling-star themes below.",
         )
         feature(
             root, "Twinkling stars",
-            "The Glitter Graphics and Night Sky themes have pixel-edged keys with stars that flash at the " +
-                "corners of the keys. Night Sky is deep midnight blue with icy white borders and lettering. " +
-                "The Star density setting changes how many stars appear in both themes.",
+            "Glitter Graphics, Night Sky, Winter, Aurora, Synthwave and Gold on Black have pixel-edged keys " +
+                "with stars that flash at the corners of the keys. Night Sky is deep midnight blue with icy white " +
+                "borders and lettering. The Star density setting changes how many stars appear in all of them.",
         )
         feature(
             root, "Typing pulse",
-            "The keyboard background flashes in the theme's accent colour as you type (Glitter Graphics and Night Sky have twinkling stars instead), with an adjustable " +
+            "The keyboard background flashes in the theme's accent colour as you type (the twinkling-star themes have stars instead), with an adjustable " +
                 "strength. It is drawn by the keyboard itself, so Android's animation settings do not speed it up, " +
                 "slow it down or switch it off.",
         )

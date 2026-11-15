@@ -31,8 +31,18 @@ class KeyboardTheme(
     val isGameBoyAdvance: Boolean = false,
     val isGameBoy: Boolean = false,
     val isGlitter: Boolean = false,
-    /** Night Sky reuses the Glitter pixel keys and twinkles, but with a plain midnight-blue look. */
-    val isNightSky: Boolean = false,
+    /** Glitter-style themes that skip the pink pinstripe and hearts and use a plain (or gradient) background. */
+    val plainBackground: Boolean = false,
+    /** Border colour of the pixel keys on a glitter-style theme; 0 keeps the theme's own default. */
+    val pixelBorder: Int = 0,
+    /** Star colours for the twinkles on a glitter-style theme; null keeps the pink Glitter Graphics stars. */
+    val starColours: IntArray? = null,
+    /** When not 0, the background fades from [background] at the top to this colour at the bottom. */
+    val backgroundBottom: Int = 0,
+    /** Grey 90s-desktop keys with raised and sunken bevelled edges. */
+    val isRetro: Boolean = false,
+    /** Square-cornered keys (the terminal themes). */
+    val squareKeys: Boolean = false,
     val typeface: Typeface = Typeface.DEFAULT,
 ) {
     companion object {
@@ -184,8 +194,172 @@ class KeyboardTheme(
             shadow = 0xFF050A1F.toInt(),
             deep = 0xFF050A1F.toInt(),
             isGlitter = true,
-            isNightSky = true,
+            plainBackground = true,
+            pixelBorder = NIGHT_SKY_ICY,
+            starColours = NIGHT_SKY_STAR_COLOURS,
             typeface = Typeface.create("monospace", Typeface.BOLD),
+        )
+
+        /** Winter: steel-blue pixel keys with snow-white borders, a touch of Christmas red, and snowy sparkles. */
+        val WINTER = KeyboardTheme(
+            background = 0xFF0E2238.toInt(),
+            backgroundBottom = 0xFF1B3F66.toInt(),
+            strip = 0xFF16365A.toInt(),
+            key = 0xFF1F4B78.toInt(),
+            keyPressed = 0xFF3A74A8.toInt(),
+            text = 0xFFF2FAFF.toInt(),
+            accent = 0xFFC62839.toInt(),
+            accentText = 0xFFFFFFFF.toInt(),
+            actionKey = 0xFFC62839.toInt(),
+            actionKeyPressed = 0xFFE5495A.toInt(),
+            actionText = 0xFFFFFFFF.toInt(),
+            subText = 0xFFCFE8F8.toInt(),
+            shadow = 0xFF081624.toInt(),
+            deep = 0xFF081624.toInt(),
+            isGlitter = true,
+            plainBackground = true,
+            pixelBorder = 0xFFF2FAFF.toInt(),
+            starColours = WINTER_STAR_COLOURS,
+            typeface = Typeface.create("monospace", Typeface.BOLD),
+        )
+
+        /** Aurora: dark teal sky, teal and violet keys with northern-lights green borders, green and pink sparkles. */
+        val AURORA = KeyboardTheme(
+            background = 0xFF050B1C.toInt(),
+            backgroundBottom = 0xFF0A3A38.toInt(),
+            strip = 0xFF081A2B.toInt(),
+            key = 0xFF123B45.toInt(),
+            keyPressed = 0xFF1E6B62.toInt(),
+            text = 0xFFE9FFF6.toInt(),
+            accent = 0xFF8B5CF6.toInt(),
+            accentText = 0xFFFFFFFF.toInt(),
+            actionKey = 0xFF3B2A6B.toInt(),
+            actionKeyPressed = 0xFF6A4BC0.toInt(),
+            actionText = 0xFFE9FFF6.toInt(),
+            subText = 0xFFB8F5DC.toInt(),
+            shadow = 0xFF03070F.toInt(),
+            deep = 0xFF03070F.toInt(),
+            isGlitter = true,
+            plainBackground = true,
+            pixelBorder = 0xFF63F5B8.toInt(),
+            starColours = AURORA_STAR_COLOURS,
+            typeface = Typeface.create("monospace", Typeface.BOLD),
+        )
+
+        /** Synthwave: purple dusk, indigo keys with neon pink borders and cyan lettering, pink and cyan sparkles. */
+        val SYNTHWAVE = KeyboardTheme(
+            background = 0xFF140A2E.toInt(),
+            backgroundBottom = 0xFF3A0B53.toInt(),
+            strip = 0xFF0F0626.toInt(),
+            key = 0xFF1E1048.toInt(),
+            keyPressed = 0xFF3B2A8C.toInt(),
+            text = 0xFF2DE2E6.toInt(),
+            accent = 0xFFFF2E97.toInt(),
+            accentText = 0xFFFFFFFF.toInt(),
+            actionKey = 0xFF3A0F5C.toInt(),
+            actionKeyPressed = 0xFF7A1F8C.toInt(),
+            actionText = 0xFFFF6EC7.toInt(),
+            subText = 0xFF9BE8F0.toInt(),
+            shadow = 0xFF0A0420.toInt(),
+            deep = 0xFF0A0420.toInt(),
+            isGlitter = true,
+            plainBackground = true,
+            pixelBorder = 0xFFFF2E97.toInt(),
+            starColours = SYNTHWAVE_STAR_COLOURS,
+            typeface = Typeface.create("monospace", Typeface.BOLD),
+        )
+
+        /** Gold on Black: black keys with gold borders and lettering, and warm gold glints. */
+        val GOLD_ON_BLACK = KeyboardTheme(
+            background = 0xFF000000.toInt(),
+            strip = 0xFF000000.toInt(),
+            key = 0xFF0A0A0A.toInt(),
+            keyPressed = 0xFF3A2F0A.toInt(),
+            text = 0xFFF3D77A.toInt(),
+            accent = 0xFFD4AF37.toInt(),
+            accentText = 0xFF000000.toInt(),
+            actionKey = 0xFF1A1405.toInt(),
+            actionKeyPressed = 0xFF4A3A0C.toInt(),
+            actionText = 0xFFF3D77A.toInt(),
+            subText = 0xFFC9A227.toInt(),
+            shadow = 0xFF1A1405.toInt(),
+            deep = 0xFF1A1405.toInt(),
+            isGlitter = true,
+            plainBackground = true,
+            pixelBorder = 0xFFD4AF37.toInt(),
+            starColours = GOLD_STAR_COLOURS,
+            typeface = Typeface.create("monospace", Typeface.BOLD),
+        )
+
+        /** Amber Backlight: an old monochrome phone with an orange backlight: dark brown, amber lettering, soft keys. */
+        val AMBER_BACKLIGHT = KeyboardTheme(
+            background = 0xFF1A0F05.toInt(),
+            strip = 0xFF120A03.toInt(),
+            key = 0xFF2B1A0A.toInt(),
+            keyPressed = 0xFF5C3A10.toInt(),
+            text = 0xFFFFB000.toInt(),
+            accent = 0xFFFFB000.toInt(),
+            accentText = 0xFF1A0F05.toInt(),
+            actionKey = 0xFF3A2410.toInt(),
+            actionKeyPressed = 0xFF6B4415.toInt(),
+            actionText = 0xFFFFC433.toInt(),
+            subText = 0xFFD98E00.toInt(),
+            border = 0xFF6B4410.toInt(),
+            typeface = Typeface.create("sans-serif", Typeface.BOLD),
+        )
+
+        /** Terminal, phosphor green: black screen, square keys with green outlines, monospace lettering. */
+        val TERMINAL_GREEN = KeyboardTheme(
+            background = 0xFF000000.toInt(),
+            strip = 0xFF000000.toInt(),
+            key = 0xFF000A00.toInt(),
+            keyPressed = 0xFF0F4A1E.toInt(),
+            text = 0xFF33FF66.toInt(),
+            accent = 0xFF33FF66.toInt(),
+            accentText = 0xFF000000.toInt(),
+            actionKey = 0xFF062A12.toInt(),
+            actionKeyPressed = 0xFF14702F.toInt(),
+            actionText = 0xFF33FF66.toInt(),
+            subText = 0xFF1FB547.toInt(),
+            border = 0xFF1FA040.toInt(),
+            squareKeys = true,
+            typeface = Typeface.create("monospace", Typeface.BOLD),
+        )
+
+        /** Terminal, amber phosphor: the same square-keyed look in amber on black. */
+        val TERMINAL_AMBER = KeyboardTheme(
+            background = 0xFF000000.toInt(),
+            strip = 0xFF000000.toInt(),
+            key = 0xFF0A0600.toInt(),
+            keyPressed = 0xFF4A3000.toInt(),
+            text = 0xFFFFB000.toInt(),
+            accent = 0xFFFFB000.toInt(),
+            accentText = 0xFF000000.toInt(),
+            actionKey = 0xFF2A1A00.toInt(),
+            actionKeyPressed = 0xFF6B4700.toInt(),
+            actionText = 0xFFFFB000.toInt(),
+            subText = 0xFFC48600.toInt(),
+            border = 0xFFA86F00.toInt(),
+            squareKeys = true,
+            typeface = Typeface.create("monospace", Typeface.BOLD),
+        )
+
+        /** Retro Desktop: silver bevelled keys on a teal desktop, a white text box and navy highlights. */
+        val RETRO_DESKTOP = KeyboardTheme(
+            background = 0xFF008080.toInt(),
+            strip = 0xFFFFFFFF.toInt(),
+            key = 0xFFC0C0C0.toInt(),
+            keyPressed = 0xFFB0B0B0.toInt(),
+            text = 0xFF000000.toInt(),
+            accent = 0xFF000080.toInt(),
+            accentText = 0xFFFFFFFF.toInt(),
+            actionKey = 0xFFC0C0C0.toInt(),
+            actionKeyPressed = 0xFFB0B0B0.toInt(),
+            actionText = 0xFF000000.toInt(),
+            subText = 0xFF000080.toInt(),
+            isRetro = true,
+            squareKeys = true,
+            typeface = Typeface.create("sans-serif", Typeface.NORMAL),
         )
 
         private fun heavyItalic(): Typeface =
@@ -207,6 +381,14 @@ class KeyboardTheme(
                 KeyboardSettings.THEME_GAME_BOY_ADVANCE -> GAME_BOY_ADVANCE
                 KeyboardSettings.THEME_GLITTER -> GLITTER
                 KeyboardSettings.THEME_NIGHT_SKY -> NIGHT_SKY
+                KeyboardSettings.THEME_WINTER -> WINTER
+                KeyboardSettings.THEME_AURORA -> AURORA
+                KeyboardSettings.THEME_SYNTHWAVE -> SYNTHWAVE
+                KeyboardSettings.THEME_GOLD_ON_BLACK -> GOLD_ON_BLACK
+                KeyboardSettings.THEME_AMBER_BACKLIGHT -> AMBER_BACKLIGHT
+                KeyboardSettings.THEME_TERMINAL_GREEN -> TERMINAL_GREEN
+                KeyboardSettings.THEME_TERMINAL_AMBER -> TERMINAL_AMBER
+                KeyboardSettings.THEME_RETRO_DESKTOP -> RETRO_DESKTOP
                 KeyboardSettings.THEME_DARK -> DARK
                 KeyboardSettings.THEME_LIGHT -> LIGHT
                 else -> if (night) DARK else LIGHT
@@ -218,6 +400,26 @@ class KeyboardTheme(
 /** Night Sky's deep midnight blue (background and keys) and its icy white (borders, lettering, stars). */
 const val NIGHT_SKY_MIDNIGHT = 0xFF0B1437.toInt()
 const val NIGHT_SKY_ICY = 0xFFE8F6FF.toInt()
+
+/** Star colours for the twinkling themes (a colour listed more than once is that much more common). */
+internal val NIGHT_SKY_STAR_COLOURS = intArrayOf(
+    0xFFE8F6FF.toInt(), 0xFFE8F6FF.toInt(), 0xFFE8F6FF.toInt(), 0xFFFFFFFF.toInt(),
+    0xFFBFDFFF.toInt(), 0xFFBFDFFF.toInt(), 0xFF9EEBFF.toInt(),
+)
+internal val WINTER_STAR_COLOURS = intArrayOf(
+    0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0xFFE3F4FF.toInt(),
+    0xFFBFE3FF.toInt(), 0xFFBFE3FF.toInt(), 0xFFFF8E99.toInt(),
+)
+internal val AURORA_STAR_COLOURS = intArrayOf(
+    0xFF7CFFC4.toInt(), 0xFF7CFFC4.toInt(), 0xFFB6FFE0.toInt(), 0xFFFF8AD8.toInt(),
+    0xFFC4A8FF.toInt(), 0xFFFFFFFF.toInt(),
+)
+internal val SYNTHWAVE_STAR_COLOURS = intArrayOf(
+    0xFF2DE2E6.toInt(), 0xFF2DE2E6.toInt(), 0xFFFF2E97.toInt(), 0xFFFF7BC3.toInt(), 0xFFFFFFFF.toInt(),
+)
+internal val GOLD_STAR_COLOURS = intArrayOf(
+    0xFFFFE9A3.toInt(), 0xFFFFE9A3.toInt(), 0xFFFFD86B.toInt(), 0xFFD4AF37.toInt(), 0xFFFFFFFF.toInt(),
+)
 
 /** One selectable accent colour for the P5 theme: the main colour, a brighter one (pressed action keys) and a deep one (shadows). */
 class P5Accent(

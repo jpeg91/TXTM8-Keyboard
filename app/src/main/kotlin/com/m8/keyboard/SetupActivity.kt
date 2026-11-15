@@ -67,7 +67,11 @@ class SetupActivity : ThemedScreen() {
         root.addView(sectionTitle("Look"))
         addChoice(
             root, "Theme", KeyboardSettings.KEY_THEME,
-            listOf("P5", "Nokia 3310", "Game Boy", "Game Boy Advance", "Glitter Graphics", "Night Sky", "Follow system", "Dark", "Light"),
+            listOf(
+                "P5", "Nokia 3310", "Game Boy", "Game Boy Advance", "Glitter Graphics", "Night Sky", "Winter", "Aurora",
+                "Synthwave", "Gold on Black", "Amber Backlight", "Terminal Green", "Terminal Amber", "Retro Desktop",
+                "Follow system", "Dark", "Light",
+            ),
             listOf(
                 KeyboardSettings.THEME_P5,
                 KeyboardSettings.THEME_NOKIA,
@@ -75,6 +79,14 @@ class SetupActivity : ThemedScreen() {
                 KeyboardSettings.THEME_GAME_BOY_ADVANCE,
                 KeyboardSettings.THEME_GLITTER,
                 KeyboardSettings.THEME_NIGHT_SKY,
+                KeyboardSettings.THEME_WINTER,
+                KeyboardSettings.THEME_AURORA,
+                KeyboardSettings.THEME_SYNTHWAVE,
+                KeyboardSettings.THEME_GOLD_ON_BLACK,
+                KeyboardSettings.THEME_AMBER_BACKLIGHT,
+                KeyboardSettings.THEME_TERMINAL_GREEN,
+                KeyboardSettings.THEME_TERMINAL_AMBER,
+                KeyboardSettings.THEME_RETRO_DESKTOP,
                 KeyboardSettings.THEME_SYSTEM,
                 KeyboardSettings.THEME_DARK,
                 KeyboardSettings.THEME_LIGHT,
@@ -91,7 +103,7 @@ class SetupActivity : ThemedScreen() {
             listOf("Small", "Medium", "Large"), listOf(0, 1, 2), 1,
         )
         if (look.isGlitter) {
-            // Glitter Graphics and Night Sky have twinkling stars instead of the typing pulse.
+            // The twinkling-star themes (Glitter Graphics, Night Sky, Winter, Aurora, Synthwave, Gold on Black) have stars instead of the typing pulse.
             addStarDensityControl(root)
         } else {
             root.addView(label("Typing pulse"))
