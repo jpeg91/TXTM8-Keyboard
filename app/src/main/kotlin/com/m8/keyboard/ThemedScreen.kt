@@ -360,4 +360,41 @@ abstract class ThemedScreen : Activity() {
         parent.addView(seek, LinearLayout.LayoutParams(MATCH, WRAP))
         refresh()
     }
+
+    /** The tap-effect amount slider, for the themes that animate wherever you tap. */
+    protected fun addEffectAmountControl(parent: LinearLayout) {
+        parent.addView(label("Effect amount"))
+
+        val valueText = TextView(this)
+        valueText.textSize = 14f
+        valueText.setTextColor(look.subText)
+        valueText.setPadding(dp(36), dp(4), 0, 0)
+
+        val seek = SeekBar(this)
+        seek.max = 100
+        seek.progress = prefs.getInt(KeyboardSettings.KEY_EFFECT_AMOUNT, 50)
+        val tint = ColorStateList.valueOf(look.accent)
+        seek.progressTintList = tint
+        seek.thumbTintList = tint
+        seek.progressBackgroundTintList = ColorStateList.valueOf(0xFF727272.toInt()) // dim grey
+
+        fun refresh() {
+            valueText.text = "Amount: " + seek.progress + "%"
+        }
+        seek.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(bar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) prefs.edit().putInt(KeyboardSettings.KEY_EFFECT_AMOUNT, progress).apply()
+                refresh()
+            }
+
+            override fun onStartTrackingTouch(bar: SeekBar?) {}
+
+            override fun onStopTrackingTouch(bar: SeekBar?) {}
+        })
+
+        parent.addView(hint("How much appears when you tap a key. Set it to 0% for none."))
+        parent.addView(valueText)
+        parent.addView(seek, LinearLayout.LayoutParams(MATCH, WRAP))
+        refresh()
+    }
 }
