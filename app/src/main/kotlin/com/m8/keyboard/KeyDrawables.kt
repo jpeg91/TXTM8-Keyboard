@@ -626,12 +626,15 @@ private val NIGHT_SKY_STAR_COLOURS = intArrayOf(
     0xFFBFDFFF.toInt(), 0xFFBFDFFF.toInt(), 0xFF9EEBFF.toInt(),
 )
 
+/** Fixed star brightness (the stars no longer follow the typing pulse); matches the old look at the default pulse. */
+private const val STAR_BRIGHTNESS = 0.425f
+
 /** The twinkling stars drawn over [host], in this theme's colours and the chosen star density. */
 fun KeyboardTheme.twinkleDrawable(host: ViewGroup, settings: KeyboardSettings): GlitterTwinkleDrawable =
     if (isNightSky) {
-        GlitterTwinkleDrawable(host, host.resources.displayMetrics.density, settings.pulseStrength, NIGHT_SKY_STAR_COLOURS, settings.starDensity)
+        GlitterTwinkleDrawable(host, host.resources.displayMetrics.density, STAR_BRIGHTNESS, NIGHT_SKY_STAR_COLOURS, settings.starDensity)
     } else {
-        GlitterTwinkleDrawable(host, host.resources.displayMetrics.density, settings.pulseStrength, starDensity = settings.starDensity)
+        GlitterTwinkleDrawable(host, host.resources.displayMetrics.density, STAR_BRIGHTNESS, starDensity = settings.starDensity)
     }
 
 /** The keyboard's background for this theme (plain colour, or the pinstriped backdrop). */

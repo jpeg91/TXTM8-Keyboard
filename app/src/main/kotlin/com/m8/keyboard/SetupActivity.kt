@@ -90,10 +90,13 @@ class SetupActivity : ThemedScreen() {
             root, "Key size", KeyboardSettings.KEY_SIZE,
             listOf("Small", "Medium", "Large"), listOf(0, 1, 2), 1,
         )
-        root.addView(label("Typing pulse"))
-        addPulseControls(root)
-        // Only the themes with twinkling stars (Glitter Graphics and Night Sky) have star density.
-        if (look.isGlitter) addStarDensityControl(root)
+        if (look.isGlitter) {
+            // Glitter Graphics and Night Sky have twinkling stars instead of the typing pulse.
+            addStarDensityControl(root)
+        } else {
+            root.addView(label("Typing pulse"))
+            addPulseControls(root)
+        }
 
         // ---- Typing ----
         root.addView(sectionTitle("Typing"))

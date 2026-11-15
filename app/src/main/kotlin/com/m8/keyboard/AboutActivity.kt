@@ -184,7 +184,7 @@ class AboutActivity : ThemedScreen() {
         )
         feature(
             root, "Typing pulse",
-            "The keyboard background flashes in the theme's accent colour as you type, with an adjustable " +
+            "The keyboard background flashes in the theme's accent colour as you type (Glitter Graphics and Night Sky have twinkling stars instead), with an adjustable " +
                 "strength. It is drawn by the keyboard itself, so Android's animation settings do not speed it up, " +
                 "slow it down or switch it off.",
         )

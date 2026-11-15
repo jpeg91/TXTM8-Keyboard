@@ -355,7 +355,7 @@ abstract class ThemedScreen : Activity() {
             override fun onStopTrackingTouch(bar: SeekBar?) {}
         })
 
-        parent.addView(hint("How many stars twinkle on the keys. The stars are switched off while the typing pulse is off."))
+        parent.addView(hint("How many stars twinkle on the keys. Set it to 0% for none."))
         parent.addView(valueText)
         parent.addView(seek, LinearLayout.LayoutParams(MATCH, WRAP))
         refresh()
