@@ -118,9 +118,6 @@ class IconKeyView(
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val path = Path()
 
-    /** 0..1: how brightly the icon glows (RAZR theme only; set by [bindKeyGlow]). */
-    var glow = 0f
-
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         val density = resources.displayMetrics.density
@@ -149,6 +146,5 @@ fun KeyboardTheme.iconKey(
     val view = IconKeyView(context, icon, if (action) actionLabel(actionSlot) else text)
     view.background = keyBackground(density, action, gapXDp, gapYDp, cornerDp, actionSlot = actionSlot)
     view.contentDescription = description
-    bindKeyGlow(view)
     return view
 }

@@ -119,13 +119,7 @@ class NumberPadView(
         val enter = theme.iconKey(context, KeyIcon.ENTER, true, GAP_DP, GAP_DP, 10, "Enter")
         enter.setOnClickListener {
             settings.feedback(it)
-            listener.onKeypadPaste()
-        }
-        // Hold paste to copy the selected text.
-        paste.setOnLongClickListener {
-            settings.feedback(it, isLong = true)
-            listener.onKeypadCopy()
-            true
+            listener.onKeypadEnter()
         }
 
         val top = newRow()
@@ -139,10 +133,10 @@ class NumberPadView(
 
         // --- 4x3 number grid ---
         grid.orientation = VERTICAL
-        for ((rowIndex, rowKeys) in listOf("123", "456", "789", "*0#").withIndex()) {
+        for (rowKeys in listOf("123", "456", "789", "*0#")) {
             val r = newRow()
-            for ((columnIndex, k) in rowKeys.withIndex()) {
-                val key = makeKey(labelFor(k), razrRow = rowIndex, razrColumn = columnIndex)
+            for (k in rowKeys) {
+                val key = makeKey(labelFor(k))
                 key.setOnClickListener {
                     settings.feedback(it)
                     listener.onKeypadKey(k)
@@ -281,23 +275,6 @@ class NumberPadView(
     }
 
     // ---- helpers ----
-
-    private fun moveCandidate(delta: Int) {
-        if (candidateWords.isEmpty()) return
-        val next = (selectedCandidate + delta).coerceIn(0, candidateWords.lastIndex)
-        if (next == selectedCandidate) return
-        selectedCandidate = next
-        setCandidates(candidateWords, next)
-        listener.onKeypadCandidateMove(next)
-        settings.feedback(this)
-    }
-
-    private fun selectCandidate() {
-        if (selectedCandidate in candidateWords.indices) {
-            listener.onKeypadCandidate(selectedCandidate)
-            settings.feedback(this)
-        }
-    }
 
     private fun density(): Float = resources.displayMetrics.density
 
