@@ -751,7 +751,7 @@ class TapEffectDrawable(
                         size = (34f + i * 14f + rnd(0f, 8f)) * d,
                         bornAt = now + i * 150L, life = rnd(750f, 950f).toLong(),
                         colour = colour, phase = 0f, spin = 0f,
-                    ),
+                    )
                 },
             )
         }
