@@ -1,6 +1,6 @@
 # TXTM8 Keyboard
 
-An Android keyboard for the old and more efficient way of typing on a phone: a number pad with T9 style predictive text
+An Android keyboard for the old and more efficient way of typing on a phone: a number pad with T9-style predictive text.
 
 Press each number once for the letter you want. The keyboard works out the word, learns which words you use, and gets better at putting them first.
 
@@ -8,7 +8,7 @@ You can also switch to multi-tap, where repeated presses cycle through the lette
 
 The predictive engine starts with a 40,000-word English dictionary, ranked by frequency. It also learns from your typing, including which words tend to follow each other.
 
-There are several themes to choose from, including a Nokia 3310-inspired theme, as well as lots of quality of life and usability features.
+There are plenty of themes to choose from, including Nokia 3310, Game Boy and game console-inspired themes, as well as a range of typing, editing and visual features.
 
 Everything runs locally. There is no internet permission, and anything the keyboard learns stays on your phone.
 
@@ -32,15 +32,17 @@ Multi-tap works like older mobile phones: press a number repeatedly to cycle thr
 
 The letter is entered when you press another key or the timeout expires. Words typed this way are added to your dictionary.
 
+Hold a number key to enter the digit itself. In number and phone fields, the number pad enters digits directly.
+
 ### It learns from you
 
 Words you choose more often gradually move up the suggestions list.
 
-Type out a new word not yet in the dictionary using Multi-tap or the included QWERTY keyboard, and the word will be automatically added to the predictive dictionary for next time.
+Type a new word using Multi-tap or the included QWERTY keyboard, and it will be added to the predictive dictionary for next time.
 
 It also remembers which words tend to follow each other. After a space, the suggestion strip can offer likely next words based on what you've typed before.
 
-You can remove suggestions by holding them. Removed words stay out of the list, even after restarting the keyboard.
+You can remove a suggestion by holding it. Removed words stay out of the list, even after restarting the keyboard. Holding a next-word suggestion removes that word pairing instead.
 
 Everything it learns is saved locally. You can clear learned words at any time from Settings.
 
@@ -48,13 +50,13 @@ Everything it learns is saved locally. You can clear learned words at any time f
 
 Tap the keyboard icon to switch to a conventional QWERTY layout, with a separate numbers and symbols page.
 
-It includes the usual shift, space, enter and backspace keys, along with clipboard controls and the same cursor and selection gestures as the number pad.
+It includes shift, space, enter and backspace keys, along with clipboard controls and the same cursor and selection gestures as the number pad.
 
 ### Emoji and text smileys
 
-The emoji page contains emoji grouped into sections, followed by old-school text smileys and kaomoji.
+The emoji page is available from either symbol page by tapping `;)`.
 
-Each section scrolls sideways, with the whole page scrolling up and down.
+It contains emoji grouped into sections, followed by old-school text smileys and kaomoji. Each section scrolls sideways, with the whole page scrolling up and down.
 
 ### Editing gestures
 
@@ -62,25 +64,35 @@ Each section scrolls sideways, with the whole page scrolling up and down.
 - With text selected, use the same gesture to adjust either end of the selection.
 - Slide left from backspace to select text backwards. Let go to delete the selection.
 - Hold the clipboard key and let go to copy selected text.
-- Hold the clipboard key and slide to select text from the cursor.
+- Hold the clipboard key and slide to select text from the cursor. Let go to leave the selection in place.
 - Tap the clipboard key to paste.
+- Backspace straight after a word re-opens it with its suggestions, so you can choose a different one.
 
 Gestures can be switched off or adjusted for speed in Settings.
 
 ### Automatic typing features
 
-- **Capitalisation:** Automatically capitalises the start of sentences, with manual one-letter capitals and caps lock.
+- **Capitalisation:** Automatically capitalises the start of sentences. Tap `#` to cycle between lower case, a capital for the next letter, and caps lock.
 - **Contractions:** Fixes common missing apostrophes when typing letter by letter. `dont` becomes `don't`, `im` becomes `I'm`, and so on.
 - **Double space:** Two quick taps on space after a word insert a full stop and a space.
-- **Automatic spacing:** Suggestions add a space after the word. Typing punctuation straight afterwards takes that space back.
+- **Automatic spacing:** Accepting a suggestion adds a space after the word. Typing punctuation straight afterwards takes that space back.
+- **Punctuation:** Repeatedly tap `1` to cycle through punctuation marks.
 
 ### Themes and settings
 
-Choose from Red, Purple, Nokia 3310, Dark and Light themes, or follow the system's light and dark mode.
+There are 32 themes to choose from:
 
-Key size can be set to small, medium or large. The typing pulse has an adjustable strength, and vibration and key click sounds can each be switched on or off.
+- **P5:** Black and white with a choice of twelve accent colours.
+- **Nokia 3310, Game Boy and Game Boy Advance.**
+- **Glitter Graphics, Night Sky, Winter, Aurora, Synthwave and Gold on Black:** Pixel-edged keys with twinkling stars.
+- **Amber Backlight, Terminal Green, Terminal Amber and Retro Desktop.**
+- **Bubbles, Embers, Sakura and Neon Ripples:** Animations that appear wherever you tap.
+- **SNES (US and EU), N64, Saturn, PlayStation, PS2, Dreamcast (US, Japan and EU), Xbox and GameCube.**
+- **Follow system, Dark and Light.**
 
-There are also settings for multi-tap timing, learning, next-word suggestions, automatic capitalisation and slide gestures.
+Key size can be set to small, medium or large. The typing pulse has an adjustable strength. The star themes have a separate star-density setting, and the tap-animation themes have an effect-amount setting.
+
+Vibration and key click sounds can each be switched on or off. Other settings cover multi-tap timing, learning, next-word suggestions, automatic capitalisation, contractions, double-space full stops and slide gestures.
 
 ### Password and number fields
 
@@ -130,7 +142,7 @@ Next-word suggestions use these learned pairs, ranked by how often they have occ
 
 Words typed in multi-tap or QWERTY mode can be added to the dictionary, so they are available to predictive mode afterwards.
 
-Removed suggestions and learned data are saved in a local file and restored when the engine starts again.
+Removed suggestions and learned data are saved in a local file and restored when the engine starts again. Typing a removed word letter by letter adds it back.
 
 ### Dictionary
 
@@ -140,7 +152,7 @@ It is derived from [FrequencyWords](https://github.com/hermitdave/FrequencyWords
 
 The original frequencies are converted to a logarithmic score:
 
-`score = round(100 × ln(count))`
+`score = max(1, round(100 × ln(count)))`
 
 This keeps the scores within a useful range for the engine's own learning weights.
 
@@ -175,7 +187,7 @@ The predictive engine is kept separate from the Android keyboard interface, allo
 
 The keyboard communicates with the active text field through Android's input connection. It handles composing text, committing words, cursor movement, selection, clipboard actions and editor-specific actions.
 
-Password fields are detected through the editor's input type. Learning is disabled for these fields, and the keyboard switches to multi-tap/QWERTY input without predictive suggestions.
+Password fields are detected through the editor's input type. Learning and predictive suggestions are disabled for these fields, and the keyboard switches to the plain QWERTY layout.
 
 ### Tests
 
@@ -200,13 +212,13 @@ The project uses Kotlin and Android Gradle Plugin.
 Requirements:
 
 - JDK 17
-- Gradle 8.9
+- Gradle 8.10.2
 - Android SDK 34
 
 Run the tests:
 
 ```bash
-gradle test
+gradle :test
 ```
 
 Build the debug APK:
@@ -225,7 +237,7 @@ app/build/outputs/apk/debug/
 
 There is no internet permission in the Android manifest.
 
-The dictionary and predictive engine run locally. Learned words, word preferences and removed suggestions are stored in the app's private storage.
+The dictionary and predictive engine run locally. Learned words, word preferences, word pairings and removed suggestions are stored in the app's private storage.
 
 Nothing is uploaded, and learned data can be cleared from the settings screen.
 
