@@ -3,9 +3,14 @@ package com.m8.keyboard
 
 import android.app.AlertDialog
 import android.content.Intent
+import android.content.SharedPreferences
+import android.os.Handler
+import android.os.Looper
 import android.os.Bundle
 import android.provider.Settings
 import android.view.inputmethod.InputMethodManager
+import android.text.InputType
+import android.view.Gravity
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -21,6 +26,29 @@ private const val MATCH = android.view.ViewGroup.LayoutParams.MATCH_PARENT
 class SetupActivity : ThemedScreen() {
 
     private var status: TextView? = null
+    private var testField: EditText? = null
+    private val handler = Handler(Looper.getMainLooper())
+
+    /**
+     * Only registered while this screen is in front (onResume to onPause), so the keyboard
+     * service itself never watches for changes. It is a field because SharedPreferences keeps
+     * only a weak reference to its listeners.
+     */
+    private val prefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == KeyboardSettings.KEY_CLEAR_TOKEN) return@OnSharedPreferenceChangeListener
+        // A slider fires many times while it is dragged, so wait for the changes to settle.
+        handler.removeCallbacks(restartKeyboard)
+        handler.postDelayed(restartKeyboard, 300L)
+    }
+
+    /** Closes the keyboard and opens it again; it reloads its settings whenever it starts. */
+    private val restartKeyboard = Runnable {
+        val field = testField ?: return@Runnable
+        if (!field.hasFocus()) return@Runnable // keyboard not up: the next start picks the settings up
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(field.windowToken, 0)
+        handler.postDelayed({ if (field.hasFocus()) imm.showSoftInput(field, 0) }, 250L)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,10 +79,18 @@ class SetupActivity : ThemedScreen() {
         // ---- Try it ----
         root.addView(sectionTitle("Try it"))
         val test = EditText(this)
+        testField = test
         test.hint = "Tap here to try it"
         test.setHintTextColor(0xFF727272.toInt()) // dim grey
         test.setTextColor(look.text)
         test.textSize = 16f
+        // A real multi-line text field: sentence capitals and suggestions only happen when the
+        // field asks for them (a bare EditText has no capitalisation flag).
+        test.inputType = InputType.TYPE_CLASS_TEXT or
+            InputType.TYPE_TEXT_FLAG_CAP_SENTENCES or
+            InputType.TYPE_TEXT_FLAG_MULTI_LINE
+        test.minLines = 6
+        test.gravity = Gravity.TOP or Gravity.START
         test.setPadding(dp(18), dp(14), dp(18), dp(14))
         test.background = look.keyBackground(density, false, 4, 4, 10)
         root.addView(test, LinearLayout.LayoutParams(MATCH, WRAP))
@@ -226,6 +262,13 @@ class SetupActivity : ThemedScreen() {
     override fun onResume() {
         super.onResume()
         refreshStatus()
+        prefs.registerOnSharedPreferenceChangeListener(prefsListener)
+    }
+
+    override fun onPause() {
+        prefs.unregisterOnSharedPreferenceChangeListener(prefsListener)
+        handler.removeCallbacks(restartKeyboard)
+        super.onPause()
     }
 
     /** Says where the person is in the two setup steps (this changes while they are in system settings). */
