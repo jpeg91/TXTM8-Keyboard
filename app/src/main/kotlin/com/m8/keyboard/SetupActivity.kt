@@ -71,7 +71,7 @@ class SetupActivity : ThemedScreen() {
                 "P5", "Nokia 3310", "Game Boy", "Game Boy Advance", "Glitter Graphics", "Night Sky", "Winter", "Aurora",
                 "Synthwave", "Gold on Black", "Amber Backlight", "Terminal Green", "Terminal Amber", "Retro Desktop",
                 "Bubbles", "Embers", "Sakura", "Neon Ripples", "SNES (US)", "SNES (EU)", "N64", "Saturn",
-                "PlayStation", "Dreamcast (US)", "Dreamcast (EU)", "Xbox", "GameCube",
+                "PlayStation", "PS2", "Dreamcast (US)", "Dreamcast (JP)", "Dreamcast (EU)", "Xbox", "GameCube",
                 "Follow system", "Dark", "Light",
             ),
             listOf(
@@ -98,7 +98,9 @@ class SetupActivity : ThemedScreen() {
                 KeyboardSettings.THEME_N64,
                 KeyboardSettings.THEME_SATURN,
                 KeyboardSettings.THEME_PLAYSTATION,
+                KeyboardSettings.THEME_PS2,
                 KeyboardSettings.THEME_DREAMCAST,
+                KeyboardSettings.THEME_DREAMCAST_JP,
                 KeyboardSettings.THEME_DREAMCAST_EU,
                 KeyboardSettings.THEME_XBOX,
                 KeyboardSettings.THEME_GAMECUBE,

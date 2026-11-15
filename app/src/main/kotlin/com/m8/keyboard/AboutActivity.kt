@@ -177,8 +177,9 @@ class AboutActivity : ThemedScreen() {
                 "be small, medium or large. There are also retro and colourful themes: Amber Backlight (an old phone " +
                 "with an orange backlight), Terminal in green or amber, Retro Desktop (silver bevelled keys on teal), " +
                 "and the twinkling-star themes below. Bubbles, Embers, Sakura and Neon Ripples animate wherever you " +
-                "tap. SNES, N64, Saturn, PlayStation, Dreamcast, Xbox and GameCube are inspired by 90s and 2000s game " +
-                "consoles, and SNES and Dreamcast come in US and EU versions with their own button colours.",
+                "tap. SNES, N64, Saturn, PlayStation, PS2, Dreamcast, Xbox and GameCube are inspired by 90s and 2000s " +
+                "game consoles. SNES comes in US and EU versions, and Dreamcast in US, Japan and EU versions, each " +
+                "with its own colours.",
         )
         feature(
             root, "Tap animations",

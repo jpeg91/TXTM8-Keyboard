@@ -474,18 +474,18 @@ class KeyboardTheme(
 
         /** 16-bit console pad (US): cool grey shell with purple action keys and a red highlight. */
         val SNES = KeyboardTheme(
-            background = 0xFFB9B7C0.toInt(),
-            strip = 0xFFE9E7EE.toInt(),
-            key = 0xFFDAD8E2.toInt(),
-            keyPressed = 0xFFB7B3C8.toInt(),
+            background = 0xFFB8B8B8.toInt(),
+            strip = 0xFFEDEDED.toInt(),
+            key = 0xFFB7A6D2.toInt(),
+            keyPressed = 0xFF9E8CC0.toInt(),
             text = 0xFF2C2A3A.toInt(),
-            accent = 0xFFD8453B.toInt(),
+            accent = 0xFFB51F2A.toInt(),
             accentText = 0xFFFFFFFF.toInt(),
-            actionKey = 0xFF5B4B8A.toInt(),
-            actionKeyPressed = 0xFF7C6BB0.toInt(),
+            actionKey = 0xFF654A91.toInt(),
+            actionKeyPressed = 0xFF9380B2.toInt(),
             actionText = 0xFFFFFFFF.toInt(),
-            subText = 0xFF5A5670.toInt(),
-            border = 0xFF8C88A0.toInt(),
+            subText = 0xFF3E3A55.toInt(),
+            border = 0xFF7E7A94.toInt(),
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
@@ -494,20 +494,20 @@ class KeyboardTheme(
          * (green, red, blue and yellow) in place of the purple action keys.
          */
         val SNES_EU = KeyboardTheme(
-            background = 0xFFB9B7C0.toInt(),
-            strip = 0xFFE9E7EE.toInt(),
-            key = 0xFFDAD8E2.toInt(),
-            keyPressed = 0xFFB7B3C8.toInt(),
-            text = 0xFF2C2A3A.toInt(),
-            accent = 0xFFD8453B.toInt(),
+            background = 0xFFB8B8B8.toInt(),
+            strip = 0xFFEDEDED.toInt(),
+            key = 0xFFC9C9C9.toInt(),
+            keyPressed = 0xFFAFAFAF.toInt(),
+            text = 0xFF2A2A2E.toInt(),
+            accent = 0xFFB51F2A.toInt(),
             accentText = 0xFFFFFFFF.toInt(),
-            actionKey = 0xFF2E9E5B.toInt(),
-            actionKeyPressed = 0xFF5BBF82.toInt(),
+            actionKey = 0xFF168A45.toInt(),
+            actionKeyPressed = 0xFF5BAD7C.toInt(),
             actionText = 0xFFFFFFFF.toInt(),
-            subText = 0xFF5A5670.toInt(),
-            border = 0xFF8C88A0.toInt(),
-            actionKeyColours = intArrayOf(0xFF2E9E5B.toInt(), 0xFFD1352F.toInt(), 0xFF2F5FBF.toInt(), 0xFFF2C12E.toInt()),
-            actionTextColours = intArrayOf(0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0xFF2C2A3A.toInt()),
+            subText = 0xFF4A4A52.toInt(),
+            border = 0xFF7A7A7A.toInt(),
+            actionKeyColours = intArrayOf(0xFF168A45.toInt(), 0xFFC92B32.toInt(), 0xFF245AA6.toInt(), 0xFFE8C52A.toInt()),
+            actionTextColours = intArrayOf(0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0xFF2A2A2E.toInt()),
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
@@ -516,34 +516,34 @@ class KeyboardTheme(
          * button colours as the action keys, and a yellow highlight.
          */
         val N64 = KeyboardTheme(
-            background = 0xFF7E8085.toInt(),
-            strip = 0xFFD0D2D5.toInt(),
-            key = 0xFFB9BBBF.toInt(),
-            keyPressed = 0xFF9A9CA1.toInt(),
+            background = 0xFFA5A5A5.toInt(),
+            strip = 0xFFDCDCDC.toInt(),
+            key = 0xFFC4C4C4.toInt(),
+            keyPressed = 0xFF9A9A9A.toInt(),
             text = 0xFF22242A.toInt(),
-            accent = 0xFFF5C21B.toInt(),
+            accent = 0xFFE6C51A.toInt(),
             accentText = 0xFF22242A.toInt(),
-            actionKey = 0xFF2C5BB8.toInt(),
-            actionKeyPressed = 0xFF5C86D6.toInt(),
+            actionKey = 0xFF1764B2.toInt(),
+            actionKeyPressed = 0xFF5C92C9.toInt(),
             actionText = 0xFFFFFFFF.toInt(),
-            subText = 0xFF3F4146.toInt(),
-            border = 0xFF55575C.toInt(),
-            actionKeyColours = intArrayOf(0xFF2C5BB8.toInt(), 0xFFD42A2A.toInt(), 0xFF2E9E4F.toInt(), 0xFFF5C21B.toInt()),
+            subText = 0xFF3A3A3A.toInt(),
+            border = 0xFF666666.toInt(),
+            actionKeyColours = intArrayOf(0xFF1764B2.toInt(), 0xFFD71920.toInt(), 0xFF168A45.toInt(), 0xFFE6C51A.toInt()),
             actionTextColours = intArrayOf(0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0xFF22242A.toInt()),
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
         /** 32-bit console pad (Saturn): dark grey shell, mid-grey keys with silver lettering and blue action keys. */
         val SATURN = KeyboardTheme(
-            background = 0xFF2B2D33.toInt(),
-            strip = 0xFF1C1E23.toInt(),
-            key = 0xFF43464E.toInt(),
-            keyPressed = 0xFF5C606B.toInt(),
+            background = 0xFF171717.toInt(),
+            strip = 0xFF0F0F0F.toInt(),
+            key = 0xFF242424.toInt(),
+            keyPressed = 0xFF3C3C3C.toInt(),
             text = 0xFFE6E8EC.toInt(),
-            accent = 0xFF3E6AD8.toInt(),
+            accent = 0xFF315FA8.toInt(),
             accentText = 0xFFFFFFFF.toInt(),
-            actionKey = 0xFF2D52B8.toInt(),
-            actionKeyPressed = 0xFF557DE8.toInt(),
+            actionKey = 0xFF244A91.toInt(),
+            actionKeyPressed = 0xFF3F6CC0.toInt(),
             actionText = 0xFFFFFFFF.toInt(),
             subText = 0xFFB6BAC4.toInt(),
             border = 0xFF6E727C.toInt(),
@@ -552,52 +552,97 @@ class KeyboardTheme(
 
         /** 32-bit grey console pad: mid-grey shell with the blue cross and red circle button colours. */
         val PLAYSTATION = KeyboardTheme(
-            background = 0xFF8F9097.toInt(),
-            strip = 0xFFD6D6DA.toInt(),
-            key = 0xFFC4C5CB.toInt(),
-            keyPressed = 0xFFA3A4AC.toInt(),
+            background = 0xFF8F9297.toInt(),
+            strip = 0xFFDADBDE.toInt(),
+            key = 0xFFB9BCC2.toInt(),
+            keyPressed = 0xFF9A9DA4.toInt(),
             text = 0xFF24252B.toInt(),
-            accent = 0xFFE0463E.toInt(),
+            accent = 0xFFC83A43.toInt(),
             accentText = 0xFFFFFFFF.toInt(),
-            actionKey = 0xFF3C6FD8.toInt(),
-            actionKeyPressed = 0xFF6A93EC.toInt(),
+            actionKey = 0xFF315A9B.toInt(),
+            actionKeyPressed = 0xFF6E8BB9.toInt(),
             actionText = 0xFFFFFFFF.toInt(),
-            subText = 0xFF4C4D55.toInt(),
-            border = 0xFF6E6F78.toInt(),
+            subText = 0xFF3E4048.toInt(),
+            border = 0xFF6A6C74.toInt(),
+            typeface = Typeface.create("sans-serif", Typeface.BOLD),
+        )
+
+        /**
+         * Early-2000s black console (PlayStation 2): black pad with the blue of the PS2 logo for outlines and the
+         * highlight, a black-to-navy background, and the four symbol colours (blue, red, green, pink) as the
+         * action keys. The symbol colours are estimates, not researched values.
+         */
+        val PS2 = KeyboardTheme(
+            background = 0xFF0A0A0C.toInt(),
+            backgroundBottom = 0xFF0D0A3A.toInt(),
+            strip = 0xFF121216.toInt(),
+            key = 0xFF1C1C21.toInt(),
+            keyPressed = 0xFF34343C.toInt(),
+            text = 0xFFF2F4F8.toInt(),
+            accent = 0xFF118FDB.toInt(),
+            accentText = 0xFF0A0A0C.toInt(),
+            actionKey = 0xFF0072CE.toInt(),
+            actionKeyPressed = 0xFF4C9CDC.toInt(),
+            actionText = 0xFFFFFFFF.toInt(),
+            subText = 0xFFA8AAB4.toInt(),
+            border = 0xFF118FDB.toInt(),
+            actionKeyColours = intArrayOf(0xFF0072CE.toInt(), 0xFFD22630.toInt(), 0xFF2EB67D.toInt(), 0xFFE8A0C4.toInt()),
+            actionTextColours = intArrayOf(0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0xFF0A0A0C.toInt(), 0xFF0A0A0C.toInt()),
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
         /** Late-90s white console (US): white keys on a light grey shell with orange action keys. */
         val DREAMCAST = KeyboardTheme(
-            background = 0xFFD7D8DB.toInt(),
-            strip = 0xFFF4F4F5.toInt(),
+            background = 0xFFF2F2F0.toInt(),
+            strip = 0xFFE4E4E1.toInt(),
             key = 0xFFFFFFFF.toInt(),
-            keyPressed = 0xFFE2E3E6.toInt(),
+            keyPressed = 0xFFE2E2DF.toInt(),
+            text = 0xFF2D3036.toInt(),
+            accent = 0xFFBB3322.toInt(),
+            accentText = 0xFFFFFFFF.toInt(),
+            actionKey = 0xFFBB3322.toInt(),
+            actionKeyPressed = 0xFFCF7064.toInt(),
+            actionText = 0xFFFFFFFF.toInt(),
+            subText = 0xFF5E626B.toInt(),
+            border = 0xFFA8A8A4.toInt(),
+            typeface = Typeface.create("sans-serif", Typeface.BOLD),
+        )
+
+        /**
+         * Late-90s white console (Japan): the same white keys and light grey shell, with the orange swirl.
+         * The orange is an estimate, not a researched value; the lettering is dark because white on this
+         * orange is hard to read.
+         */
+        val DREAMCAST_JP = KeyboardTheme(
+            background = 0xFFF2F2F0.toInt(),
+            strip = 0xFFE4E4E1.toInt(),
+            key = 0xFFFFFFFF.toInt(),
+            keyPressed = 0xFFE2E2DF.toInt(),
             text = 0xFF2D3036.toInt(),
             accent = 0xFFF26A1B.toInt(),
-            accentText = 0xFFFFFFFF.toInt(),
+            accentText = 0xFF1E2024.toInt(),
             actionKey = 0xFFF26A1B.toInt(),
-            actionKeyPressed = 0xFFFF8C4A.toInt(),
-            actionText = 0xFFFFFFFF.toInt(),
-            subText = 0xFF6B6F78.toInt(),
-            border = 0xFFB4B6BC.toInt(),
+            actionKeyPressed = 0xFFF5965F.toInt(),
+            actionText = 0xFF1E2024.toInt(),
+            subText = 0xFF5E626B.toInt(),
+            border = 0xFFA8A8A4.toInt(),
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
         /** Late-90s white console (EU): the same white keys and light grey shell, with the European blue instead of orange. */
         val DREAMCAST_EU = KeyboardTheme(
-            background = 0xFFD7D8DB.toInt(),
-            strip = 0xFFF4F4F5.toInt(),
+            background = 0xFFF2F2F0.toInt(),
+            strip = 0xFFE4E4E1.toInt(),
             key = 0xFFFFFFFF.toInt(),
-            keyPressed = 0xFFE2E3E6.toInt(),
+            keyPressed = 0xFFE2E2DF.toInt(),
             text = 0xFF2D3036.toInt(),
-            accent = 0xFF1F5FBF.toInt(),
+            accent = 0xFF0066CC.toInt(),
             accentText = 0xFFFFFFFF.toInt(),
-            actionKey = 0xFF1F5FBF.toInt(),
-            actionKeyPressed = 0xFF4A86E0.toInt(),
+            actionKey = 0xFF0066CC.toInt(),
+            actionKeyPressed = 0xFF4C93DB.toInt(),
             actionText = 0xFFFFFFFF.toInt(),
-            subText = 0xFF6B6F78.toInt(),
-            border = 0xFFB4B6BC.toInt(),
+            subText = 0xFF5E626B.toInt(),
+            border = 0xFFA8A8A4.toInt(),
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
@@ -606,31 +651,31 @@ class KeyboardTheme(
             background = 0xFF050505.toInt(),
             backgroundBottom = 0xFF0E2208.toInt(),
             strip = 0xFF141414.toInt(),
-            key = 0xFF1B1D1B.toInt(),
+            key = 0xFF171917.toInt(),
             keyPressed = 0xFF2F4A12.toInt(),
             text = 0xFFEFF5E6.toInt(),
-            accent = 0xFF9BDC25.toInt(),
+            accent = 0xFF94C83F.toInt(),
             accentText = 0xFF0A0A0A.toInt(),
-            actionKey = 0xFF9BDC25.toInt(),
-            actionKeyPressed = 0xFFB8F04A.toInt(),
+            actionKey = 0xFF94C83F.toInt(),
+            actionKeyPressed = 0xFFB4D878.toInt(),
             actionText = 0xFF0A0A0A.toInt(),
             subText = 0xFF9FB58A.toInt(),
-            border = 0xFF3E7A10.toInt(),
+            border = 0xFF4F7A25.toInt(),
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
         /** Early-2000s indigo console: deep indigo shell, purple keys, silver action keys and a green highlight. */
         val GAMECUBE = KeyboardTheme(
-            background = 0xFF2E2559.toInt(),
-            strip = 0xFF1F1840.toInt(),
-            key = 0xFF5B4BA8.toInt(),
-            keyPressed = 0xFF8272D6.toInt(),
+            background = 0xFF493B78.toInt(),
+            strip = 0xFF2F2552.toInt(),
+            key = 0xFF51458A.toInt(),
+            keyPressed = 0xFF7466B8.toInt(),
             text = 0xFFFFFFFF.toInt(),
-            accent = 0xFF2BB673.toInt(),
+            accent = 0xFF238A4B.toInt(),
             accentText = 0xFFFFFFFF.toInt(),
-            actionKey = 0xFFE8E6F2.toInt(),
-            actionKeyPressed = 0xFFFFFFFF.toInt(),
-            actionText = 0xFF2E2559.toInt(),
+            actionKey = 0xFFD6D6D6.toInt(),
+            actionKeyPressed = 0xFFEEEEEE.toInt(),
+            actionText = 0xFF2B2150.toInt(),
             subText = 0xFFD2CAF5.toInt(),
             border = 0xFF9C8FE8.toInt(),
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
@@ -672,6 +717,8 @@ class KeyboardTheme(
                 KeyboardSettings.THEME_N64 -> N64
                 KeyboardSettings.THEME_SATURN -> SATURN
                 KeyboardSettings.THEME_DREAMCAST_EU -> DREAMCAST_EU
+                KeyboardSettings.THEME_DREAMCAST_JP -> DREAMCAST_JP
+                KeyboardSettings.THEME_PS2 -> PS2
                 KeyboardSettings.THEME_XBOX -> XBOX
                 KeyboardSettings.THEME_PLAYSTATION -> PLAYSTATION
                 KeyboardSettings.THEME_DREAMCAST -> DREAMCAST

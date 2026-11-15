@@ -97,6 +97,8 @@ data class KeyboardSettings(
         const val THEME_N64 = 29
         const val THEME_XBOX = 30
         const val THEME_SATURN = 31
+        const val THEME_DREAMCAST_JP = 32
+        const val THEME_PS2 = 33
 
         /** Index in [P5_ACCENTS] of the original red (the default) and of the purple. */
         const val P5_ACCENT_RED = 0
