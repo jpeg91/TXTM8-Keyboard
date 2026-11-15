@@ -10,6 +10,7 @@ import android.graphics.RadialGradient
 import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Shader
+import android.graphics.Typeface
 import android.graphics.PixelFormat
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
@@ -512,6 +513,15 @@ class GlitterPulseBackground(
     @Suppress("unused") private val strength: Float,
     @Suppress("unused") private val density: Float,
 ) : Drawable(), KeyboardPulseEffect {
+    private val forward = ForwardCallback(this)
+
+    init { base.callback = forward }
+
+    override fun setVisible(visible: Boolean, restart: Boolean): Boolean {
+        base.setVisible(visible, restart)
+        return super.setVisible(visible, restart)
+    }
+
     override fun onBoundsChange(bounds: Rect) { base.bounds = bounds }
     override fun draw(canvas: Canvas) = base.draw(canvas)
     override fun pulse() = Unit
@@ -673,7 +683,30 @@ class GlitterTwinkleDrawable(
 }
 
 /** The animations that start where the keyboard is tapped. */
-enum class TapEffectKind { BUBBLES, EMBERS, PETALS, RIPPLES }
+enum class TapEffectKind {
+    BUBBLES, EMBERS, PETALS, RIPPLES,
+
+    /** A short row of blue blocks that marches away from the tap, like a loading bar. */
+    BLOCKS,
+
+    /** Equaliser bars that jump up at the tap and fall back. */
+    EQ_BARS,
+
+    /** Little four-point sparkles that fall away, like an old web page's cursor trail. */
+    SPARKLE,
+
+    /** A cluster of pixels that fades in coarse steps, like the ghosting of a slow LCD. */
+    GHOST,
+
+    /** Music notes that float up and sway. */
+    NOTES,
+
+    /** A column of falling glyphs that starts at the tap. */
+    GLYPHS,
+
+    /** Squiggles, triangles, rings and plus signs that burst out and tumble down. */
+    CONFETTI,
+}
 
 /**
  * An animation drawn over the keyboard that starts wherever a finger touches down (not just on a key):
@@ -704,6 +737,14 @@ class TapEffectDrawable(
     private val particles = ArrayList<Particle>()
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val oval = RectF()
+    private val path = Path()
+    private val glyph = CharArray(1)
+    private val glyphChars: CharArray by lazy {
+        val list = ArrayList<Char>()
+        for (code in 0xFF66..0xFF9D) list.add(code.toChar())
+        for (ch in "0123456789:.=*+-<>") list.add(ch)
+        list.toCharArray()
+    }
 
     private fun rnd(from: Float, to: Float): Float = from + random.nextFloat() * (to - from)
 
@@ -717,6 +758,13 @@ class TapEffectDrawable(
             TapEffectKind.EMBERS -> 8f
             TapEffectKind.PETALS -> 6f
             TapEffectKind.RIPPLES -> 2f
+            TapEffectKind.BLOCKS -> 1f
+            TapEffectKind.EQ_BARS -> 1f
+            TapEffectKind.SPARKLE -> 5f
+            TapEffectKind.GHOST -> 1f
+            TapEffectKind.NOTES -> 2f
+            TapEffectKind.GLYPHS -> 1f
+            TapEffectKind.CONFETTI -> 9f
         }
         var count = expected.toInt() + if (random.nextFloat() < expected - expected.toInt()) 1 else 0
         if (count < 1) count = 1
@@ -752,6 +800,55 @@ class TapEffectDrawable(
                         bornAt = now + i * 150L, life = rnd(750f, 950f).toLong(),
                         colour = colour, phase = 0f, spin = 0f,
                     )
+                    TapEffectKind.BLOCKS -> Particle(
+                        x = x - 18f * d, y = y + rnd(-12f, 12f) * d,
+                        vx = rnd(110f, 150f) * d, vy = 0f,
+                        size = 5.5f * d,
+                        bornAt = now + i * 90L, life = 850L,
+                        colour = colour, phase = 0f, spin = 0f,
+                    )
+                    TapEffectKind.EQ_BARS -> Particle(
+                        x = x + rnd(-10f, 10f) * d, y = y,
+                        vx = 0f, vy = 0f,
+                        size = rnd(28f, 46f) * d,
+                        bornAt = now, life = rnd(650f, 900f).toLong(),
+                        colour = colour, phase = rnd(0f, 6.28f), spin = 0f,
+                    )
+                    TapEffectKind.SPARKLE -> Particle(
+                        x = x + rnd(-10f, 10f) * d, y = y + rnd(-6f, 6f) * d,
+                        vx = rnd(-40f, 40f) * d, vy = -rnd(10f, 60f) * d,
+                        size = rnd(3.5f, 7f) * d,
+                        bornAt = now + rnd(0f, 160f).toLong(), life = rnd(500f, 900f).toLong(),
+                        colour = colour, phase = rnd(0f, 6.28f), spin = 0f,
+                    )
+                    TapEffectKind.GHOST -> Particle(
+                        x = x + rnd(-8f, 8f) * d, y = y + rnd(-8f, 8f) * d,
+                        vx = 0f, vy = 0f,
+                        size = 3.2f * d,
+                        bornAt = now, life = 1100L,
+                        colour = colour, phase = rnd(0f, 1f), spin = 0f,
+                    )
+                    TapEffectKind.NOTES -> Particle(
+                        x = x + rnd(-10f, 10f) * d, y = y,
+                        vx = rnd(-20f, 20f) * d, vy = -rnd(50f, 90f) * d,
+                        size = rnd(0.9f, 1.4f),
+                        bornAt = now + rnd(0f, 200f).toLong(), life = rnd(1100f, 1700f).toLong(),
+                        colour = colour, phase = rnd(0f, 6.28f), spin = 0f,
+                    )
+                    TapEffectKind.GLYPHS -> Particle(
+                        x = x + rnd(-12f, 12f) * d, y = y,
+                        vx = 0f, vy = rnd(220f, 320f) * d,
+                        size = 13f * d,
+                        bornAt = now + rnd(0f, 120f).toLong(), life = rnd(900f, 1300f).toLong(),
+                        colour = colour, phase = rnd(0f, 6.28f), spin = 0f,
+                    )
+                    TapEffectKind.CONFETTI -> Particle(
+                        x = x, y = y,
+                        vx = rnd(-170f, 170f) * d, vy = -rnd(120f, 260f) * d,
+                        size = rnd(5f, 9f) * d,
+                        bornAt = now, life = rnd(1100f, 1800f).toLong(),
+                        colour = colour, phase = rnd(0f, 6.28f), spin = rnd(-300f, 300f),
+                    )
                 },
             )
         }
@@ -779,6 +876,13 @@ class TapEffectDrawable(
                 TapEffectKind.EMBERS -> drawEmber(canvas, p, sec, t)
                 TapEffectKind.PETALS -> drawPetal(canvas, p, sec, fade)
                 TapEffectKind.RIPPLES -> drawRipple(canvas, p, t)
+                TapEffectKind.BLOCKS -> drawBlocks(canvas, p, sec, fade)
+                TapEffectKind.EQ_BARS -> drawBars(canvas, p, sec, t, fade)
+                TapEffectKind.SPARKLE -> drawSparkle(canvas, p, sec, t)
+                TapEffectKind.GHOST -> drawGhost(canvas, p, t)
+                TapEffectKind.NOTES -> drawNote(canvas, p, sec, fade)
+                TapEffectKind.GLYPHS -> drawGlyphs(canvas, p, sec, t)
+                TapEffectKind.CONFETTI -> drawConfetti(canvas, p, sec, fade)
             }
         }
         if (particles.isNotEmpty()) invalidateSelf() // ask for the next frame
@@ -844,6 +948,175 @@ class TapEffectDrawable(
         canvas.drawCircle(p.x, p.y, radius, paint)
     }
 
+    /** Three blocks, a loading bar on the move: the lead block is the strongest. */
+    private fun drawBlocks(canvas: Canvas, p: Particle, sec: Float, fade: Float) {
+        val cx = p.x + p.vx * sec
+        val bw = p.size * 1.3f
+        val bh = p.size * 2.3f
+        val gap = p.size * 0.5f
+        paint.style = Paint.Style.FILL
+        for (i in 0 until 3) {
+            // Blocks move in steps of one block, as the real bar does, not smoothly.
+            val step = (cx / (bw + gap)).toInt() * (bw + gap)
+            val x = step - i * (bw + gap)
+            paint.color = p.colour
+            paint.alpha = (fade * (255f - i * 70f)).toInt().coerceIn(0, 255)
+            oval.set(x, p.y - bh / 2f, x + bw, p.y + bh / 2f)
+            canvas.drawRoundRect(oval, p.size * 0.35f, p.size * 0.35f, paint)
+            paint.color = 0xFFFFFFFF.toInt()
+            paint.alpha = (fade * (110f - i * 30f)).toInt().coerceIn(0, 255)
+            oval.set(x + bw * 0.15f, p.y - bh / 2f + bh * 0.1f, x + bw * 0.85f, p.y - bh / 2f + bh * 0.42f)
+            canvas.drawRoundRect(oval, p.size * 0.25f, p.size * 0.25f, paint)
+        }
+    }
+
+    /** Five equaliser bars that jump up from the tap: the heights are re-picked about 14 times a second. */
+    private fun drawBars(canvas: Canvas, p: Particle, sec: Float, t: Float, fade: Float) {
+        val bw = 4f * density
+        val gap = 2f * density
+        val total = 5 * bw + 4 * gap
+        val step = (sec * 14f).toInt()
+        paint.style = Paint.Style.FILL
+        for (i in 0 until 5) {
+            val level = 0.3f + 0.7f * kotlin.math.abs(kotlin.math.sin(p.phase + i * 1.9f + step * 2.3f))
+            val hgt = p.size * level * (1f - t) * (1f - t * 0.4f)
+            val left = p.x - total / 2f + i * (bw + gap)
+            paint.color = colours[i % colours.size]
+            paint.alpha = (fade * 235f).toInt().coerceIn(0, 255)
+            canvas.drawRect(left, p.y - hgt, left + bw, p.y, paint)
+            // A bright cap, the way a music visualiser draws its peak hold.
+            paint.color = 0xFFFFFFFF.toInt()
+            paint.alpha = (fade * 200f).toInt().coerceIn(0, 255)
+            canvas.drawRect(left, p.y - hgt - 2f * density, left + bw, p.y - hgt, paint)
+        }
+    }
+
+    /** A four-point sparkle that falls away and flickers between two sizes. */
+    private fun drawSparkle(canvas: Canvas, p: Particle, sec: Float, t: Float) {
+        val cx = p.x + p.vx * sec
+        val cy = p.y + p.vy * sec + 0.5f * 140f * density * sec * sec
+        val flick = if ((sec * 16f).toInt() % 2 == 0) 1f else 0.55f
+        val r = p.size * flick
+        paint.style = Paint.Style.FILL
+        paint.color = p.colour
+        paint.alpha = ((1f - t) * 255f).toInt().coerceIn(0, 255)
+        path.reset()
+        for (i in 0 until 8) {
+            val angle = -Math.PI / 2.0 + i * Math.PI / 4.0
+            val rr = if (i % 2 == 0) r else r * 0.22f
+            val x = cx + kotlin.math.cos(angle).toFloat() * rr
+            val y = cy + kotlin.math.sin(angle).toFloat() * rr
+            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+        path.close()
+        canvas.drawPath(path, paint)
+    }
+
+    /** A 4x4 cluster of pixels (the middle four always lit) whose brightness drops in eight coarse steps. */
+    private fun drawGhost(canvas: Canvas, p: Particle, t: Float) {
+        val level = 1f - (t * 8f).toInt() / 8f
+        if (level <= 0f) return
+        val bits = (p.phase * 65535f).toInt() or 0x0660
+        val cell = p.size
+        val left = (p.x / cell).toInt() * cell - 2f * cell
+        val top = (p.y / cell).toInt() * cell - 2f * cell
+        paint.style = Paint.Style.FILL
+        paint.color = p.colour
+        paint.alpha = (level * level * 215f).toInt().coerceIn(0, 255)
+        for (i in 0 until 16) {
+            if ((bits shr i) and 1 == 0) continue
+            val x = left + (i % 4) * cell
+            val y = top + (i / 4) * cell
+            canvas.drawRect(x, y, x + cell - 0.5f * density, y + cell - 0.5f * density, paint)
+        }
+    }
+
+    /** A music note that rises, sways and tilts. */
+    private fun drawNote(canvas: Canvas, p: Particle, sec: Float, fade: Float) {
+        val sway = kotlin.math.sin(sec * 4f + p.phase)
+        val cx = p.x + p.vx * sec + sway * 10f * density
+        val cy = p.y + p.vy * sec
+        paint.style = Paint.Style.FILL
+        paint.color = p.colour
+        paint.alpha = (fade * 235f).toInt().coerceIn(0, 255)
+        paint.textSize = 20f * density * p.size
+        paint.textAlign = Paint.Align.CENTER
+        canvas.save()
+        canvas.translate(cx, cy)
+        canvas.rotate(sway * 12f)
+        canvas.drawText(if (p.phase < 3.14f) "\u266A" else "\u266B", 0f, 0f, paint)
+        canvas.restore()
+    }
+
+    /** A column of glyphs falling from the tap: a white head and a green trail that fades. */
+    private fun drawGlyphs(canvas: Canvas, p: Particle, sec: Float, t: Float) {
+        val cell = p.size
+        val column = (p.x / cell).toInt()
+        val x = column * cell + cell / 2f
+        val headY = p.y + p.vy * sec
+        val trail = 9
+        val out = 1f - t * t
+        paint.style = Paint.Style.FILL
+        paint.typeface = Typeface.MONOSPACE
+        paint.textAlign = Paint.Align.CENTER
+        paint.textSize = cell * 0.95f
+        for (i in 0 until trail) {
+            val g = hash3(column, i, if (i == 0) (sec * 14f).toInt() else (sec * 7f).toInt() + (p.phase * 10f).toInt()) % glyphChars.size
+            glyph[0] = glyphChars[g]
+            val f = 1f - i / trail.toFloat()
+            paint.color = when {
+                i == 0 -> colours[0]
+                colours.size > 1 -> colours[1 + i % (colours.size - 1)]
+                else -> colours[0]
+            }
+            paint.alpha = ((if (i == 0) 255f else 220f * f * f) * out).toInt().coerceIn(0, 255)
+            canvas.drawText(glyph, 0, 1, x, headY - i * cell, paint)
+        }
+        paint.typeface = Typeface.DEFAULT
+    }
+
+    /** A squiggle, triangle, ring or plus that bursts out, tumbles in 30-degree steps and falls. */
+    private fun drawConfetti(canvas: Canvas, p: Particle, sec: Float, fade: Float) {
+        val gravity = 420f * density
+        val cx = p.x + p.vx * sec
+        val cy = p.y + p.vy * sec + 0.5f * gravity * sec * sec
+        val turn = ((p.phase * 57.3f + p.spin * sec) / 30f).toInt() * 30f
+        val s = p.size
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = maxOf(1.5f, 2.2f * density)
+        paint.strokeJoin = Paint.Join.ROUND
+        paint.strokeCap = Paint.Cap.ROUND
+        paint.color = p.colour
+        paint.alpha = (fade * 255f).toInt().coerceIn(0, 255)
+        canvas.save()
+        canvas.translate(cx, cy)
+        canvas.rotate(turn)
+        path.reset()
+        when ((p.phase * 100f).toInt() % 4) {
+            0 -> {
+                path.moveTo(-s * 1.4f, 0f)
+                for (k in 0 until 4) path.lineTo(-s * 1.4f + (k + 0.5f) * s * 0.7f, if (k % 2 == 0) -s * 0.5f else s * 0.5f)
+                path.lineTo(s * 1.4f, 0f)
+            }
+            1 -> {
+                path.moveTo(0f, -s)
+                path.lineTo(s * 0.95f, s * 0.7f)
+                path.lineTo(-s * 0.95f, s * 0.7f)
+                path.close()
+            }
+            2 -> path.addCircle(0f, 0f, s * 0.6f, Path.Direction.CW)
+            else -> {
+                path.moveTo(-s * 0.8f, 0f)
+                path.lineTo(s * 0.8f, 0f)
+                path.moveTo(0f, -s * 0.8f)
+                path.lineTo(0f, s * 0.8f)
+            }
+        }
+        canvas.drawPath(path, paint)
+        canvas.restore()
+        paint.style = Paint.Style.FILL
+    }
+
     override fun setAlpha(alpha: Int) {}
     override fun setColorFilter(colorFilter: ColorFilter?) {}
     @Suppress("OVERRIDE_DEPRECATION")
@@ -869,8 +1142,21 @@ fun KeyboardTheme.twinkleDrawable(host: ViewGroup, settings: KeyboardSettings): 
         GlitterTwinkleDrawable(host, host.resources.displayMetrics.density, STAR_BRIGHTNESS, starDensity = settings.starDensity)
     }
 
-/** The keyboard's background for this theme (plain colour, or the pinstriped backdrop). */
-fun KeyboardTheme.backgroundDrawable(view: View): Drawable =
+/**
+ * The keyboard's background for this theme (plain colour, or the pinstriped backdrop). With [animated] a
+ * theme that has an ambient animation draws it on top; the settings screens leave it off, so they stay still.
+ */
+fun KeyboardTheme.backgroundDrawable(view: View, animated: Boolean = false): Drawable {
+    val flat = flatBackgroundDrawable(view)
+    val kind = ambient
+    return if (animated && kind != null) {
+        AmbientBackground(flat, kind, ambientColours ?: IntArray(0), view.resources.displayMetrics.density)
+    } else {
+        flat
+    }
+}
+
+private fun KeyboardTheme.flatBackgroundDrawable(view: View): Drawable =
     if (backgroundBottom != 0) {
         GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(background, backgroundBottom))
     } else if (plainBackground) {
@@ -908,6 +1194,16 @@ class PulseBackground(
     private var level = 0f
     private var startedAt = 0L
     private var running = false
+
+    // Keeps an animated base (see AmbientBackground) running: it asks this drawable for its next frame.
+    private val forward = ForwardCallback(this)
+
+    init { base.callback = forward }
+
+    override fun setVisible(visible: Boolean, restart: Boolean): Boolean {
+        base.setVisible(visible, restart)
+        return super.setVisible(visible, restart)
+    }
 
     override fun onBoundsChange(bounds: Rect) {
         base.bounds = bounds
@@ -983,6 +1279,38 @@ fun KeyboardTheme.keyBackground(
     val pressed = pressedKeyColor ?: if (action) actionFillPressed(actionSlot) else keyPressed
 
     fun layer(color: Int, isPressed: Boolean = false): Drawable {
+        when (keyStyle) {
+            KeyStyle.GLOSS -> return GlossKeyDrawable(
+                fill = color,
+                border = border,
+                ring = keyRing,
+                pressed = isPressed,
+                gloss = keyGloss,
+                insetX = gapXDp * density,
+                insetY = gapYDp * density,
+                radius = cornerDp * density,
+                density = density,
+            )
+            KeyStyle.LCD -> return LcdKeyDrawable(
+                fill = color,
+                border = border,
+                edge = shadow,
+                pressed = isPressed,
+                insetX = gapXDp * density,
+                insetY = gapYDp * density,
+                density = density,
+            )
+            KeyStyle.MEMPHIS -> return MemphisKeyDrawable(
+                fill = color,
+                border = border,
+                shadow = shadow,
+                pressed = isPressed,
+                insetX = gapXDp * density,
+                insetY = gapYDp * density,
+                density = density,
+            )
+            KeyStyle.DEFAULT -> Unit
+        }
         if (isRetro) {
             return RetroKeyDrawable(
                 fill = color,
@@ -1050,9 +1378,16 @@ fun KeyboardTheme.keyBackground(
 
 /** Highlight behind the selected candidate word. */
 fun KeyboardTheme.candidateBackground(density: Float): Drawable {
-    if (isRetro || squareKeys) {
+    if (isRetro || squareKeys || keyStyle == KeyStyle.LCD) {
         return GradientDrawable().apply {
             setColor(accent)
+            cornerRadius = 0f
+        }
+    }
+    if (keyStyle == KeyStyle.MEMPHIS) {
+        return GradientDrawable().apply {
+            setColor(accent)
+            setStroke(maxOf(1, (2f * density).toInt()), border)
             cornerRadius = 0f
         }
     }

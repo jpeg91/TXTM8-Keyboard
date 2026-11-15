@@ -55,6 +55,16 @@ class KeyboardTheme(
     val actionKeyColours: IntArray? = null,
     /** Lettering colour for each slot of [actionKeyColours], so a yellow key can have dark lettering. */
     val actionTextColours: IntArray? = null,
+    /** How the keys are drawn when none of the older flags above decide it. */
+    val keyStyle: KeyStyle = KeyStyle.DEFAULT,
+    /** For [KeyStyle.GLOSS]: the colour of the ring inside a pressed key (0 for none), and the strength (0..255) of the shine. */
+    val keyRing: Int = 0,
+    val keyGloss: Int = 90,
+    /** Letter and digit keys take these colours in turn (the bright themes); null keeps every key one colour. */
+    val keyCycle: IntArray? = null,
+    /** A slow animation drawn behind the keys, and the colours it uses (what they mean depends on the animation). */
+    val ambient: AmbientKind? = null,
+    val ambientColours: IntArray? = null,
     val typeface: Typeface = Typeface.DEFAULT,
 ) {
     /** The face colour of the action key in [slot] (see [actionKeyColours]). */
@@ -681,6 +691,292 @@ class KeyboardTheme(
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
+        /**
+         * Windows XP: the Bliss hill and sky behind glassy silver keys with a dark blue outline and an orange
+         * ring when pressed; green, red and blue action keys, a blue title-bar candidate strip. Clouds drift
+         * across the sky and a loading bar of blue blocks marches away from every tap.
+         */
+        val XP = KeyboardTheme(
+            background = 0xFF2A6FD6.toInt(),
+            backgroundBottom = 0xFF9DD3F6.toInt(),
+            strip = 0xFF0A4FCB.toInt(),
+            key = 0xEBF5F4EE.toInt(),
+            keyPressed = 0xFFE4E2D6.toInt(),
+            text = 0xFF14181F.toInt(),
+            accent = 0xFF3C963C.toInt(),
+            accentText = 0xFFFFFFFF.toInt(),
+            actionKey = 0xFF3C963C.toInt(),
+            actionKeyPressed = 0xFF5CB45C.toInt(),
+            actionText = 0xFFFFFFFF.toInt(),
+            subText = 0xFF4A5A78.toInt(),
+            border = 0xFF003C74.toInt(),
+            actionKeyColours = intArrayOf(0xFF3C963C.toInt(), 0xFFD0432A.toInt(), 0xFF2F6FE0.toInt(), 0xFF2F6FE0.toInt()),
+            keyStyle = KeyStyle.GLOSS,
+            keyRing = 0xFFF4A52A.toInt(),
+            keyGloss = 110,
+            ambient = AmbientKind.CLOUDS,
+            tapEffect = TapEffectKind.BLOCKS,
+            effectColours = intArrayOf(0xFF2D6BF0.toInt()),
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL),
+        )
+
+        /**
+         * Media Player: smoked blue glass with cyan edges and green play-button action keys. Thin lines ripple
+         * behind the keys like a visualiser, and equaliser bars jump up wherever you tap.
+         */
+        val MEDIA_PLAYER = KeyboardTheme(
+            background = 0xFF040912.toInt(),
+            backgroundBottom = 0xFF0A2A5A.toInt(),
+            strip = 0xB3050E1E.toInt(),
+            key = 0xB5102A50.toInt(),
+            keyPressed = 0xF02B72C8.toInt(),
+            text = 0xFFE8F5FF.toInt(),
+            accent = 0xFF3FD04F.toInt(),
+            accentText = 0xFF03130A.toInt(),
+            actionKey = 0xCC2FA84A.toInt(),
+            actionKeyPressed = 0xFF5CD070.toInt(),
+            actionText = 0xFFFFFFFF.toInt(),
+            subText = 0xFF9CC8EE.toInt(),
+            border = 0xFF4FB4F0.toInt(),
+            actionKeyColours = intArrayOf(0xCC2FA84A.toInt(), 0xCCB03A3A.toInt(), 0xCC2A5FB0.toInt(), 0xCC2A5FB0.toInt()),
+            keyStyle = KeyStyle.GLOSS,
+            keyRing = 0xFF7FE8FF.toInt(),
+            keyGloss = 70,
+            ambient = AmbientKind.WAVES,
+            ambientColours = intArrayOf(0x882FA8FF.toInt(), 0x8838E0A8.toInt(), 0x887A5CFF.toInt()),
+            tapEffect = TapEffectKind.EQ_BARS,
+            effectColours = intArrayOf(0xFF38D048.toInt(), 0xFF4CE0A0.toInt(), 0xFF3FD0FF.toInt(), 0xFF5AA8FF.toInt(), 0xFF9CFF6A.toInt()),
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL),
+        )
+
+        /**
+         * MS-DOS and the BIOS setup screen: white-on-blue, square keys with light grey outlines, a red
+         * highlight and inverse-video (blue on grey) action keys. A faint band rolls down the screen and a
+         * cursor blinks.
+         */
+        val BIOS = KeyboardTheme(
+            background = 0xFF0000AA.toInt(),
+            strip = 0xFF0000AA.toInt(),
+            key = 0xFF0000AA.toInt(),
+            keyPressed = 0xFFAA0000.toInt(),
+            text = 0xFFFFFFFF.toInt(),
+            accent = 0xFFAA0000.toInt(),
+            accentText = 0xFFFFFF55.toInt(),
+            actionKey = 0xFFAAAAAA.toInt(),
+            actionKeyPressed = 0xFFFFFF55.toInt(),
+            actionText = 0xFF0000AA.toInt(),
+            subText = 0xFF55FFFF.toInt(),
+            border = 0xFFAAAAAA.toInt(),
+            squareKeys = true,
+            ambient = AmbientKind.SCAN,
+            ambientColours = intArrayOf(0x1CFFFFFF, 0xFFAAAAAA.toInt()),
+            typeface = Typeface.create("monospace", Typeface.BOLD),
+        )
+
+        /**
+         * GeoCities and the early web: a teal page with tiled twinkling stars and "under construction" tape,
+         * bevelled grey-style buttons in loud web-safe colours, and a rainbow sparkle trail from every tap.
+         */
+        val GEOCITIES = KeyboardTheme(
+            background = 0xFF2EC4C4.toInt(),
+            strip = 0xFFFFFFFF.toInt(),
+            key = 0xFFFFFF66.toInt(),
+            keyPressed = 0xFFD8D84A.toInt(),
+            text = 0xFF000000.toInt(),
+            accent = 0xFF0000EE.toInt(),
+            accentText = 0xFFFFFFFF.toInt(),
+            actionKey = 0xFFFF0000.toInt(),
+            actionKeyPressed = 0xFFFF7070.toInt(),
+            actionText = 0xFFFFFF00.toInt(),
+            subText = 0xFF000080.toInt(),
+            actionKeyColours = intArrayOf(0xFF00AA00.toInt(), 0xFFFF0000.toInt(), 0xFF0000EE.toInt(), 0xFF800080.toInt()),
+            actionTextColours = intArrayOf(0xFFFFFFFF.toInt(), 0xFFFFFF00.toInt(), 0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt()),
+            isRetro = true,
+            squareKeys = true,
+            keyCycle = intArrayOf(0xFFFFFF66.toInt(), 0xFF66FFFF.toInt(), 0xFFFF99FF.toInt(), 0xFF99FF66.toInt()),
+            ambient = AmbientKind.HAZARD,
+            ambientColours = intArrayOf(0xFFFFFFFF.toInt(), 0xFFFFFF66.toInt(), 0xFFFFD800.toInt(), 0xFF111111.toInt()),
+            tapEffect = TapEffectKind.SPARKLE,
+            effectColours = intArrayOf(
+                0xFFFF3030.toInt(), 0xFFFFA000.toInt(), 0xFFFFE000.toInt(),
+                0xFF30D030.toInt(), 0xFF2090FF.toInt(), 0xFFB040FF.toInt(),
+            ),
+            typeface = Typeface.create("casual", Typeface.BOLD),
+        )
+
+        /**
+         * Palm Pilot and early PDAs: a grey-green reflective screen, flat notched soft-buttons in dark outline
+         * and inverse-video selections. Every tap leaves a cluster of pixels that fades out in coarse steps,
+         * like the ghosting of a slow LCD.
+         */
+        val PALM = KeyboardTheme(
+            background = 0xFFA9AEB4.toInt(),
+            strip = 0xFFD2DAB8.toInt(),
+            key = 0xFFC3CCA7.toInt(),
+            keyPressed = 0xFFA4AE88.toInt(),
+            text = 0xFF1B2415.toInt(),
+            accent = 0xFF2A3322.toInt(),
+            accentText = 0xFFD2DAB8.toInt(),
+            actionKey = 0xFF2A3322.toInt(),
+            actionKeyPressed = 0xFF4A5640.toInt(),
+            actionText = 0xFFD2DAB8.toInt(),
+            subText = 0xFF4A5640.toInt(),
+            border = 0xFF2A3322.toInt(),
+            shadow = 0xFF8E9874.toInt(),
+            keyStyle = KeyStyle.LCD,
+            tapEffect = TapEffectKind.GHOST,
+            effectColours = intArrayOf(0xFF1B2415.toInt(), 0xFF2A3322.toInt()),
+            typeface = Typeface.create("sans-serif-condensed", Typeface.BOLD),
+        )
+
+        /**
+         * Walkman: charcoal metal keys with a silver edge, orange action keys and orange highlights. Two
+         * cassette reels turn behind the keys, and music notes float up from every tap.
+         */
+        val WALKMAN = KeyboardTheme(
+            background = 0xFF232427.toInt(),
+            backgroundBottom = 0xFF101113.toInt(),
+            strip = 0xB3101113.toInt(),
+            key = 0xE62D3035.toInt(),
+            keyPressed = 0xFFC96A00.toInt(),
+            text = 0xFFE8EAED.toInt(),
+            accent = 0xFFFFA800.toInt(),
+            accentText = 0xFF111111.toInt(),
+            actionKey = 0xFFFF8A00.toInt(),
+            actionKeyPressed = 0xFFFFB35C.toInt(),
+            actionText = 0xFF111111.toInt(),
+            subText = 0xFFFFB35C.toInt(),
+            border = 0xFF7C818A.toInt(),
+            keyStyle = KeyStyle.GLOSS,
+            keyRing = 0xFFFFD27A.toInt(),
+            keyGloss = 45,
+            ambient = AmbientKind.REELS,
+            ambientColours = intArrayOf(0x66FFA800),
+            tapEffect = TapEffectKind.NOTES,
+            effectColours = intArrayOf(0xFFFF8A00.toInt(), 0xFFFFD27A.toInt(), 0xFFFFFFFF.toInt()),
+            typeface = Typeface.create("sans-serif-condensed", Typeface.BOLD),
+        )
+
+        /**
+         * Virtual Boy: red on black, square keys with a dark red wash and a bright red outline. A red band
+         * sweeps across the screen like the console's mirror scanner, and taps leave a fading red glow.
+         */
+        val VIRTUAL_BOY = KeyboardTheme(
+            background = 0xFF000000.toInt(),
+            strip = 0xB3000000.toInt(),
+            key = 0x992A0000.toInt(),
+            keyPressed = 0xFF7A0000.toInt(),
+            text = 0xFFFF3B3B.toInt(),
+            accent = 0xFFFF2020.toInt(),
+            accentText = 0xFF000000.toInt(),
+            actionKey = 0xB33A0000.toInt(),
+            actionKeyPressed = 0xFF9A0000.toInt(),
+            actionText = 0xFFFF6A6A.toInt(),
+            subText = 0xFFC02828.toInt(),
+            border = 0xFF9A0000.toInt(),
+            squareKeys = true,
+            ambient = AmbientKind.RED_SCAN,
+            ambientColours = intArrayOf(0x55FF1A1A),
+            tapEffect = TapEffectKind.GHOST,
+            effectColours = intArrayOf(0xFFFF2A2A.toInt(), 0xFFFF6A6A.toInt()),
+            typeface = Typeface.create("monospace", Typeface.BOLD),
+        )
+
+        /**
+         * PSP: a deep blue menu wave behind black glass keys with a silver-blue edge, and the four symbol
+         * colours (green, red, blue, pink) on the action keys. Broad ribbons sway behind the keys and soft
+         * rings spread from every tap.
+         */
+        val PSP = KeyboardTheme(
+            background = 0xFF03123A.toInt(),
+            backgroundBottom = 0xFF1B56C9.toInt(),
+            strip = 0x8002091E.toInt(),
+            key = 0xBF0A0F1E.toInt(),
+            keyPressed = 0xFF3A6FD8.toInt(),
+            text = 0xFFFFFFFF.toInt(),
+            accent = 0xFFBFD9FF.toInt(),
+            accentText = 0xFF03123A.toInt(),
+            actionKey = 0xFF2DBE8B.toInt(),
+            actionKeyPressed = 0xFF6AD8B0.toInt(),
+            actionText = 0xFF04140E.toInt(),
+            subText = 0xFFA9C4EE.toInt(),
+            border = 0xFF8FB4F0.toInt(),
+            actionKeyColours = intArrayOf(0xFF2DBE8B.toInt(), 0xFFE0413A.toInt(), 0xFF4E8DF4.toInt(), 0xFFE98AC3.toInt()),
+            actionTextColours = intArrayOf(0xFF04140E.toInt(), 0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0xFF2A0A1A.toInt()),
+            keyStyle = KeyStyle.GLOSS,
+            keyRing = 0xFFFFFFFF.toInt(),
+            keyGloss = 60,
+            ambient = AmbientKind.RIBBONS,
+            ambientColours = intArrayOf(0x2EFFFFFF, 0x2A9CC8FF, 0x24FFFFFF),
+            tapEffect = TapEffectKind.RIPPLES,
+            effectColours = intArrayOf(0xFFFFFFFF.toInt(), 0xFF9CC8FF.toInt(), 0xFFD6E8FF.toInt()),
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL),
+        )
+
+        /**
+         * Matrix: black with bright green square keys behind which green glyphs rain down, and a column of
+         * falling code that starts wherever you tap.
+         */
+        val MATRIX = KeyboardTheme(
+            background = 0xFF000000.toInt(),
+            strip = 0xB3000000.toInt(),
+            key = 0x99021A08.toInt(),
+            keyPressed = 0xFF0F4A1E.toInt(),
+            text = 0xFF3DFF72.toInt(),
+            accent = 0xFF33FF66.toInt(),
+            accentText = 0xFF000000.toInt(),
+            actionKey = 0xB3042A0C.toInt(),
+            actionKeyPressed = 0xFF14702F.toInt(),
+            actionText = 0xFFB6FFC8.toInt(),
+            subText = 0xFF1FB547.toInt(),
+            border = 0xFF0F8F2F.toInt(),
+            squareKeys = true,
+            ambient = AmbientKind.RAIN,
+            ambientColours = intArrayOf(0xFFD8FFE0.toInt(), 0xFF22DD55.toInt()),
+            tapEffect = TapEffectKind.GLYPHS,
+            effectColours = intArrayOf(0xFFE6FFEA.toInt(), 0xFF33FF66.toInt(), 0xFF1FB547.toInt()),
+            typeface = Typeface.create("monospace", Typeface.BOLD),
+        )
+
+        /**
+         * Saved by the Bell: a bright teal screen with hard black outlines and solid shadows, every letter on a
+         * different loud colour, and squiggles and triangles that wobble as if redrawn by hand. Taps throw
+         * confetti.
+         */
+        val SATURDAY = KeyboardTheme(
+            background = 0xFF27D3C3.toInt(),
+            strip = 0xE6FFFFFF.toInt(),
+            key = 0xFFFFFFFF.toInt(),
+            keyPressed = 0xFFFFF2A0.toInt(),
+            text = 0xFF1A1033.toInt(),
+            accent = 0xFFFF5FA8.toInt(),
+            accentText = 0xFF1A1033.toInt(),
+            actionKey = 0xFFFFE23B.toInt(),
+            actionKeyPressed = 0xFFFFF08A.toInt(),
+            actionText = 0xFF1A1033.toInt(),
+            subText = 0xFF3B2A6B.toInt(),
+            border = 0xFF1A1033.toInt(),
+            shadow = 0xFF1A1033.toInt(),
+            actionKeyColours = intArrayOf(0xFFFFE23B.toInt(), 0xFFFF5FA8.toInt(), 0xFF8E5BFF.toInt(), 0xFF3DA5FF.toInt()),
+            actionTextColours = intArrayOf(0xFF1A1033.toInt(), 0xFF1A1033.toInt(), 0xFFFFFFFF.toInt(), 0xFF1A1033.toInt()),
+            keyStyle = KeyStyle.MEMPHIS,
+            keyCycle = intArrayOf(
+                0xFFFF8FC4.toInt(), 0xFFFFE23B.toInt(), 0xFFFFFFFF.toInt(),
+                0xFFB794FF.toInt(), 0xFFFFB06B.toInt(), 0xFF7CC4FF.toInt(),
+            ),
+            ambient = AmbientKind.MEMPHIS,
+            ambientColours = intArrayOf(
+                0xFFFF5FA8.toInt(), 0xFFFFE23B.toInt(), 0xFF8E5BFF.toInt(),
+                0xFFFFFFFF.toInt(), 0xFF3DA5FF.toInt(), 0xFFFF9248.toInt(),
+            ),
+            tapEffect = TapEffectKind.CONFETTI,
+            effectColours = intArrayOf(
+                0xFFFF5FA8.toInt(), 0xFFFFE23B.toInt(), 0xFF8E5BFF.toInt(),
+                0xFFFFFFFF.toInt(), 0xFF3DA5FF.toInt(), 0xFFFF9248.toInt(),
+            ),
+            typeface = Typeface.create("sans-serif-black", Typeface.NORMAL),
+        )
+
         private fun heavyItalic(): Typeface =
             if (Build.VERSION.SDK_INT >= 28) {
                 Typeface.create(Typeface.SANS_SERIF, 900, true)
@@ -723,6 +1019,16 @@ class KeyboardTheme(
                 KeyboardSettings.THEME_PLAYSTATION -> PLAYSTATION
                 KeyboardSettings.THEME_DREAMCAST -> DREAMCAST
                 KeyboardSettings.THEME_GAMECUBE -> GAMECUBE
+                KeyboardSettings.THEME_XP -> XP
+                KeyboardSettings.THEME_MEDIA_PLAYER -> MEDIA_PLAYER
+                KeyboardSettings.THEME_BIOS -> BIOS
+                KeyboardSettings.THEME_GEOCITIES -> GEOCITIES
+                KeyboardSettings.THEME_PALM -> PALM
+                KeyboardSettings.THEME_WALKMAN -> WALKMAN
+                KeyboardSettings.THEME_VIRTUAL_BOY -> VIRTUAL_BOY
+                KeyboardSettings.THEME_PSP -> PSP
+                KeyboardSettings.THEME_MATRIX -> MATRIX
+                KeyboardSettings.THEME_SATURDAY -> SATURDAY
                 KeyboardSettings.THEME_DARK -> DARK
                 KeyboardSettings.THEME_LIGHT -> LIGHT
                 else -> if (night) DARK else LIGHT

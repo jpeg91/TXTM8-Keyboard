@@ -99,6 +99,16 @@ data class KeyboardSettings(
         const val THEME_SATURN = 31
         const val THEME_DREAMCAST_JP = 32
         const val THEME_PS2 = 33
+        const val THEME_XP = 34
+        const val THEME_MEDIA_PLAYER = 35
+        const val THEME_BIOS = 36
+        const val THEME_GEOCITIES = 37
+        const val THEME_PALM = 38
+        const val THEME_WALKMAN = 39
+        const val THEME_VIRTUAL_BOY = 40
+        const val THEME_PSP = 41
+        const val THEME_MATRIX = 42
+        const val THEME_SATURDAY = 43 // the bright, Memphis-patterned "Saved by the Bell" theme
 
         /** Index in [P5_ACCENTS] of the original red (the default) and of the purple. */
         const val P5_ACCENT_RED = 0

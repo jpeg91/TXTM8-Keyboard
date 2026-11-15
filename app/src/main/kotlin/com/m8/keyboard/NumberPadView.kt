@@ -62,7 +62,7 @@ class NumberPadView(
     private val grid = LinearLayout(context)
     private val symbolPanel = LinearLayout(context)
     private val tapEffect: TapEffectDrawable? = theme.tapEffectDrawable(this, settings)
-    private val pulseBackground: Drawable = if (!theme.usesPulse) GlitterPulseBackground(theme.backgroundDrawable(this), settings.pulseStrength, resources.displayMetrics.density) else PulseBackground(theme.backgroundDrawable(this), theme.accent, settings.pulseStrength)
+    private val pulseBackground: Drawable = if (!theme.usesPulse) GlitterPulseBackground(theme.backgroundDrawable(this, animated = true), settings.pulseStrength, resources.displayMetrics.density) else PulseBackground(theme.backgroundDrawable(this, animated = true), theme.accent, settings.pulseStrength)
     private lateinit var hashKey: TextView
     private var candidateWords: List<String> = emptyList()
     private var selectedCandidate: Int = -1
@@ -136,7 +136,7 @@ class NumberPadView(
         for (rowKeys in listOf("123", "456", "789", "*0#")) {
             val r = newRow()
             for (k in rowKeys) {
-                val key = makeKey(labelFor(k))
+                val key = makeKey(labelFor(k), keyColour = theme.keyCycle?.let { it[(k - '0').mod(it.size)] })
                 key.setOnClickListener {
                     settings.feedback(it)
                     listener.onKeypadKey(k)
@@ -330,6 +330,7 @@ class NumberPadView(
         size: Float = 20f,
         action: Boolean = false,
         actionSlot: Int = 0,
+        keyColour: Int? = null,
     ): TextView {
         val tv = TextView(context)
         tv.text = label
@@ -337,7 +338,10 @@ class NumberPadView(
         tv.typeface = theme.typeface
         tv.gravity = Gravity.CENTER
         tv.setTextColor(if (action) theme.actionLabel(actionSlot) else theme.text)
-        tv.background = theme.keyBackground(density(), action, GAP_DP, GAP_DP, 10, actionSlot = actionSlot)
+        tv.background = theme.keyBackground(
+            density(), action, GAP_DP, GAP_DP, 10,
+            keyColor = keyColour, pressedKeyColor = keyColour?.let { darken(it, 0.22f) }, actionSlot = actionSlot,
+        )
         return tv
     }
 }

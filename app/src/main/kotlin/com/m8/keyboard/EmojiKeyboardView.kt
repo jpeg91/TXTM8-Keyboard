@@ -51,7 +51,7 @@ class EmojiKeyboardView(
     private class Row(val scroll: HorizontalScrollView, val section: EmojiSection, var built: Boolean = false)
 
     private val tapEffect: TapEffectDrawable? = theme.tapEffectDrawable(this, settings)
-    private val pulseBackground: Drawable = if (!theme.usesPulse) GlitterPulseBackground(theme.backgroundDrawable(this), settings.pulseStrength, resources.displayMetrics.density) else PulseBackground(theme.backgroundDrawable(this), theme.accent, settings.pulseStrength)
+    private val pulseBackground: Drawable = if (!theme.usesPulse) GlitterPulseBackground(theme.backgroundDrawable(this, animated = true), settings.pulseStrength, resources.displayMetrics.density) else PulseBackground(theme.backgroundDrawable(this, animated = true), theme.accent, settings.pulseStrength)
 
     private val rowPx = dp(settings.keyHeightDp + 2 * GAP_Y_DP)
     private val headerPx = dp(24)

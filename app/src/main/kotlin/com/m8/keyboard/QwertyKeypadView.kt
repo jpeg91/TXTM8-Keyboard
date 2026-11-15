@@ -45,7 +45,7 @@ class QwertyKeypadView(
     }
 
     private val tapEffect: TapEffectDrawable? = theme.tapEffectDrawable(this, settings)
-    private val pulseBackground: Drawable = if (!theme.usesPulse) GlitterPulseBackground(theme.backgroundDrawable(this), settings.pulseStrength, resources.displayMetrics.density) else PulseBackground(theme.backgroundDrawable(this), theme.accent, settings.pulseStrength)
+    private val pulseBackground: Drawable = if (!theme.usesPulse) GlitterPulseBackground(theme.backgroundDrawable(this, animated = true), settings.pulseStrength, resources.displayMetrics.density) else PulseBackground(theme.backgroundDrawable(this, animated = true), theme.accent, settings.pulseStrength)
     private val letterKeys = ArrayList<Pair<TextView, Char>>()
     private var shiftKey: TextView? = null
     private var shiftLabel = "abc"
@@ -125,7 +125,11 @@ class QwertyKeypadView(
             val weight = 1f + (if (first) pad else 0f) + (if (last) pad else 0f)
             val leftFrac = if (first) pad / weight else 0f
             val rightFrac = if (last) pad / weight else 0f
-            val keyColour = if (theme.isGameBoyAdvance && isLetter) gbaKeyColour(ch) else null
+            val keyColour = when {
+                theme.isGameBoyAdvance && isLetter -> gbaKeyColour(ch)
+                isLetter -> theme.keyCycle?.let { it[(ch.lowercaseChar() - 'a').mod(it.size)] }
+                else -> null
+            }
             val key = makeKey(if (isLetter) shown(ch) else ch.toString(), 20f, leftFrac, rightFrac, keyColour = keyColour)
             key.setOnClickListener {
                 settings.feedback(it)

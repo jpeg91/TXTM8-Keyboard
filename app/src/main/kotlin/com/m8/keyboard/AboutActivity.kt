@@ -179,12 +179,17 @@ class AboutActivity : ThemedScreen() {
                 "and the twinkling-star themes below. Bubbles, Embers, Sakura and Neon Ripples animate wherever you " +
                 "tap. SNES, N64, Saturn, PlayStation, PS2, Dreamcast, Xbox and GameCube are inspired by 90s and 2000s " +
                 "game consoles. SNES comes in US and EU versions, and Dreamcast in US, Japan and EU versions, each " +
-                "with its own colours.",
+                "with its own colours. Windows XP, Media Player, MS-DOS / BIOS, GeoCities, Palm Pilot, Walkman, " +
+                "Virtual Boy, PSP, Matrix and Saved by the Bell are drawn from gadgets, software and screens of the " +
+                "90s and early 2000s, and most of them have their own animation behind the keys or under your finger.",
         )
         feature(
             root, "Tap animations",
             "Bubbles rise, embers float up, petals flutter down and ripples spread from every spot you touch, " +
-                "not just from the key. The Animation amount setting changes how much appears.",
+                "not just from the key. The newer themes add loading-bar blocks, equaliser bars, rainbow sparkles, " +
+                "fading LCD pixels, music notes, falling code and confetti. The Effect amount setting changes how " +
+                "much appears. A few themes (BIOS, for one) also have a slow animation behind the keys; it only runs " +
+                "while the keyboard is on screen.",
         )
         feature(
             root, "Twinkling stars",
