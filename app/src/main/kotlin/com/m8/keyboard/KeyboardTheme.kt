@@ -984,25 +984,26 @@ class KeyboardTheme(
         )
 
         /**
-         * Nokia 3210 (1999): the green-backlit monochrome phone in a purple Xpress-on cover with a black keypad.
-         * The keys and the candidate strip are dark with the yellow-green glow of the backlight on the lettering,
-         * and the selected word is shown inverse, like a pixel-black selection on the old LCD. Colours are
+         * Nokia 3210 (1999) in its standard grey-black case: a dark metallic shell and dark grey keys with pale
+         * lettering and a light edge. The green of its backlit LCD shows in the candidate strip (dark green-grey), in
+         * the selected word (shown inverse, like the LCD's dark pixels) and in the typing pulse. Colours are
          * estimates, not researched values.
          */
         val NOKIA_3210 = KeyboardTheme(
-            background = 0xFF5B3A8C.toInt(),
-            strip = 0xFF232A14.toInt(),
-            key = 0xFF1E201C.toInt(),
-            keyPressed = 0xFF3C4430.toInt(),
-            text = 0xFFC9E04A.toInt(),
-            accent = 0xFFC9E04A.toInt(),
-            accentText = 0xFF1F2A10.toInt(),
-            actionKey = 0xFF2C3022.toInt(),
-            actionKeyPressed = 0xFF4A5436.toInt(),
-            actionText = 0xFFC9E04A.toInt(),
-            subText = 0xFF8FA23A.toInt(),
-            border = 0xFF3A4030.toInt(),
-            typeface = Typeface.create("monospace", Typeface.BOLD),
+            background = 0xFF383B3E.toInt(),
+            backgroundBottom = 0xFF26282A.toInt(),
+            strip = 0xFF2A3326.toInt(),
+            key = 0xFF2C2F31.toInt(),
+            keyPressed = 0xFF4A5B3A.toInt(),
+            text = 0xFFE4E7E2.toInt(),
+            accent = 0xFFA9C25A.toInt(),
+            accentText = 0xFF1E2A12.toInt(),
+            actionKey = 0xFF3E4346.toInt(),
+            actionKeyPressed = 0xFF5D6468.toInt(),
+            actionText = 0xFFE4E7E2.toInt(),
+            subText = 0xFF9AA39A.toInt(),
+            border = 0xFF5A5E62.toInt(),
+            typeface = Typeface.create("sans-serif-condensed", Typeface.BOLD),
         )
 
         /**
@@ -1157,10 +1158,10 @@ class KeyboardTheme(
         )
 
         /**
-         * Evangelion Unit-00, the prototype: orange armour keys with white edges on a dark screen, a white
-         * armour candidate strip, white Enter, a red Delete and a red "eye" highlight. A faint orange band rolls
-         * down the screen, and hexagonal shields flash out from every tap. Colours are estimates, not
-         * researched values.
+         * Evangelion Unit-00, the prototype: orange armour plates with white edges on a dark screen, a white
+         * armour candidate strip, white Enter, a red Delete and a red "eye" highlight. The keys are angular plates
+         * with two cut corners. A faint orange band rolls down the screen, and large hexagonal shields flash out
+         * from every tap. Colours are estimates, not researched values.
          */
         val EVANGELION_00 = KeyboardTheme(
             background = 0xFF0B0A0E.toInt(),
@@ -1178,12 +1179,70 @@ class KeyboardTheme(
             border = 0xFFF4F1EA.toInt(),
             actionKeyColours = intArrayOf(0xFFEDEAE4.toInt(), 0xFFD7191C.toInt(), 0xFF8C8F96.toInt(), 0xFF8C8F96.toInt()),
             actionTextColours = intArrayOf(0xFF1A0E06.toInt(), 0xFFFFFFFF.toInt(), 0xFF111111.toInt(), 0xFF111111.toInt()),
-            squareKeys = true,
+            keyStyle = KeyStyle.CHAMFER,
             ambient = AmbientKind.SCAN,
             ambientColours = intArrayOf(0x22FF8A1F),
             tapEffect = TapEffectKind.HEXAGONS,
             effectColours = intArrayOf(0xFFFF8A1F.toInt(), 0xFFFFC14D.toInt(), 0xFFFFFFFF.toInt()),
-            typeface = Typeface.create("serif", Typeface.BOLD),
+            typeface = evaTypeface(),
+        )
+
+        /**
+         * Evangelion Unit-01: purple armour plates edged in neon green on a deep purple screen, neon green Enter
+         * and highlight, an orange Delete, and green hexagonal shields from every tap. Colours are estimates, not
+         * researched values.
+         */
+        val EVANGELION_01 = KeyboardTheme(
+            background = 0xFF0B0714.toInt(),
+            backgroundBottom = 0xFF1C0F33.toInt(),
+            strip = 0xFF1A1030.toInt(),
+            key = 0xFF6B3FB0.toInt(),
+            keyPressed = 0xFF9A6BE6.toInt(),
+            text = 0xFFF2EEFF.toInt(),
+            accent = 0xFF76FF3A.toInt(),
+            accentText = 0xFF0A1A04.toInt(),
+            actionKey = 0xFF76FF3A.toInt(),
+            actionKeyPressed = 0xFFA8FF7A.toInt(),
+            actionText = 0xFF0A1A04.toInt(),
+            subText = 0xFFD2BFFF.toInt(),
+            border = 0xFF76FF3A.toInt(),
+            actionKeyColours = intArrayOf(0xFF76FF3A.toInt(), 0xFFFF8A1A.toInt(), 0xFF2B1B4D.toInt(), 0xFF2B1B4D.toInt()),
+            actionTextColours = intArrayOf(0xFF0A1A04.toInt(), 0xFF1A0E04.toInt(), 0xFF76FF3A.toInt(), 0xFF76FF3A.toInt()),
+            keyStyle = KeyStyle.CHAMFER,
+            ambient = AmbientKind.SCAN,
+            ambientColours = intArrayOf(0x2276FF3A),
+            tapEffect = TapEffectKind.HEXAGONS,
+            effectColours = intArrayOf(0xFF76FF3A.toInt(), 0xFFB894FF.toInt(), 0xFFFFFFFF.toInt()),
+            typeface = evaTypeface(),
+        )
+
+        /**
+         * Evangelion Unit-02: red armour plates edged in amber on a near-black red screen, an orange Enter, a silver
+         * Delete and a yellow "eye" highlight, with red and yellow hexagonal shields from every tap. Colours are
+         * estimates, not researched values.
+         */
+        val EVANGELION_02 = KeyboardTheme(
+            background = 0xFF0E0506.toInt(),
+            backgroundBottom = 0xFF2E0A0C.toInt(),
+            strip = 0xFF1F0A0C.toInt(),
+            key = 0xFFC8171C.toInt(),
+            keyPressed = 0xFFFF5A52.toInt(),
+            text = 0xFFFFFFFF.toInt(),
+            accent = 0xFFFFD400.toInt(),
+            accentText = 0xFF1A1400.toInt(),
+            actionKey = 0xFFFF8A1A.toInt(),
+            actionKeyPressed = 0xFFFFB066.toInt(),
+            actionText = 0xFF1A0E04.toInt(),
+            subText = 0xFFFFD2C8.toInt(),
+            border = 0xFFFFC21A.toInt(),
+            actionKeyColours = intArrayOf(0xFFFF8A1A.toInt(), 0xFFE6E7EA.toInt(), 0xFF3A1214.toInt(), 0xFF3A1214.toInt()),
+            actionTextColours = intArrayOf(0xFF1A0E04.toInt(), 0xFF1A1014.toInt(), 0xFFFFD400.toInt(), 0xFFFFD400.toInt()),
+            keyStyle = KeyStyle.CHAMFER,
+            ambient = AmbientKind.SCAN,
+            ambientColours = intArrayOf(0x22FF3A2A),
+            tapEffect = TapEffectKind.HEXAGONS,
+            effectColours = intArrayOf(0xFFFF5A3C.toInt(), 0xFFFFD400.toInt(), 0xFFFFFFFF.toInt()),
+            typeface = evaTypeface(),
         )
 
         /**
@@ -1215,6 +1274,37 @@ class KeyboardTheme(
             typeface = Typeface.create("monospace", Typeface.BOLD),
         )
 
+
+        /**
+         * MonsterNav: a red handheld navigator with a dark navy screen. Navy keys with pale-blue lettering and a
+         * cyan edge, a yellow-orange Enter and highlight, a pale Delete, a faint radar band behind the keys and blips
+         * of pixels wherever you tap. It uses no logos or artwork. Colours are estimates, not researched values.
+         */
+        val MONSTERNAV = KeyboardTheme(
+            background = 0xFFC62A2F.toInt(),
+            backgroundBottom = 0xFF8E1B20.toInt(),
+            strip = 0xFF0B1B3A.toInt(),
+            key = 0xFF14284F.toInt(),
+            keyPressed = 0xFF2F6BC4.toInt(),
+            text = 0xFFDFF3FF.toInt(),
+            accent = 0xFFFFB02E.toInt(),
+            accentText = 0xFF1A1000.toInt(),
+            actionKey = 0xFFFFB02E.toInt(),
+            actionKeyPressed = 0xFFFFD27A.toInt(),
+            actionText = 0xFF1A1000.toInt(),
+            subText = 0xFF86B8E8.toInt(),
+            border = 0xFF5FB4F0.toInt(),
+            actionKeyColours = intArrayOf(0xFFFFB02E.toInt(), 0xFFEAF2FF.toInt(), 0xFF2F5DA8.toInt(), 0xFF2F5DA8.toInt()),
+            actionTextColours = intArrayOf(0xFF1A1000.toInt(), 0xFF14284F.toInt(), 0xFFDFF3FF.toInt(), 0xFFDFF3FF.toInt()),
+            ambient = AmbientKind.SCAN,
+            ambientColours = intArrayOf(0x1E7FE0FF),
+            tapEffect = TapEffectKind.GHOST,
+            effectColours = intArrayOf(0xFF7FE0FF.toInt(), 0xFFFFFFFF.toInt()),
+            typeface = Typeface.create("sans-serif", Typeface.BOLD),
+        )
+
+        /** The lettering of the Evangelion themes: heavy and condensed, like the signage on the NERV screens. */
+        private fun evaTypeface(): Typeface = Typeface.create("sans-serif-condensed", Typeface.BOLD)
 
         private fun heavyItalic(): Typeface =
             if (Build.VERSION.SDK_INT >= 28) {
@@ -1277,6 +1367,9 @@ class KeyboardTheme(
                 KeyboardSettings.THEME_KAWAII -> KAWAII
                 KeyboardSettings.THEME_EVANGELION_00 -> EVANGELION_00
                 KeyboardSettings.THEME_MONSTERGEAR -> MONSTERGEAR
+                KeyboardSettings.THEME_EVANGELION_01 -> EVANGELION_01
+                KeyboardSettings.THEME_EVANGELION_02 -> EVANGELION_02
+                KeyboardSettings.THEME_MONSTERNAV -> MONSTERNAV
                 KeyboardSettings.THEME_DARK -> DARK
                 KeyboardSettings.THEME_LIGHT -> LIGHT
                 else -> if (night) DARK else LIGHT

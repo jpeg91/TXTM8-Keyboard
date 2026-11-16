@@ -121,6 +121,9 @@ data class KeyboardSettings(
         const val THEME_KAWAII = 50
         const val THEME_EVANGELION_00 = 51
         const val THEME_MONSTERGEAR = 52
+        const val THEME_EVANGELION_01 = 53
+        const val THEME_EVANGELION_02 = 54
+        const val THEME_MONSTERNAV = 55
 
         /** Index in [P5_ACCENTS] of the original red (the default) and of the purple. */
         const val P5_ACCENT_RED = 0

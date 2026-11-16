@@ -776,7 +776,7 @@ class TapEffectDrawable(
             TapEffectKind.GLYPHS -> 1f
             TapEffectKind.CONFETTI -> 9f
             TapEffectKind.HEARTS -> 4f
-            TapEffectKind.HEXAGONS -> 2f
+            TapEffectKind.HEXAGONS -> 3f
         }
         var count = expected.toInt() + if (random.nextFloat() < expected - expected.toInt()) 1 else 0
         if (count < 1) count = 1
@@ -869,9 +869,9 @@ class TapEffectDrawable(
                     )
                     TapEffectKind.HEXAGONS -> Particle(
                         x = x, y = y, vx = 0f, vy = 0f,
-                        size = (30f + i * 16f + rnd(0f, 8f)) * d,
-                        bornAt = now + i * 120L, life = rnd(700f, 900f).toLong(),
-                        colour = colour, phase = rnd(0f, 1.05f), spin = 0f,
+                        size = (64f + i * 34f + rnd(0f, 10f)) * d,
+                        bornAt = now + i * 110L, life = rnd(850f, 1050f).toLong(),
+                        colour = colour, phase = 0f, spin = 0f,
                     )
                 },
             )
@@ -1172,31 +1172,37 @@ class TapEffectDrawable(
         canvas.restore()
     }
 
-    /** A hexagonal shield that flashes out from the tap: a bright outline that thins and fades, and a faint fill at first. */
+    /**
+     * A hexagonal shield that flashes out from the tap: two nested outlines that thin and fade as they grow, and a
+     * faint fill at first. Every hexagon is drawn the same way up, with a flat top and bottom.
+     */
     private fun drawHexagon(canvas: Canvas, p: Particle, t: Float) {
         val ease = 1f - (1f - t) * (1f - t)
-        val start = 5f * density
+        val start = 8f * density
         val radius = start + (p.size - start) * ease
-        path.reset()
-        for (i in 0 until 6) {
-            val angle = p.phase + i * Math.PI / 3.0
-            val x = p.x + kotlin.math.cos(angle).toFloat() * radius
-            val y = p.y + kotlin.math.sin(angle).toFloat() * radius
-            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
-        }
-        path.close()
-        if (t < 0.25f) {
-            paint.style = Paint.Style.FILL
+        for (layer in 0 until 2) {
+            val r = if (layer == 0) radius else radius * 0.62f
+            path.reset()
+            for (i in 0 until 6) {
+                val angle = i * Math.PI / 3.0 // vertex at 0 degrees: flat top and bottom, every time
+                val x = p.x + kotlin.math.cos(angle).toFloat() * r
+                val y = p.y + kotlin.math.sin(angle).toFloat() * r
+                if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+            }
+            path.close()
+            if (layer == 0 && t < 0.3f) {
+                paint.style = Paint.Style.FILL
+                paint.color = p.colour
+                paint.alpha = ((0.3f - t) / 0.3f * 70f).toInt().coerceIn(0, 255)
+                canvas.drawPath(path, paint)
+            }
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = maxOf(1.5f, ((if (layer == 0) 3.6f else 2f) * (1f - t) + 1f) * density)
+            paint.strokeJoin = Paint.Join.MITER
             paint.color = p.colour
-            paint.alpha = ((0.25f - t) / 0.25f * 60f).toInt().coerceIn(0, 255)
+            paint.alpha = ((1f - t) * (1f - t) * (if (layer == 0) 240f else 150f)).toInt().coerceIn(0, 255)
             canvas.drawPath(path, paint)
         }
-        paint.style = Paint.Style.STROKE
-        paint.strokeWidth = maxOf(1f, (2.4f * (1f - t) + 0.8f) * density)
-        paint.strokeJoin = Paint.Join.MITER
-        paint.color = p.colour
-        paint.alpha = ((1f - t) * (1f - t) * 235f).toInt().coerceIn(0, 255)
-        canvas.drawPath(path, paint)
         paint.style = Paint.Style.FILL
     }
 
@@ -1405,6 +1411,14 @@ fun KeyboardTheme.keyBackground(
                 insetY = gapYDp * density,
                 density = density,
             )
+            KeyStyle.CHAMFER -> return ChamferKeyDrawable(
+                fill = color,
+                border = border,
+                pressed = isPressed,
+                insetX = gapXDp * density,
+                insetY = gapYDp * density,
+                density = density,
+            )
             KeyStyle.DEFAULT -> Unit
         }
         if (isRetro) {
@@ -1474,6 +1488,16 @@ fun KeyboardTheme.keyBackground(
 
 /** Highlight behind the selected candidate word. */
 fun KeyboardTheme.candidateBackground(density: Float): Drawable {
+    if (keyStyle == KeyStyle.CHAMFER) {
+        return ChamferKeyDrawable(
+            fill = accent,
+            border = border,
+            pressed = false,
+            insetX = 2f * density,
+            insetY = 6f * density,
+            density = density,
+        )
+    }
     if (isRetro || squareKeys || keyStyle == KeyStyle.LCD) {
         return GradientDrawable().apply {
             setColor(accent)

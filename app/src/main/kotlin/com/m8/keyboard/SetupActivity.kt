@@ -95,6 +95,7 @@ class SetupActivity : ThemedScreen() {
                     "Walkman" to KeyboardSettings.THEME_WALKMAN,
                     "PSP" to KeyboardSettings.THEME_PSP,
                     "MonsterGear" to KeyboardSettings.THEME_MONSTERGEAR,
+                    "MonsterNav" to KeyboardSettings.THEME_MONSTERNAV,
                 ),
             ),
             ThemeGroup(
@@ -141,6 +142,8 @@ class SetupActivity : ThemedScreen() {
                     "Neon Ripples" to KeyboardSettings.THEME_RIPPLES,
                     "Saved by the Bell" to KeyboardSettings.THEME_SATURDAY,
                     "Evangelion Unit-00" to KeyboardSettings.THEME_EVANGELION_00,
+                    "Evangelion Unit-01" to KeyboardSettings.THEME_EVANGELION_01,
+                    "Evangelion Unit-02" to KeyboardSettings.THEME_EVANGELION_02,
                 ),
             ),
         )

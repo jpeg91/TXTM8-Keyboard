@@ -1,6 +1,7 @@
 // app/src/main/kotlin/com/m8/keyboard/ThemeEffects.kt
 package com.m8.keyboard
 
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.ColorFilter
 import android.graphics.LinearGradient
@@ -34,6 +35,9 @@ enum class KeyStyle {
 
     /** Hard black outline and an offset solid shadow, the early-90s "Memphis" look. */
     MEMPHIS,
+
+    /** Angular armour plates: a hard outline, two opposite corners cut off and a fine inner panel line. */
+    CHAMFER,
 }
 
 /**
@@ -218,6 +222,74 @@ class LcdKeyDrawable(
 }
 
 /**
+ * An angular armour-plate key: the top-left and bottom-right corners are cut off, a hard [border] runs round the
+ * edge, and a fine panel line sits just inside. Pressed, the outline thickens and the panel line goes.
+ */
+class ChamferKeyDrawable(
+    private val fill: Int,
+    private val border: Int,
+    private val pressed: Boolean,
+    private val insetX: Float,
+    private val insetY: Float,
+    private val density: Float,
+) : Drawable() {
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val path = Path()
+
+    private fun plate(l: Float, t: Float, r: Float, b: Float, c: Float) {
+        path.reset()
+        path.moveTo(l + c, t)
+        path.lineTo(r, t)
+        path.lineTo(r, b - c)
+        path.lineTo(r - c, b)
+        path.lineTo(l, b)
+        path.lineTo(l, t + c)
+        path.close()
+    }
+
+    override fun draw(canvas: Canvas) {
+        val bd = bounds
+        val l = bd.left + insetX
+        val t = bd.top + insetY
+        val r = bd.right - insetX
+        val b = bd.bottom - insetY
+        if (r - l < 8f * density || b - t < 8f * density) return
+        val cut = minOf(7f * density, (b - t) / 3f)
+
+        plate(l, t, r, b, cut)
+        paint.style = Paint.Style.FILL
+        paint.color = fill
+        canvas.drawPath(path, paint)
+
+        if (!pressed) {
+            val g = 3.4f * density
+            plate(l + g, t + g, r - g, b - g, maxOf(1f, cut - g * 0.4f))
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = maxOf(1f, 0.9f * density)
+            paint.strokeJoin = Paint.Join.MITER
+            paint.color = withAlpha(darken(fill, 0.45f), 150)
+            canvas.drawPath(path, paint)
+        }
+
+        if (border != 0) {
+            val w = (if (pressed) 2.6f else 1.6f) * density
+            plate(l + w / 2f, t + w / 2f, r - w / 2f, b - w / 2f, cut)
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = w
+            paint.strokeJoin = Paint.Join.MITER
+            paint.color = border
+            canvas.drawPath(path, paint)
+        }
+        paint.style = Paint.Style.FILL
+    }
+
+    override fun setAlpha(alpha: Int) { paint.alpha = alpha }
+    override fun setColorFilter(colorFilter: ColorFilter?) { paint.colorFilter = colorFilter }
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+}
+
+/**
  * A flat key with a heavy dark outline and a hard, offset shadow. When pressed the key slides down onto its
  * shadow, so it looks pushed in.
  */
@@ -309,6 +381,11 @@ class AmbientBackground(
     private var hill: Shader? = null
     private var hillBack: Shader? = null
 
+    // The three drawings of the Memphis kind, each drawn once into a bitmap and then just blitted (see drawMemphis).
+    private val memphisFrames = arrayOfNulls<Bitmap>(3)
+    private var memphisW = 0
+    private var memphisH = 0
+
     /** Milliseconds per frame. Slow and stepped on purpose: it reads as hand-drawn and costs little. */
     private val frameMs: Long = when (kind) {
         AmbientKind.CLOUDS -> 100L
@@ -329,8 +406,17 @@ class AmbientBackground(
         }
     }
 
+    /** Lets go of the cached Memphis drawings (when the keyboard is hidden or resized); they are redrawn when next needed. */
+    private fun releaseMemphisFrames() {
+        for (i in memphisFrames.indices) {
+            memphisFrames[i]?.recycle()
+            memphisFrames[i] = null
+        }
+    }
+
     override fun onBoundsChange(bounds: Rect) {
         base.bounds = bounds
+        releaseMemphisFrames()
         if (kind == AmbientKind.CLOUDS) {
             val h = bounds.height().toFloat()
             hillBack = LinearGradient(0f, h * 0.6f, 0f, h, 0xFF7CC336.toInt(), 0xFF3F8F1A.toInt(), Shader.TileMode.CLAMP)
@@ -341,7 +427,10 @@ class AmbientBackground(
     override fun setVisible(visible: Boolean, restart: Boolean): Boolean {
         base.setVisible(visible, restart)
         val changed = super.setVisible(visible, restart)
-        if (!visible) unscheduleSelf(tick)
+        if (!visible) {
+            unscheduleSelf(tick)
+            releaseMemphisFrames()
+        }
         return changed
     }
 
@@ -621,8 +710,34 @@ class AmbientBackground(
      * they are spread over the whole screen and show through every gap between the keys.
      */
     private fun drawMemphis(canvas: Canvas, w: Float, h: Float, frame: Int) {
-        val d = density
         val wobble = frame % 3 // three drawings, repeated: the "line boil" of hand-drawn animation
+        val iw = w.toInt()
+        val ih = h.toInt()
+        if (iw <= 0 || ih <= 0) return
+        if (iw != memphisW || ih != memphisH) {
+            releaseMemphisFrames()
+            memphisW = iw
+            memphisH = ih
+        }
+        var bitmap = memphisFrames[wobble]
+        if (bitmap == null) {
+            bitmap = try {
+                Bitmap.createBitmap(iw, ih, Bitmap.Config.ARGB_8888).also {
+                    drawMemphisShapes(Canvas(it), w, h, wobble)
+                    memphisFrames[wobble] = it
+                }
+            } catch (e: OutOfMemoryError) {
+                null
+            }
+        }
+        // Each drawing is made the first time it is needed and then reused: one blit per frame instead of drawing
+        // a couple of hundred shapes. If there is not the memory for the bitmaps, the shapes are drawn directly.
+        if (bitmap != null) canvas.drawBitmap(bitmap, 0f, 0f, null) else drawMemphisShapes(canvas, w, h, wobble)
+    }
+
+    /** One of the three drawings: a small shape in every cell of a grid. */
+    private fun drawMemphisShapes(canvas: Canvas, w: Float, h: Float, wobble: Int) {
+        val d = density
         val cell = 24f * d
         val cols = (w / cell).toInt() + 1
         val rows = (h / cell).toInt() + 1
