@@ -13,7 +13,12 @@ import android.graphics.Shader
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import android.os.SystemClock
+import android.view.View
+import android.view.ViewGroup
+import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.cos
+import kotlin.math.exp
 import kotlin.math.sin
 
 /** How a theme draws its keys, beyond the older per-theme flags (retro, Nokia, glitter and so on). */
@@ -46,14 +51,14 @@ enum class AmbientKind {
     /** Broad translucent ribbons that sway slowly, like a console menu background. */
     RIBBONS,
 
-    /** A faint band that rolls down the screen, plus a blinking cursor. */
+    /** A faint band that rolls down the screen. */
     SCAN,
 
     /** A starry tiled backdrop with a marching hazard-tape border. */
     HAZARD,
 
-    /** Two cassette reels that turn, with the tape moving from one to the other. */
-    REELS,
+    /** A row of sound-wave bars that lies flat until a key is pressed, then rings like a short sound. */
+    SOUND,
 
     /** A red band that sweeps across the screen like the mirror scanner of a 3D handheld. */
     RED_SCAN,
@@ -285,11 +290,19 @@ class AmbientBackground(
     private val kind: AmbientKind,
     private val colours: IntArray,
     private val density: Float,
-) : Drawable() {
+) : Drawable(), KeyboardPulseEffect {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val path = Path()
     private val rect = RectF()
     private val startedAt = SystemClock.uptimeMillis()
+    private var nowMs = startedAt
+    private var animating = true
+
+    // The last few key presses (for the sound-wave kind): when each happened and where along the width.
+    private val soundTimes = LongArray(SOUND_EVENTS)
+    private val soundX = FloatArray(SOUND_EVENTS)
+    private val soundAges = FloatArray(SOUND_EVENTS)
+    private var soundNext = 0
     private val tick = Runnable { invalidateSelf() }
     private val glyphs: CharArray = if (kind == AmbientKind.RAIN) matrixGlyphs() else CharArray(0)
     private val one = CharArray(1)
@@ -303,7 +316,7 @@ class AmbientBackground(
         AmbientKind.RIBBONS -> 80L
         AmbientKind.SCAN -> 90L
         AmbientKind.HAZARD -> 120L
-        AmbientKind.REELS -> 80L
+        AmbientKind.SOUND -> 40L
         AmbientKind.RED_SCAN -> 70L
         AmbientKind.RAIN -> 85L
         AmbientKind.MEMPHIS -> 220L
@@ -337,6 +350,8 @@ class AmbientBackground(
         val b = bounds
         if (b.width() <= 0 || b.height() <= 0) return
         val now = SystemClock.uptimeMillis()
+        nowMs = now
+        animating = true
         val frame = ((now - startedAt) / frameMs).toInt()
         canvas.save()
         canvas.clipRect(b)
@@ -349,7 +364,7 @@ class AmbientBackground(
             AmbientKind.RIBBONS -> drawWaves(canvas, w, h, frame, filled = true)
             AmbientKind.SCAN -> drawScan(canvas, w, h, frame)
             AmbientKind.HAZARD -> drawHazard(canvas, w, h, frame)
-            AmbientKind.REELS -> drawReels(canvas, w, h, frame)
+            AmbientKind.SOUND -> drawSound(canvas, w, h)
             AmbientKind.RED_SCAN -> drawRedScan(canvas, w, h, frame)
             AmbientKind.RAIN -> drawRain(canvas, w, h, frame)
             AmbientKind.MEMPHIS -> drawMemphis(canvas, w, h, frame)
@@ -359,7 +374,8 @@ class AmbientBackground(
         paint.alpha = 255
         // One pending tick at most: other redraws (typing, a pulse) must not start extra chains of frames.
         unscheduleSelf(tick)
-        if (isVisible) scheduleSelf(tick, now + frameMs)
+        // The sound wave only needs frames while a sound is still ringing; flat, it is drawn once and rests.
+        if (isVisible && animating) scheduleSelf(tick, now + frameMs)
     }
 
     private fun col(i: Int): Int = if (colours.isEmpty()) 0xFFFFFFFF.toInt() else colours[i % colours.size]
@@ -440,7 +456,7 @@ class AmbientBackground(
 
     // -------------------------------------------------- BIOS: rolling band and cursor
 
-    /** [colours]: 0 is the band, 1 is the cursor. */
+    /** [colours]: 0 is the band. (The blinking cursor is a separate overlay, because it sits on top of the keys.) */
     private fun drawScan(canvas: Canvas, w: Float, h: Float, frame: Int) {
         val d = density
         val band = 12f * d
@@ -451,11 +467,6 @@ class AmbientBackground(
         for (i in 0 until 3) {
             paint.color = withAlpha(col(0), if (i == 1) a else a / 2)
             canvas.drawRect(0f, y + i * band, w, y + (i + 1) * band, paint)
-        }
-        // A cursor that blinks about twice a second, in the gap above the top row.
-        if ((frame / 6) % 2 == 0) {
-            paint.color = col(1)
-            canvas.drawRect(6f * d, 0.5f * d, 14f * d, 3.2f * d, paint)
         }
     }
 
@@ -500,42 +511,46 @@ class AmbientBackground(
         }
     }
 
-    // -------------------------------------------------- Walkman: turning reels
+    // -------------------------------------------------- Walkman: a sound wave
 
-    /** [colours]: 0 is the tape and hubs. */
-    private fun drawReels(canvas: Canvas, w: Float, h: Float, frame: Int) {
+    /**
+     * [colours]: 0 is the bars. A row of short bars (a flat dotted line when nothing is playing). Each key press
+     * starts a burst centred on that key: ripples spread out from it and die away over about a second, the way
+     * a short click or note would look on an audio editor.
+     */
+    private fun drawSound(canvas: Canvas, w: Float, h: Float) {
         val d = density
-        val cy = h * 0.52f
-        val big = minOf(h * 0.30f, w * 0.17f)
-        // The tape slowly moves from the left reel to the right one and back again.
-        val swing = sin(frame * 0.012f)
-        val radii = floatArrayOf(big * (0.80f + 0.18f * swing), big * (0.80f - 0.18f * swing))
-        val xs = floatArrayOf(w * 0.27f, w * 0.73f)
-        val tape = col(0)
-        for (i in 0 until 2) {
-            val cx = xs[i]
-            val r = radii[i]
-            paint.style = Paint.Style.FILL
-            paint.color = withAlpha(tape, ((tape ushr 24) and 0xFF) / 2)
-            canvas.drawCircle(cx, cy, r, paint)
-            paint.style = Paint.Style.STROKE
-            paint.strokeWidth = 2f * d
-            paint.color = tape
-            canvas.drawCircle(cx, cy, r, paint)
-            canvas.drawCircle(cx, cy, big * 0.30f, paint)
-            // Six spokes that turn in steps of 15 degrees, as a hand-drawn flip-book would.
-            val turn = (frame * 15f) % 360f
-            for (s in 0 until 6) {
-                val a = Math.toRadians((turn + s * 60f).toDouble())
-                val ca = cos(a).toFloat()
-                val sa = sin(a).toFloat()
-                canvas.drawLine(cx + ca * big * 0.12f, cy + sa * big * 0.12f, cx + ca * big * 0.30f, cy + sa * big * 0.30f, paint)
-            }
+        val now = nowMs
+        var live = false
+        for (e in 0 until SOUND_EVENTS) {
+            val age = if (soundTimes[e] == 0L) 99f else (now - soundTimes[e]) / 1000f
+            soundAges[e] = age
+            if (age < 1.1f) live = true
         }
-        // The run of tape between the two reels.
-        paint.strokeWidth = 1.5f * d
-        canvas.drawLine(xs[0], cy + radii[0], xs[1], cy + radii[1], paint)
+        val baseY = h * 0.5f
+        val step = 4f * d
+        val half = 1f * d
         paint.style = Paint.Style.FILL
+        paint.color = col(0)
+        var x = step / 2f
+        while (x < w) {
+            var disp = 0f
+            if (live) {
+                for (e in 0 until SOUND_EVENTS) {
+                    val a = soundAges[e]
+                    if (a >= 1.1f) continue
+                    val dist = abs(x - soundX[e]) / d // dp from the key
+                    val attack = 1f - exp(-a * 70f)
+                    val envelope = exp(-a / 0.26f) * attack
+                    val reach = exp(-dist / 150f)
+                    disp += envelope * reach * sin(2f * PI.toFloat() * (dist / 28f - a * 9f))
+                }
+            }
+            val bar = maxOf(half, minOf(abs(disp) * 0.34f * h, h * 0.42f))
+            canvas.drawRect(x - d, baseY - bar, x + d, baseY + bar, paint)
+            x += step
+        }
+        animating = live
     }
 
     // -------------------------------------------------- Virtual Boy: sweeping red band
@@ -601,35 +616,40 @@ class AmbientBackground(
 
     // -------------------------------------------------- Saved by the Bell: wobbling shapes
 
-    /** [colours]: the shape colours, used in turn. */
+    /**
+     * [colours]: the shape colours. One small shape in every cell of a grid, placed at random inside its cell, so
+     * they are spread over the whole screen and show through every gap between the keys.
+     */
     private fun drawMemphis(canvas: Canvas, w: Float, h: Float, frame: Int) {
         val d = density
         val wobble = frame % 3 // three drawings, repeated: the "line boil" of hand-drawn animation
+        val cell = 24f * d
+        val cols = (w / cell).toInt() + 1
+        val rows = (h / cell).toInt() + 1
         paint.style = Paint.Style.STROKE
-        paint.strokeWidth = 2.4f * d
+        paint.strokeWidth = 2f * d
         paint.strokeJoin = Paint.Join.ROUND
         paint.strokeCap = Paint.Cap.ROUND
-        for (i in 0 until 18) {
-            val gx = ((i * 0.618034f) % 1f) * 0.94f + 0.03f
-            val gy = ((i * 0.381966f + 0.13f) % 1f) * 0.90f + 0.05f
-            val jx = ((hash3(i, wobble, 2) % 5) - 2) * 0.7f * d
-            val jy = ((hash3(i, wobble, 3) % 5) - 2) * 0.7f * d
-            val cx = gx * w + jx
-            val cy = gy * h + jy
-            val s = (7f + (i % 4) * 2.5f) * d
-            val turn = (((i * 37) % 60) - 30 + (wobble - 1) * 4).toFloat()
-            paint.color = col(i)
+        for (gy in 0 until rows) for (gx in 0 until cols) {
+            val hs = hash3(gx, gy, 17)
+            val jx = ((hash3(gx, gy, 20 + wobble) % 5) - 2) * 0.6f * d
+            val jy = ((hash3(gx, gy, 30 + wobble) % 5) - 2) * 0.6f * d
+            val cx = gx * cell + (hs % 100) / 100f * cell + jx
+            val cy = gy * cell + ((hs / 100) % 100) / 100f * cell + jy
+            val s = (3.4f + (hs / 10000 % 4) * 0.9f) * d
+            val turn = ((hs / 40000 % 8) * 22 - 80 + (wobble - 1) * 4).toFloat()
+            paint.color = col(hs / 7)
             canvas.save()
             canvas.translate(cx, cy)
             canvas.rotate(turn)
             path.reset()
-            when (i % 5) {
+            when (hs % 5) {
                 0 -> { // squiggle
-                    path.moveTo(-s * 1.5f, 0f)
+                    path.moveTo(-s * 1.6f, 0f)
                     for (k in 0 until 4) {
-                        path.lineTo(-s * 1.5f + (k + 0.5f) * s * 0.75f, if (k % 2 == 0) -s * 0.55f else s * 0.55f)
+                        path.lineTo(-s * 1.6f + (k + 0.5f) * s * 0.8f, if (k % 2 == 0) -s * 0.6f else s * 0.6f)
                     }
-                    path.lineTo(s * 1.5f, 0f)
+                    path.lineTo(s * 1.6f, 0f)
                 }
                 1 -> { // triangle
                     path.moveTo(0f, -s)
@@ -647,7 +667,7 @@ class AmbientBackground(
                     path.lineTo(0f, s * 0.8f)
                 }
                 else -> { // a row of dots
-                    for (k in -1..1) path.addCircle(k * s * 0.8f, 0f, s * 0.12f, Path.Direction.CW)
+                    for (k in -1..1) path.addCircle(k * s * 0.8f, 0f, s * 0.14f, Path.Direction.CW)
                 }
             }
             canvas.drawPath(path, paint)
@@ -656,12 +676,26 @@ class AmbientBackground(
         paint.style = Paint.Style.FILL
     }
 
+    override fun pulse() = pulse(null)
+
+    /** A key was pressed: the sound-wave kind rings from that key's position. Other kinds ignore it. */
+    override fun pulse(key: RectF?) {
+        if (kind != AmbientKind.SOUND) return
+        val i = soundNext
+        soundNext = (soundNext + 1) % SOUND_EVENTS
+        soundTimes[i] = SystemClock.uptimeMillis()
+        soundX[i] = key?.centerX() ?: bounds.exactCenterX()
+        invalidateSelf()
+    }
+
     override fun setAlpha(alpha: Int) { base.alpha = alpha }
     override fun setColorFilter(colorFilter: ColorFilter?) { base.colorFilter = colorFilter }
     @Suppress("OVERRIDE_DEPRECATION")
     override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
 
     private companion object {
+        const val SOUND_EVENTS = 4
+
         /** Half-width katakana, digits and a few symbols: the look of the falling code. */
         fun matrixGlyphs(): CharArray {
             val list = ArrayList<Char>()
@@ -670,4 +704,97 @@ class AmbientBackground(
             return list.toCharArray()
         }
     }
+}
+
+// ------------------------------------------------------------------ which key was pressed
+
+/**
+ * Finds the key under a touch. A key is taken to be the deepest view that contains the point and has no
+ * children of its own (a key, a candidate word, an emoji), and its rectangle is given in [root]'s own
+ * coordinates, scroll offsets included. Returns false when the touch is in a gap or padding.
+ */
+internal fun findKeyRect(root: ViewGroup, x: Float, y: Float, out: RectF): Boolean {
+    fun walk(group: ViewGroup, ox: Float, oy: Float): Boolean {
+        for (i in group.childCount - 1 downTo 0) {
+            val c = group.getChildAt(i)
+            if (c.visibility != View.VISIBLE) continue
+            val l = ox + c.left - group.scrollX + c.translationX
+            val t = oy + c.top - group.scrollY + c.translationY
+            if (x < l || x >= l + c.width || y < t || y >= t + c.height) continue
+            if (c is ViewGroup && c.childCount > 0) {
+                if (walk(c, l, t)) return true
+                continue
+            }
+            out.set(l, t, l + c.width, t + c.height)
+            return true
+        }
+        return false
+    }
+    return walk(root, 0f, 0f)
+}
+
+/**
+ * Remembers which key a finger last touched down on. The keyboard views use it to start the typing pulse
+ * and the sound wave at that key, and to put the BIOS cursor on it. [insetPx] trims the gap that is drawn
+ * inside each key's cell, so the rectangle is the visible key.
+ */
+class KeyTracker(private val host: ViewGroup) {
+    private val rect = RectF()
+    private var valid = false
+
+    fun down(x: Float, y: Float, insetPx: Float) {
+        valid = findKeyRect(host, x, y, rect)
+        if (valid && rect.width() > insetPx * 4f && rect.height() > insetPx * 4f) rect.inset(insetPx, insetPx)
+    }
+
+    /** The last key touched, or null when no key has been touched yet (or the touch was in a gap). */
+    fun current(): RectF? = if (valid) rect else null
+}
+
+/**
+ * A blinking block cursor at the bottom-left of the last key pressed, like a DOS prompt. It is a foreground
+ * drawable (the keys would hide it in the background). It blinks by hand, on the clock: it asks for a frame
+ * only when it next has to change, so it costs almost nothing, and it restarts its blink whenever it moves.
+ */
+class KeyCursorDrawable(
+    private val tracker: KeyTracker,
+    private val colour: Int,
+    private val density: Float,
+) : Drawable() {
+    private val paint = Paint()
+    private var blinkStart = SystemClock.uptimeMillis()
+    private val tick = Runnable { invalidateSelf() }
+
+    /** The cursor moved to a new key: show it solid again and restart the blink. */
+    fun moved() {
+        blinkStart = SystemClock.uptimeMillis()
+        invalidateSelf()
+    }
+
+    override fun setVisible(visible: Boolean, restart: Boolean): Boolean {
+        val changed = super.setVisible(visible, restart)
+        if (!visible) unscheduleSelf(tick)
+        return changed
+    }
+
+    override fun draw(canvas: Canvas) {
+        val now = SystemClock.uptimeMillis()
+        val phase = ((now - blinkStart) / BLINK_MS).toInt()
+        if (phase % 2 == 0) {
+            val key = tracker.current()
+            val left = if (key != null) key.left + 3f * density else bounds.left + 6f * density
+            val bottom = if (key != null) key.bottom - 3f * density else bounds.bottom - 4f * density
+            paint.color = colour
+            canvas.drawRect(left, bottom - 3f * density, left + 8f * density, bottom, paint)
+        }
+        unscheduleSelf(tick)
+        if (isVisible) scheduleSelf(tick, blinkStart + (phase + 1) * BLINK_MS)
+    }
+
+    override fun setAlpha(alpha: Int) { paint.alpha = alpha }
+    override fun setColorFilter(colorFilter: ColorFilter?) { paint.colorFilter = colorFilter }
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+
+    private companion object { const val BLINK_MS = 530L }
 }

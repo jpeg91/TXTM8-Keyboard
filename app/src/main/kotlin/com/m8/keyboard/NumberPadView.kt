@@ -62,7 +62,9 @@ class NumberPadView(
     private val grid = LinearLayout(context)
     private val symbolPanel = LinearLayout(context)
     private val tapEffect: TapEffectDrawable? = theme.tapEffectDrawable(this, settings)
-    private val pulseBackground: Drawable = if (!theme.usesPulse) GlitterPulseBackground(theme.backgroundDrawable(this, animated = true), settings.pulseStrength, resources.displayMetrics.density) else PulseBackground(theme.backgroundDrawable(this, animated = true), theme.accent, settings.pulseStrength)
+    private val keyTracker = KeyTracker(this)
+    private val keyCursor: KeyCursorDrawable? = theme.cursorDrawable(keyTracker, resources.displayMetrics.density)
+    private val pulseBackground: Drawable = if (!theme.usesPulse) GlitterPulseBackground(theme.backgroundDrawable(this, animated = true, effectAmount = settings.effectAmount), settings.pulseStrength, resources.displayMetrics.density) else PulseBackground(theme.backgroundDrawable(this, animated = true, effectAmount = settings.effectAmount), theme.accent, settings.pulseStrength)
     private lateinit var hashKey: TextView
     private var candidateWords: List<String> = emptyList()
     private var selectedCandidate: Int = -1
@@ -72,7 +74,7 @@ class NumberPadView(
     init {
         orientation = VERTICAL
         background = pulseBackground
-        if (theme.isGlitter) foreground = theme.twinkleDrawable(this, settings) else if (tapEffect != null) foreground = tapEffect
+        if (theme.isGlitter) foreground = theme.twinkleDrawable(this, settings) else if (tapEffect != null) foreground = tapEffect else if (keyCursor != null) foreground = keyCursor
         setPadding(0, dp(4), 0, 0) // no side padding: the outer keys reach the screen edge
 
         // --- top bar: QWERTY | candidates | PASTE | ENTER | DEL ---
@@ -163,7 +165,7 @@ class NumberPadView(
         for (rowSymbols in symbolRows) {
             val r = newRow()
             for (ch in rowSymbols) {
-                val key = makeKey(ch.toString())
+                val key = makeKey(ch.toString(), keyColour = theme.keyCycle?.let { it[ch.code.mod(it.size)] })
                 key.setOnClickListener {
                     settings.feedback(it)
                     listener.onKeypadSymbol(ch.toString())
@@ -204,17 +206,19 @@ class NumberPadView(
     /** Flashes the background in the accent colour (a character was typed). */
     /** Starts the tap animation (bubbles, embers and so on) wherever a finger touches down. */
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
-        val effect = tapEffect
-        if (effect != null) {
-            val action = ev.actionMasked
-            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
-                effect.spawn(ev.getX(ev.actionIndex), ev.getY(ev.actionIndex))
-            }
+        val action = ev.actionMasked
+        if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
+            val x = ev.getX(ev.actionIndex)
+            val y = ev.getY(ev.actionIndex)
+            // Remember which key this is: the typing pulse, the sound wave and the cursor all start from it.
+            keyTracker.down(x, y, 3f * resources.displayMetrics.density)
+            keyCursor?.moved()
+            tapEffect?.spawn(x, y)
         }
         return super.dispatchTouchEvent(ev)
     }
 
-    fun pulse() = (pulseBackground as KeyboardPulseEffect).pulse()
+    fun pulse() = (pulseBackground as KeyboardPulseEffect).pulse(keyTracker.current())
 
     /** Swaps the number grid for the symbol picker (or back). */
     fun showSymbols(show: Boolean) {

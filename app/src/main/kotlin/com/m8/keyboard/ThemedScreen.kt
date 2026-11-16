@@ -28,6 +28,9 @@ abstract class ThemedScreen : Activity() {
     protected val prefs by lazy { getSharedPreferences(KeyboardSettings.PREFS, MODE_PRIVATE) }
     protected lateinit var look: KeyboardTheme
 
+    /** The page's scroll view, once [showPage] has made it (so a screen can keep its place when it is rebuilt). */
+    protected var pageScroll: ScrollView? = null
+
     protected val density: Float get() = resources.displayMetrics.density
 
     protected fun dp(v: Int): Int = (v * density).toInt()
@@ -57,6 +60,7 @@ abstract class ThemedScreen : Activity() {
         val scroll = ScrollView(this)
         look.applyBackground(scroll) // the pinstripe backdrop stays put while the content scrolls
         scroll.addView(root)
+        pageScroll = scroll
         setContentView(scroll)
     }
 

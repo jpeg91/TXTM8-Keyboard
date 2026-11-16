@@ -51,7 +51,9 @@ class EmojiKeyboardView(
     private class Row(val scroll: HorizontalScrollView, val section: EmojiSection, var built: Boolean = false)
 
     private val tapEffect: TapEffectDrawable? = theme.tapEffectDrawable(this, settings)
-    private val pulseBackground: Drawable = if (!theme.usesPulse) GlitterPulseBackground(theme.backgroundDrawable(this, animated = true), settings.pulseStrength, resources.displayMetrics.density) else PulseBackground(theme.backgroundDrawable(this, animated = true), theme.accent, settings.pulseStrength)
+    private val keyTracker = KeyTracker(this)
+    private val keyCursor: KeyCursorDrawable? = theme.cursorDrawable(keyTracker, resources.displayMetrics.density)
+    private val pulseBackground: Drawable = if (!theme.usesPulse) GlitterPulseBackground(theme.backgroundDrawable(this, animated = true, effectAmount = settings.effectAmount), settings.pulseStrength, resources.displayMetrics.density) else PulseBackground(theme.backgroundDrawable(this, animated = true, effectAmount = settings.effectAmount), theme.accent, settings.pulseStrength)
 
     private val rowPx = dp(settings.keyHeightDp + 2 * GAP_Y_DP)
     private val headerPx = dp(24)
@@ -64,7 +66,7 @@ class EmojiKeyboardView(
     init {
         orientation = VERTICAL
         background = pulseBackground
-        if (theme.isGlitter) foreground = theme.twinkleDrawable(this, settings) else if (tapEffect != null) foreground = tapEffect
+        if (theme.isGlitter) foreground = theme.twinkleDrawable(this, settings) else if (tapEffect != null) foreground = tapEffect else if (keyCursor != null) foreground = keyCursor
         addView(topBar(), LinearLayout.LayoutParams(MATCH, rowPx))
 
         val content = LinearLayout(context)
@@ -89,17 +91,19 @@ class EmojiKeyboardView(
     /** Flashes the background in the accent colour (a character was typed). */
     /** Starts the tap animation (bubbles, embers and so on) wherever a finger touches down. */
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
-        val effect = tapEffect
-        if (effect != null) {
-            val action = ev.actionMasked
-            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
-                effect.spawn(ev.getX(ev.actionIndex), ev.getY(ev.actionIndex))
-            }
+        val action = ev.actionMasked
+        if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
+            val x = ev.getX(ev.actionIndex)
+            val y = ev.getY(ev.actionIndex)
+            // Remember which key this is: the typing pulse, the sound wave and the cursor all start from it.
+            keyTracker.down(x, y, 3f * resources.displayMetrics.density)
+            keyCursor?.moved()
+            tapEffect?.spawn(x, y)
         }
         return super.dispatchTouchEvent(ev)
     }
 
-    fun pulse() = (pulseBackground as KeyboardPulseEffect).pulse()
+    fun pulse() = (pulseBackground as KeyboardPulseEffect).pulse(keyTracker.current())
 
     /**
      * Fills in the rows on screen, and the section after them. Rows further down are built when

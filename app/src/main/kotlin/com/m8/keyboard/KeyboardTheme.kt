@@ -65,6 +65,8 @@ class KeyboardTheme(
     /** A slow animation drawn behind the keys, and the colours it uses (what they mean depends on the animation). */
     val ambient: AmbientKind? = null,
     val ambientColours: IntArray? = null,
+    /** A blinking block cursor that sits at the bottom-left of the last key pressed (0 for none). */
+    val cursorColour: Int = 0,
     val typeface: Typeface = Typeface.DEFAULT,
 ) {
     /** The face colour of the action key in [slot] (see [actionKeyColours]). */
@@ -721,38 +723,40 @@ class KeyboardTheme(
         )
 
         /**
-         * Media Player: smoked blue glass with cyan edges and green play-button action keys. Thin lines ripple
-         * behind the keys like a visualiser, and equaliser bars jump up wherever you tap.
+         * Media Player, in the look of version 11: near-black glass fading to deep blue, smoked blue-grey keys with a
+         * thin steel edge, the library's selection blue when a key is pressed, and the green of the play button on
+         * the action keys. Thin blue and aqua lines drift behind the keys like the visualiser, and a glowing orb
+         * (like the play button's hover glow) blooms wherever you tap.
          */
         val MEDIA_PLAYER = KeyboardTheme(
-            background = 0xFF040912.toInt(),
-            backgroundBottom = 0xFF0A2A5A.toInt(),
-            strip = 0xB3050E1E.toInt(),
-            key = 0xB5102A50.toInt(),
-            keyPressed = 0xF02B72C8.toInt(),
-            text = 0xFFE8F5FF.toInt(),
-            accent = 0xFF3FD04F.toInt(),
-            accentText = 0xFF03130A.toInt(),
-            actionKey = 0xCC2FA84A.toInt(),
-            actionKeyPressed = 0xFF5CD070.toInt(),
+            background = 0xFF0A0B0E.toInt(),
+            backgroundBottom = 0xFF17324F.toInt(),
+            strip = 0xCC090D14.toInt(),
+            key = 0xCC1C2733.toInt(),
+            keyPressed = 0xFF2E7FD1.toInt(),
+            text = 0xFFEAF2FA.toInt(),
+            accent = 0xFF5BB52E.toInt(),
+            accentText = 0xFF07130A.toInt(),
+            actionKey = 0xCC3E9B2F.toInt(),
+            actionKeyPressed = 0xFF6CC84A.toInt(),
             actionText = 0xFFFFFFFF.toInt(),
-            subText = 0xFF9CC8EE.toInt(),
-            border = 0xFF4FB4F0.toInt(),
-            actionKeyColours = intArrayOf(0xCC2FA84A.toInt(), 0xCCB03A3A.toInt(), 0xCC2A5FB0.toInt(), 0xCC2A5FB0.toInt()),
+            subText = 0xFF8FA8C2.toInt(),
+            border = 0xFF3A4D63.toInt(),
+            actionKeyColours = intArrayOf(0xCC3E9B2F.toInt(), 0xCC9A2E2E.toInt(), 0xCC2A5F9E.toInt(), 0xCC2A5F9E.toInt()),
             keyStyle = KeyStyle.GLOSS,
-            keyRing = 0xFF7FE8FF.toInt(),
-            keyGloss = 70,
+            keyRing = 0xFF9AD4FF.toInt(),
+            keyGloss = 55,
             ambient = AmbientKind.WAVES,
-            ambientColours = intArrayOf(0x882FA8FF.toInt(), 0x8838E0A8.toInt(), 0x887A5CFF.toInt()),
-            tapEffect = TapEffectKind.EQ_BARS,
-            effectColours = intArrayOf(0xFF38D048.toInt(), 0xFF4CE0A0.toInt(), 0xFF3FD0FF.toInt(), 0xFF5AA8FF.toInt(), 0xFF9CFF6A.toInt()),
+            ambientColours = intArrayOf(0x703C9BE8.toInt(), 0x6040C8D8.toInt(), 0x50A0E0FF.toInt()),
+            tapEffect = TapEffectKind.ORB,
+            effectColours = intArrayOf(0xFF4CD964.toInt(), 0xFF3FB6FF.toInt(), 0xFF7FE8C8.toInt()),
             typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL),
         )
 
         /**
          * MS-DOS and the BIOS setup screen: white-on-blue, square keys with light grey outlines, a red
-         * highlight and inverse-video (blue on grey) action keys. A faint band rolls down the screen and a
-         * cursor blinks.
+         * highlight and inverse-video (blue on grey) action keys. A faint band rolls down the screen, and a
+         * block cursor blinks at the bottom-left of whichever key you pressed last.
          */
         val BIOS = KeyboardTheme(
             background = 0xFF0000AA.toInt(),
@@ -769,7 +773,8 @@ class KeyboardTheme(
             border = 0xFFAAAAAA.toInt(),
             squareKeys = true,
             ambient = AmbientKind.SCAN,
-            ambientColours = intArrayOf(0x1CFFFFFF, 0xFFAAAAAA.toInt()),
+            ambientColours = intArrayOf(0x1CFFFFFF),
+            cursorColour = 0xFFFFFFFF.toInt(),
             typeface = Typeface.create("monospace", Typeface.BOLD),
         )
 
@@ -830,14 +835,15 @@ class KeyboardTheme(
         )
 
         /**
-         * Walkman: charcoal metal keys with a silver edge, orange action keys and orange highlights. Two
-         * cassette reels turn behind the keys, and music notes float up from every tap.
+         * Walkman: charcoal metal keys with a silver edge, orange action keys and orange highlights. A row of
+         * sound-wave bars lies flat behind the keys until you press one, then rings out from it like a short
+         * sound; music notes float up from every tap.
          */
         val WALKMAN = KeyboardTheme(
             background = 0xFF232427.toInt(),
             backgroundBottom = 0xFF101113.toInt(),
             strip = 0xB3101113.toInt(),
-            key = 0xE62D3035.toInt(),
+            key = 0xC72D3035.toInt(),
             keyPressed = 0xFFC96A00.toInt(),
             text = 0xFFE8EAED.toInt(),
             accent = 0xFFFFA800.toInt(),
@@ -850,8 +856,8 @@ class KeyboardTheme(
             keyStyle = KeyStyle.GLOSS,
             keyRing = 0xFFFFD27A.toInt(),
             keyGloss = 45,
-            ambient = AmbientKind.REELS,
-            ambientColours = intArrayOf(0x66FFA800),
+            ambient = AmbientKind.SOUND,
+            ambientColours = intArrayOf(0xCCFFA800.toInt()),
             tapEffect = TapEffectKind.NOTES,
             effectColours = intArrayOf(0xFFFF8A00.toInt(), 0xFFFFD27A.toInt(), 0xFFFFFFFF.toInt()),
             typeface = Typeface.create("sans-serif-condensed", Typeface.BOLD),
@@ -945,7 +951,7 @@ class KeyboardTheme(
          */
         val SATURDAY = KeyboardTheme(
             background = 0xFF27D3C3.toInt(),
-            strip = 0xE6FFFFFF.toInt(),
+            strip = 0xB3FFFFFF.toInt(),
             key = 0xFFFFFFFF.toInt(),
             keyPressed = 0xFFFFF2A0.toInt(),
             text = 0xFF1A1033.toInt(),

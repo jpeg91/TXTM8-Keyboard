@@ -45,7 +45,9 @@ class QwertyKeypadView(
     }
 
     private val tapEffect: TapEffectDrawable? = theme.tapEffectDrawable(this, settings)
-    private val pulseBackground: Drawable = if (!theme.usesPulse) GlitterPulseBackground(theme.backgroundDrawable(this, animated = true), settings.pulseStrength, resources.displayMetrics.density) else PulseBackground(theme.backgroundDrawable(this, animated = true), theme.accent, settings.pulseStrength)
+    private val keyTracker = KeyTracker(this)
+    private val keyCursor: KeyCursorDrawable? = theme.cursorDrawable(keyTracker, resources.displayMetrics.density)
+    private val pulseBackground: Drawable = if (!theme.usesPulse) GlitterPulseBackground(theme.backgroundDrawable(this, animated = true, effectAmount = settings.effectAmount), settings.pulseStrength, resources.displayMetrics.density) else PulseBackground(theme.backgroundDrawable(this, animated = true, effectAmount = settings.effectAmount), theme.accent, settings.pulseStrength)
     private val letterKeys = ArrayList<Pair<TextView, Char>>()
     private var shiftKey: TextView? = null
     private var shiftLabel = "abc"
@@ -55,7 +57,7 @@ class QwertyKeypadView(
     init {
         orientation = VERTICAL
         background = pulseBackground
-        if (theme.isGlitter) foreground = theme.twinkleDrawable(this, settings) else if (tapEffect != null) foreground = tapEffect
+        if (theme.isGlitter) foreground = theme.twinkleDrawable(this, settings) else if (tapEffect != null) foreground = tapEffect else if (keyCursor != null) foreground = keyCursor
         setPadding(0, dp(4), 0, 0) // no side padding: the outer keys reach the screen edge
         buildPage()
     }
@@ -63,17 +65,19 @@ class QwertyKeypadView(
     /** Flashes the background in the accent colour (a character was typed). */
     /** Starts the tap animation (bubbles, embers and so on) wherever a finger touches down. */
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
-        val effect = tapEffect
-        if (effect != null) {
-            val action = ev.actionMasked
-            if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
-                effect.spawn(ev.getX(ev.actionIndex), ev.getY(ev.actionIndex))
-            }
+        val action = ev.actionMasked
+        if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
+            val x = ev.getX(ev.actionIndex)
+            val y = ev.getY(ev.actionIndex)
+            // Remember which key this is: the typing pulse, the sound wave and the cursor all start from it.
+            keyTracker.down(x, y, 3f * resources.displayMetrics.density)
+            keyCursor?.moved()
+            tapEffect?.spawn(x, y)
         }
         return super.dispatchTouchEvent(ev)
     }
 
-    fun pulse() = (pulseBackground as KeyboardPulseEffect).pulse()
+    fun pulse() = (pulseBackground as KeyboardPulseEffect).pulse(keyTracker.current())
 
     /** [label] is the shift key text (abc / Abc / ABC); [upper] shows capital letters on the keys. */
     fun setCase(label: String, upper: Boolean) {
@@ -128,7 +132,7 @@ class QwertyKeypadView(
             val keyColour = when {
                 theme.isGameBoyAdvance && isLetter -> gbaKeyColour(ch)
                 isLetter -> theme.keyCycle?.let { it[(ch.lowercaseChar() - 'a').mod(it.size)] }
-                else -> null
+                else -> theme.keyCycle?.let { it[ch.code.mod(it.size)] } // symbols and digits take the colours too
             }
             val key = makeKey(if (isLetter) shown(ch) else ch.toString(), 20f, leftFrac, rightFrac, keyColour = keyColour)
             key.setOnClickListener {

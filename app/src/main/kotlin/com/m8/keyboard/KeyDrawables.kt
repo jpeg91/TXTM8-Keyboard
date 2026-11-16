@@ -502,6 +502,9 @@ class GlitterPatternDrawable(
 /** The keyboard's optional typing pulse interface. */
 interface KeyboardPulseEffect {
     fun pulse()
+
+    /** The same, from a particular key: [key] is that key's rectangle in the keyboard's coordinates (null if unknown). */
+    fun pulse(key: RectF?) { pulse() }
 }
 
 /**
@@ -524,7 +527,8 @@ class GlitterPulseBackground(
 
     override fun onBoundsChange(bounds: Rect) { base.bounds = bounds }
     override fun draw(canvas: Canvas) = base.draw(canvas)
-    override fun pulse() = Unit
+    override fun pulse() = pulse(null)
+    override fun pulse(key: RectF?) { (base as? KeyboardPulseEffect)?.pulse(key) }
     override fun setAlpha(alpha: Int) { base.alpha = alpha }
     override fun setColorFilter(colorFilter: ColorFilter?) { base.colorFilter = colorFilter }
     @Suppress("OVERRIDE_DEPRECATION")
@@ -689,8 +693,8 @@ enum class TapEffectKind {
     /** A short row of blue blocks that marches away from the tap, like a loading bar. */
     BLOCKS,
 
-    /** Equaliser bars that jump up at the tap and fall back. */
-    EQ_BARS,
+    /** A soft glowing orb that blooms at the tap and fades, with a thin ring spreading out from it. */
+    ORB,
 
     /** Little four-point sparkles that fall away, like an old web page's cursor trail. */
     SPARKLE,
@@ -759,7 +763,7 @@ class TapEffectDrawable(
             TapEffectKind.PETALS -> 6f
             TapEffectKind.RIPPLES -> 2f
             TapEffectKind.BLOCKS -> 1f
-            TapEffectKind.EQ_BARS -> 1f
+            TapEffectKind.ORB -> 1f
             TapEffectKind.SPARKLE -> 5f
             TapEffectKind.GHOST -> 1f
             TapEffectKind.NOTES -> 2f
@@ -807,12 +811,11 @@ class TapEffectDrawable(
                         bornAt = now + i * 90L, life = 850L,
                         colour = colour, phase = 0f, spin = 0f,
                     )
-                    TapEffectKind.EQ_BARS -> Particle(
-                        x = x + rnd(-10f, 10f) * d, y = y,
-                        vx = 0f, vy = 0f,
-                        size = rnd(28f, 46f) * d,
-                        bornAt = now, life = rnd(650f, 900f).toLong(),
-                        colour = colour, phase = rnd(0f, 6.28f), spin = 0f,
+                    TapEffectKind.ORB -> Particle(
+                        x = x, y = y, vx = 0f, vy = 0f,
+                        size = rnd(34f, 46f) * d,
+                        bornAt = now, life = 750L,
+                        colour = colour, phase = 0f, spin = 0f,
                     )
                     TapEffectKind.SPARKLE -> Particle(
                         x = x + rnd(-10f, 10f) * d, y = y + rnd(-6f, 6f) * d,
@@ -877,7 +880,7 @@ class TapEffectDrawable(
                 TapEffectKind.PETALS -> drawPetal(canvas, p, sec, fade)
                 TapEffectKind.RIPPLES -> drawRipple(canvas, p, t)
                 TapEffectKind.BLOCKS -> drawBlocks(canvas, p, sec, fade)
-                TapEffectKind.EQ_BARS -> drawBars(canvas, p, sec, t, fade)
+                TapEffectKind.ORB -> drawOrb(canvas, p, t)
                 TapEffectKind.SPARKLE -> drawSparkle(canvas, p, sec, t)
                 TapEffectKind.GHOST -> drawGhost(canvas, p, t)
                 TapEffectKind.NOTES -> drawNote(canvas, p, sec, fade)
@@ -970,25 +973,30 @@ class TapEffectDrawable(
         }
     }
 
-    /** Five equaliser bars that jump up from the tap: the heights are re-picked about 14 times a second. */
-    private fun drawBars(canvas: Canvas, p: Particle, sec: Float, t: Float, fade: Float) {
-        val bw = 4f * density
-        val gap = 2f * density
-        val total = 5 * bw + 4 * gap
-        val step = (sec * 14f).toInt()
+    /**
+     * A glowing orb: it blooms fast and then fades, built from six translucent discs (a soft halo that gets brighter
+     * towards the middle), a small white core, and a thin ring that spreads a little further out.
+     */
+    private fun drawOrb(canvas: Canvas, p: Particle, t: Float) {
+        val grow = 1f - (1f - t) * (1f - t) // fast at first, then settles
+        val r = p.size * (0.3f + 0.7f * grow)
+        val fade = 1f - t
         paint.style = Paint.Style.FILL
-        for (i in 0 until 5) {
-            val level = 0.3f + 0.7f * kotlin.math.abs(kotlin.math.sin(p.phase + i * 1.9f + step * 2.3f))
-            val hgt = p.size * level * (1f - t) * (1f - t * 0.4f)
-            val left = p.x - total / 2f + i * (bw + gap)
-            paint.color = colours[i % colours.size]
-            paint.alpha = (fade * 235f).toInt().coerceIn(0, 255)
-            canvas.drawRect(left, p.y - hgt, left + bw, p.y, paint)
-            // A bright cap, the way a music visualiser draws its peak hold.
-            paint.color = 0xFFFFFFFF.toInt()
-            paint.alpha = (fade * 200f).toInt().coerceIn(0, 255)
-            canvas.drawRect(left, p.y - hgt - 2f * density, left + bw, p.y - hgt, paint)
+        paint.color = p.colour
+        for (i in 0 until 6) {
+            val f = 1f - i / 6f
+            paint.alpha = (fade * (18f + i * 22f)).toInt().coerceIn(0, 255)
+            canvas.drawCircle(p.x, p.y, r * f, paint)
         }
+        paint.color = 0xFFFFFFFF.toInt()
+        paint.alpha = (fade * fade * 230f).toInt().coerceIn(0, 255)
+        canvas.drawCircle(p.x, p.y, r * 0.16f, paint)
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = maxOf(1f, 1.4f * density)
+        paint.color = p.colour
+        paint.alpha = (fade * 190f).toInt().coerceIn(0, 255)
+        canvas.drawCircle(p.x, p.y, r * 1.12f, paint)
+        paint.style = Paint.Style.FILL
     }
 
     /** A four-point sparkle that falls away and flickers between two sizes. */
@@ -1145,11 +1153,15 @@ fun KeyboardTheme.twinkleDrawable(host: ViewGroup, settings: KeyboardSettings): 
 /**
  * The keyboard's background for this theme (plain colour, or the pinstriped backdrop). With [animated] a
  * theme that has an ambient animation draws it on top; the settings screens leave it off, so they stay still.
+ * [effectAmount] is the "Effect amount" setting (see above).
  */
-fun KeyboardTheme.backgroundDrawable(view: View, animated: Boolean = false): Drawable {
+fun KeyboardTheme.backgroundDrawable(view: View, animated: Boolean = false, effectAmount: Int = 100): Drawable {
     val flat = flatBackgroundDrawable(view)
     val kind = ambient
-    return if (animated && kind != null) {
+    // A theme with a tap animation shares one "Effect amount" slider between that and its background
+    // animation, so 0% turns both off. (Themes without a tap animation have no such slider.)
+    val on = animated && kind != null && (tapEffect == null || effectAmount > 0)
+    return if (kind != null && on) {
         AmbientBackground(flat, kind, ambientColours ?: IntArray(0), view.resources.displayMetrics.density)
     } else {
         flat
@@ -1175,14 +1187,19 @@ private fun KeyboardTheme.flatBackgroundDrawable(view: View): Drawable =
         ColorDrawable(background)
     }
 
+/** The blinking key cursor for themes that have one (MS-DOS), or null. */
+fun KeyboardTheme.cursorDrawable(tracker: KeyTracker, density: Float): KeyCursorDrawable? =
+    if (cursorColour != 0) KeyCursorDrawable(tracker, cursorColour, density) else null
+
 /** Sets [view]'s background for this theme. */
 fun KeyboardTheme.applyBackground(view: View) {
     view.background = backgroundDrawable(view)
 }
 
 /**
- * Wraps a background and, on [pulse], washes it with a glow of the accent colour (rising from the
- * bottom centre, where thumbs are) that fades out. [strength] is the glow's peak opacity; 0 disables it.
+ * Wraps a background and, on [pulse], washes it with a glow of the accent colour that spreads out from the key
+ * that was pressed (the bottom centre when that is not known) and fades. [strength] is the glow's peak opacity;
+ * 0 disables it. Key presses are also passed on to the background underneath, for the animated ones that react.
  */
 class PulseBackground(
     private val base: Drawable,
@@ -1207,15 +1224,6 @@ class PulseBackground(
 
     override fun onBoundsChange(bounds: Rect) {
         base.bounds = bounds
-        val size = maxOf(bounds.width(), bounds.height()).toFloat()
-        paint.shader = RadialGradient(
-            bounds.exactCenterX(),
-            bounds.bottom.toFloat(),
-            size * 0.95f,
-            accent,
-            accent and 0x00FFFFFF,
-            Shader.TileMode.CLAMP,
-        )
     }
 
     override fun draw(canvas: Canvas) {
@@ -1238,9 +1246,22 @@ class PulseBackground(
         if (running) invalidateSelf() // ask for the next frame
     }
 
-    /** Flash now and fade out. */
-    override fun pulse() {
+    override fun pulse() = pulse(null)
+
+    /** Flash now, from [key], and fade out. */
+    override fun pulse(key: RectF?) {
+        (base as? KeyboardPulseEffect)?.pulse(key)
         if (strength <= 0f) return
+        val b = bounds
+        if (b.isEmpty) return
+        paint.shader = RadialGradient(
+            key?.centerX() ?: b.exactCenterX(),
+            key?.centerY() ?: b.bottom.toFloat(),
+            maxOf(b.width(), b.height()) * 0.55f,
+            accent,
+            accent and 0x00FFFFFF,
+            Shader.TileMode.CLAMP,
+        )
         startedAt = SystemClock.uptimeMillis()
         running = true
         level = 1f

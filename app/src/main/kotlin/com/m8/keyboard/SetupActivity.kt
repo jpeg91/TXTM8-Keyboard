@@ -4,6 +4,7 @@ package com.m8.keyboard
 import android.app.AlertDialog
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Typeface
 import android.os.Handler
 import android.os.Looper
 import android.os.Bundle
@@ -11,6 +12,7 @@ import android.provider.Settings
 import android.view.inputmethod.InputMethodManager
 import android.text.InputType
 import android.view.Gravity
+import android.view.View
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -24,6 +26,12 @@ private const val MATCH = android.view.ViewGroup.LayoutParams.MATCH_PARENT
  * can be changed is here, grouped by what it affects; the About page has the full feature guide.
  */
 class SetupActivity : ThemedScreen() {
+
+    /** What [recreate] saves so the rebuilt screen can carry on where this one was. */
+    private class Restore(val text: String, val selStart: Int, val selEnd: Int, val scrollY: Int, val keyboardUp: Boolean)
+
+    /** A named group of themes in the picker: the label shown and the value stored. */
+    private class ThemeGroup(val title: String, val themes: List<Pair<String, Int>>)
 
     private var status: TextView? = null
     private var testField: EditText? = null
@@ -48,6 +56,85 @@ class SetupActivity : ThemedScreen() {
         val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(field.windowToken, 0)
         handler.postDelayed({ if (field.hasFocus()) imm.showSoftInput(field, 0) }, 250L)
+    }
+
+    private companion object {
+        /** Set just before the screen is rebuilt, read once by the new copy. */
+        var restore: Restore? = null
+
+        /** Sections of the theme picker the person has left open, and the theme the picker last showed. */
+        val openSections = HashSet<String>()
+        var lastThemeShown = -1
+
+        val themeGroups: List<ThemeGroup> = listOf(
+            ThemeGroup(
+                "Essentials",
+                listOf(
+                    "P5" to KeyboardSettings.THEME_P5,
+                    "Follow system" to KeyboardSettings.THEME_SYSTEM,
+                    "Dark" to KeyboardSettings.THEME_DARK,
+                    "Light" to KeyboardSettings.THEME_LIGHT,
+                ),
+            ),
+            ThemeGroup(
+                "Phones and handhelds",
+                listOf(
+                    "Nokia 3310" to KeyboardSettings.THEME_NOKIA,
+                    "Amber Backlight" to KeyboardSettings.THEME_AMBER_BACKLIGHT,
+                    "Game Boy" to KeyboardSettings.THEME_GAME_BOY,
+                    "Game Boy Advance" to KeyboardSettings.THEME_GAME_BOY_ADVANCE,
+                    "Virtual Boy" to KeyboardSettings.THEME_VIRTUAL_BOY,
+                    "Palm Pilot" to KeyboardSettings.THEME_PALM,
+                    "Walkman" to KeyboardSettings.THEME_WALKMAN,
+                    "PSP" to KeyboardSettings.THEME_PSP,
+                ),
+            ),
+            ThemeGroup(
+                "Game consoles",
+                listOf(
+                    "SNES (US)" to KeyboardSettings.THEME_SNES,
+                    "SNES (EU)" to KeyboardSettings.THEME_SNES_EU,
+                    "N64" to KeyboardSettings.THEME_N64,
+                    "Saturn" to KeyboardSettings.THEME_SATURN,
+                    "PlayStation" to KeyboardSettings.THEME_PLAYSTATION,
+                    "PS2" to KeyboardSettings.THEME_PS2,
+                    "Dreamcast (US)" to KeyboardSettings.THEME_DREAMCAST,
+                    "Dreamcast (JP)" to KeyboardSettings.THEME_DREAMCAST_JP,
+                    "Dreamcast (EU)" to KeyboardSettings.THEME_DREAMCAST_EU,
+                    "Xbox" to KeyboardSettings.THEME_XBOX,
+                    "GameCube" to KeyboardSettings.THEME_GAMECUBE,
+                ),
+            ),
+            ThemeGroup(
+                "Computers and the web",
+                listOf(
+                    "Retro Desktop" to KeyboardSettings.THEME_RETRO_DESKTOP,
+                    "Terminal Green" to KeyboardSettings.THEME_TERMINAL_GREEN,
+                    "Terminal Amber" to KeyboardSettings.THEME_TERMINAL_AMBER,
+                    "Windows XP" to KeyboardSettings.THEME_XP,
+                    "Media Player" to KeyboardSettings.THEME_MEDIA_PLAYER,
+                    "MS-DOS / BIOS" to KeyboardSettings.THEME_BIOS,
+                    "GeoCities" to KeyboardSettings.THEME_GEOCITIES,
+                    "Matrix" to KeyboardSettings.THEME_MATRIX,
+                ),
+            ),
+            ThemeGroup(
+                "Sparkle and colour",
+                listOf(
+                    "Glitter Graphics" to KeyboardSettings.THEME_GLITTER,
+                    "Night Sky" to KeyboardSettings.THEME_NIGHT_SKY,
+                    "Winter" to KeyboardSettings.THEME_WINTER,
+                    "Aurora" to KeyboardSettings.THEME_AURORA,
+                    "Synthwave" to KeyboardSettings.THEME_SYNTHWAVE,
+                    "Gold on Black" to KeyboardSettings.THEME_GOLD_ON_BLACK,
+                    "Bubbles" to KeyboardSettings.THEME_BUBBLES,
+                    "Embers" to KeyboardSettings.THEME_EMBERS,
+                    "Sakura" to KeyboardSettings.THEME_SAKURA,
+                    "Neon Ripples" to KeyboardSettings.THEME_RIPPLES,
+                    "Saved by the Bell" to KeyboardSettings.THEME_SATURDAY,
+                ),
+            ),
+        )
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -78,6 +165,28 @@ class SetupActivity : ThemedScreen() {
 
         // ---- Try it ----
         root.addView(sectionTitle("Try it"))
+
+        // Flip through the themes without leaving the test box; the keyboard reopens in each new theme.
+        val flat = themeGroups.flatMap { it.themes }
+        val currentTheme = prefs.getInt(KeyboardSettings.KEY_THEME, KeyboardSettings.THEME_P5)
+        val position = flat.indexOfFirst { it.second == currentTheme }.coerceAtLeast(0)
+        val readout = body("Theme: " + flat[position].first + "  (" + (position + 1) + " of " + flat.size + ")")
+        readout.typeface = Typeface.DEFAULT_BOLD
+        readout.gravity = Gravity.CENTER
+        readout.setPadding(0, 0, 0, dp(8))
+        root.addView(readout, LinearLayout.LayoutParams(MATCH, WRAP))
+        val stepRow = LinearLayout(this)
+        stepRow.orientation = LinearLayout.HORIZONTAL
+        stepRow.addView(
+            button("< Previous", action = false) { stepTheme(flat, -1) },
+            LinearLayout.LayoutParams(0, WRAP, 1f).apply { rightMargin = dp(4) },
+        )
+        stepRow.addView(
+            button("Next >", action = false) { stepTheme(flat, 1) },
+            LinearLayout.LayoutParams(0, WRAP, 1f).apply { leftMargin = dp(4) },
+        )
+        root.addView(stepRow, LinearLayout.LayoutParams(MATCH, WRAP).apply { bottomMargin = dp(10) })
+
         val test = EditText(this)
         testField = test
         test.hint = "Tap here to try it"
@@ -101,64 +210,7 @@ class SetupActivity : ThemedScreen() {
 
         // ---- Look ----
         root.addView(sectionTitle("Look"))
-        addChoice(
-            root, "Theme", KeyboardSettings.KEY_THEME,
-            listOf(
-                "P5", "Nokia 3310", "Game Boy", "Game Boy Advance", "Glitter Graphics", "Night Sky", "Winter", "Aurora",
-                "Synthwave", "Gold on Black", "Amber Backlight", "Terminal Green", "Terminal Amber", "Retro Desktop",
-                "Bubbles", "Embers", "Sakura", "Neon Ripples", "SNES (US)", "SNES (EU)", "N64", "Saturn",
-                "PlayStation", "PS2", "Dreamcast (US)", "Dreamcast (JP)", "Dreamcast (EU)", "Xbox", "GameCube",
-                "Windows XP", "Media Player", "MS-DOS / BIOS", "GeoCities", "Palm Pilot", "Walkman", "Virtual Boy",
-                "PSP", "Matrix", "Saved by the Bell",
-                "Follow system", "Dark", "Light",
-            ),
-            listOf(
-                KeyboardSettings.THEME_P5,
-                KeyboardSettings.THEME_NOKIA,
-                KeyboardSettings.THEME_GAME_BOY,
-                KeyboardSettings.THEME_GAME_BOY_ADVANCE,
-                KeyboardSettings.THEME_GLITTER,
-                KeyboardSettings.THEME_NIGHT_SKY,
-                KeyboardSettings.THEME_WINTER,
-                KeyboardSettings.THEME_AURORA,
-                KeyboardSettings.THEME_SYNTHWAVE,
-                KeyboardSettings.THEME_GOLD_ON_BLACK,
-                KeyboardSettings.THEME_AMBER_BACKLIGHT,
-                KeyboardSettings.THEME_TERMINAL_GREEN,
-                KeyboardSettings.THEME_TERMINAL_AMBER,
-                KeyboardSettings.THEME_RETRO_DESKTOP,
-                KeyboardSettings.THEME_BUBBLES,
-                KeyboardSettings.THEME_EMBERS,
-                KeyboardSettings.THEME_SAKURA,
-                KeyboardSettings.THEME_RIPPLES,
-                KeyboardSettings.THEME_SNES,
-                KeyboardSettings.THEME_SNES_EU,
-                KeyboardSettings.THEME_N64,
-                KeyboardSettings.THEME_SATURN,
-                KeyboardSettings.THEME_PLAYSTATION,
-                KeyboardSettings.THEME_PS2,
-                KeyboardSettings.THEME_DREAMCAST,
-                KeyboardSettings.THEME_DREAMCAST_JP,
-                KeyboardSettings.THEME_DREAMCAST_EU,
-                KeyboardSettings.THEME_XBOX,
-                KeyboardSettings.THEME_GAMECUBE,
-                KeyboardSettings.THEME_XP,
-                KeyboardSettings.THEME_MEDIA_PLAYER,
-                KeyboardSettings.THEME_BIOS,
-                KeyboardSettings.THEME_GEOCITIES,
-                KeyboardSettings.THEME_PALM,
-                KeyboardSettings.THEME_WALKMAN,
-                KeyboardSettings.THEME_VIRTUAL_BOY,
-                KeyboardSettings.THEME_PSP,
-                KeyboardSettings.THEME_MATRIX,
-                KeyboardSettings.THEME_SATURDAY,
-                KeyboardSettings.THEME_SYSTEM,
-                KeyboardSettings.THEME_DARK,
-                KeyboardSettings.THEME_LIGHT,
-            ),
-            KeyboardSettings.THEME_P5,
-            recreateOnChange = true, // so this screen picks up the new accent
-        )
+        addThemePicker(root)
         // The P5 theme's accent colour: red, yellow, blue, purple, green, orange and six in-betweens.
         if (prefs.getInt(KeyboardSettings.KEY_THEME, KeyboardSettings.THEME_P5) == KeyboardSettings.THEME_P5) {
             addAccentPicker(root)
@@ -269,6 +321,96 @@ class SetupActivity : ThemedScreen() {
         )
 
         showPage(root)
+
+        // Rebuilt after a theme change (or a reset): put the text, scroll position and keyboard back as they were.
+        val saved = restore
+        restore = null
+        if (saved != null) {
+            test.setText(saved.text)
+            test.setSelection(saved.selStart.coerceIn(0, test.length()), saved.selEnd.coerceIn(0, test.length()))
+            pageScroll?.post { pageScroll?.scrollTo(0, saved.scrollY) }
+            if (saved.keyboardUp) {
+                test.postDelayed({
+                    test.requestFocus()
+                    (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager).showSoftInput(test, 0)
+                }, 350L)
+            }
+        }
+    }
+
+    /** Remembers the test box and scroll position, so [onCreate] can put them back after the screen is rebuilt. */
+    override fun recreate() {
+        val field = testField
+        restore = Restore(
+            text = field?.text?.toString().orEmpty(),
+            selStart = field?.selectionStart ?: 0,
+            selEnd = field?.selectionEnd ?: 0,
+            scrollY = pageScroll?.scrollY ?: 0,
+            keyboardUp = field?.hasFocus() == true,
+        )
+        super.recreate()
+    }
+
+    /** Moves to the previous or next theme in the order they are listed, wrapping round at the ends. */
+    private fun stepTheme(flat: List<Pair<String, Int>>, direction: Int) {
+        val current = prefs.getInt(KeyboardSettings.KEY_THEME, KeyboardSettings.THEME_P5)
+        val position = flat.indexOfFirst { it.second == current }.coerceAtLeast(0)
+        chooseTheme(flat[(position + direction + flat.size) % flat.size].second)
+    }
+
+    private fun chooseTheme(value: Int) {
+        prefs.edit().putInt(KeyboardSettings.KEY_THEME, value).apply()
+        recreate() // so this screen takes on the new theme's colours
+    }
+
+    /**
+     * The theme list, in collapsible sections. Tap a section's heading to open or close it; the one holding the
+     * chosen theme is open to begin with, and the sections you open stay open when the screen rebuilds.
+     */
+    private fun addThemePicker(root: LinearLayout) {
+        root.addView(label("Theme"))
+        val current = prefs.getInt(KeyboardSettings.KEY_THEME, KeyboardSettings.THEME_P5)
+        if (current != lastThemeShown) {
+            // A new theme was picked (or this is the first time here): make sure it can be seen.
+            themeGroups.firstOrNull { g -> g.themes.any { it.second == current } }?.let { openSections.add(it.title) }
+            lastThemeShown = current
+        }
+        for (group in themeGroups) {
+            val body = LinearLayout(this)
+            body.orientation = LinearLayout.VERTICAL
+            body.visibility = if (group.title in openSections) View.VISIBLE else View.GONE
+            for ((name, value) in group.themes) {
+                val diamond = View(this)
+                diamond.background = DiamondDrawable(value == current, look.accent, density)
+                val row = optionRow(diamond, name)
+                row.setOnClickListener { chooseTheme(value) }
+                body.addView(row)
+            }
+
+            val header = TextView(this)
+            fun headerText() = (if (body.visibility == View.VISIBLE) "\u25BE  " else "\u25B8  ") +
+                group.title.uppercase() + "  (" + group.themes.size + ")"
+            header.text = headerText()
+            header.textSize = 14f
+            header.typeface = look.typeface
+            header.setTextColor(look.text)
+            header.gravity = Gravity.CENTER_VERTICAL
+            header.minHeight = dp(46)
+            header.setPadding(dp(16), 0, dp(16), 0)
+            header.background = look.keyBackground(density, false, 4, 3, 10)
+            header.setOnClickListener {
+                if (body.visibility == View.VISIBLE) {
+                    body.visibility = View.GONE
+                    openSections.remove(group.title)
+                } else {
+                    body.visibility = View.VISIBLE
+                    openSections.add(group.title)
+                }
+                header.text = headerText()
+            }
+            root.addView(header, LinearLayout.LayoutParams(MATCH, WRAP).apply { topMargin = dp(6) })
+            root.addView(body, LinearLayout.LayoutParams(MATCH, WRAP))
+        }
     }
 
     override fun onResume() {

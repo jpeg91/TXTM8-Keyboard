@@ -188,8 +188,10 @@ class AboutActivity : ThemedScreen() {
             "Bubbles rise, embers float up, petals flutter down and ripples spread from every spot you touch, " +
                 "not just from the key. The newer themes add loading-bar blocks, equaliser bars, rainbow sparkles, " +
                 "fading LCD pixels, music notes, falling code and confetti. The Effect amount setting changes how " +
-                "much appears. A few themes (BIOS, for one) also have a slow animation behind the keys; it only runs " +
-                "while the keyboard is on screen.",
+                "much appears, and at 0% it turns the theme's background animation off too. A few themes also have a " +
+                "slow animation behind the keys; it only runs while the keyboard is on screen. On the settings screen " +
+                "the themes sit in sections you can open and close, and Previous and Next above the test box step " +
+                "through them while the keyboard stays open.",
         )
         feature(
             root, "Twinkling stars",
