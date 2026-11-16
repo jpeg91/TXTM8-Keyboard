@@ -723,33 +723,33 @@ class KeyboardTheme(
         )
 
         /**
-         * Media Player, in the look of version 11: near-black glass fading to deep blue, smoked blue-grey keys with a
-         * thin steel edge, the library's selection blue when a key is pressed, and the green of the play button on
-         * the action keys. Thin blue and aqua lines drift behind the keys like the visualiser, and a glowing orb
-         * (like the play button's hover glow) blooms wherever you tap.
+         * Media Player 10, from the Windows XP era: deep navy glass with a bright blue glow, smoked navy keys with a
+         * glowing blue edge, aqua when pressed, and glossy blue orbs (with the logo's orange for delete) on the action
+         * keys. Thin blue and aqua lines drift behind the keys like the visualiser, and a glowing orb blooms wherever
+         * you tap, like the glow round its round buttons.
          */
         val MEDIA_PLAYER = KeyboardTheme(
-            background = 0xFF0A0B0E.toInt(),
-            backgroundBottom = 0xFF17324F.toInt(),
-            strip = 0xCC090D14.toInt(),
-            key = 0xCC1C2733.toInt(),
-            keyPressed = 0xFF2E7FD1.toInt(),
-            text = 0xFFEAF2FA.toInt(),
-            accent = 0xFF5BB52E.toInt(),
-            accentText = 0xFF07130A.toInt(),
-            actionKey = 0xCC3E9B2F.toInt(),
-            actionKeyPressed = 0xFF6CC84A.toInt(),
+            background = 0xFF030918.toInt(),
+            backgroundBottom = 0xFF0E3478.toInt(),
+            strip = 0xCC040B20.toInt(),
+            key = 0xCC0F2556.toInt(),
+            keyPressed = 0xFF2C86F0.toInt(),
+            text = 0xFFEAF4FF.toInt(),
+            accent = 0xFF3B9AF0.toInt(),
+            accentText = 0xFFFFFFFF.toInt(),
+            actionKey = 0xCC2A7BE8.toInt(),
+            actionKeyPressed = 0xFF63B4FF.toInt(),
             actionText = 0xFFFFFFFF.toInt(),
-            subText = 0xFF8FA8C2.toInt(),
-            border = 0xFF3A4D63.toInt(),
-            actionKeyColours = intArrayOf(0xCC3E9B2F.toInt(), 0xCC9A2E2E.toInt(), 0xCC2A5F9E.toInt(), 0xCC2A5F9E.toInt()),
+            subText = 0xFF86B0E8.toInt(),
+            border = 0xFF3F7FD6.toInt(),
+            actionKeyColours = intArrayOf(0xCC2A7BE8.toInt(), 0xCCD9741A.toInt(), 0xCC1F5FB8.toInt(), 0xCC1F5FB8.toInt()),
             keyStyle = KeyStyle.GLOSS,
-            keyRing = 0xFF9AD4FF.toInt(),
-            keyGloss = 55,
+            keyRing = 0xFF8FE0FF.toInt(),
+            keyGloss = 80,
             ambient = AmbientKind.WAVES,
-            ambientColours = intArrayOf(0x703C9BE8.toInt(), 0x6040C8D8.toInt(), 0x50A0E0FF.toInt()),
+            ambientColours = intArrayOf(0x804FB4FF.toInt(), 0x7040D8F0.toInt(), 0x609CC8FF.toInt()),
             tapEffect = TapEffectKind.ORB,
-            effectColours = intArrayOf(0xFF4CD964.toInt(), 0xFF3FB6FF.toInt(), 0xFF7FE8C8.toInt()),
+            effectColours = intArrayOf(0xFF4FC3FF.toInt(), 0xFF8FE0FF.toInt(), 0xFF2A7BE8.toInt()),
             typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL),
         )
 

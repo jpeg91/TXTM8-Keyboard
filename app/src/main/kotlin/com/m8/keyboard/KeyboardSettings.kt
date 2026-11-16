@@ -9,7 +9,7 @@ import android.view.View
 
 /** User-adjustable options, stored in SharedPreferences by [SetupActivity]. */
 data class KeyboardSettings(
-    val theme: Int = THEME_P5,
+    val theme: Int = THEME_DEFAULT,
     val p5Accent: Int = P5_ACCENT_RED,
     val keySize: Int = 1,
     val multiTapMs: Int = 800,
@@ -67,6 +67,9 @@ data class KeyboardSettings(
         const val THEME_DARK = 1
         const val THEME_LIGHT = 2
         const val THEME_P5 = 3 // was the red theme: its accent colour is now chosen separately
+
+        /** What a new install starts with: follow the phone's light and dark mode. */
+        const val THEME_DEFAULT = THEME_SYSTEM
         /** Was the purple theme, now the P5 theme with the purple accent. */
         const val THEME_RETIRED_PURPLE = 4
         const val THEME_NOKIA = 5
@@ -130,7 +133,7 @@ data class KeyboardSettings(
             val p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             migrateThemes(p)
             return KeyboardSettings(
-                theme = p.getInt(KEY_THEME, THEME_P5),
+                theme = p.getInt(KEY_THEME, THEME_DEFAULT),
                 p5Accent = p.getInt(KEY_P5_ACCENT, P5_ACCENT_RED).coerceIn(0, P5_ACCENTS.lastIndex),
                 keySize = p.getInt(KEY_SIZE, 1),
                 multiTapMs = p.getInt(KEY_TIMEOUT, 800),

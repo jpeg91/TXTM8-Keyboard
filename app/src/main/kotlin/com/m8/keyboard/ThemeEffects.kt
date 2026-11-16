@@ -753,8 +753,8 @@ class KeyTracker(private val host: ViewGroup) {
 
 /**
  * A blinking block cursor at the bottom-left of the last key pressed, like a DOS prompt. It is a foreground
- * drawable (the keys would hide it in the background). It blinks by hand, on the clock: it asks for a frame
- * only when it next has to change, so it costs almost nothing, and it restarts its blink whenever it moves.
+ * drawable (the keys would hide it in the background). It blinks by hand, on the clock, at a steady rate wherever
+ * it is: it asks for a frame only when it next has to change, so it costs almost nothing.
  */
 class KeyCursorDrawable(
     private val tracker: KeyTracker,
@@ -762,12 +762,11 @@ class KeyCursorDrawable(
     private val density: Float,
 ) : Drawable() {
     private val paint = Paint()
-    private var blinkStart = SystemClock.uptimeMillis()
+    private val blinkStart = SystemClock.uptimeMillis()
     private val tick = Runnable { invalidateSelf() }
 
-    /** The cursor moved to a new key: show it solid again and restart the blink. */
+    /** The cursor moved to a new key. It jumps there but keeps its blink going, as a real prompt does. */
     fun moved() {
-        blinkStart = SystemClock.uptimeMillis()
         invalidateSelf()
     }
 

@@ -42,7 +42,7 @@ abstract class ThemedScreen : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         KeyboardSettings.migrateThemes(prefs)
-        val chosen = prefs.getInt(KeyboardSettings.KEY_THEME, KeyboardSettings.THEME_P5)
+        val chosen = prefs.getInt(KeyboardSettings.KEY_THEME, KeyboardSettings.THEME_DEFAULT)
         look = KeyboardTheme.resolve(this, chosen, p5Accent())
         window.statusBarColor = look.background
         window.navigationBarColor = look.background

@@ -70,8 +70,8 @@ class SetupActivity : ThemedScreen() {
             ThemeGroup(
                 "Essentials",
                 listOf(
-                    "P5" to KeyboardSettings.THEME_P5,
                     "Follow system" to KeyboardSettings.THEME_SYSTEM,
+                    "P5" to KeyboardSettings.THEME_P5,
                     "Dark" to KeyboardSettings.THEME_DARK,
                     "Light" to KeyboardSettings.THEME_LIGHT,
                 ),
@@ -168,7 +168,7 @@ class SetupActivity : ThemedScreen() {
 
         // Flip through the themes without leaving the test box; the keyboard reopens in each new theme.
         val flat = themeGroups.flatMap { it.themes }
-        val currentTheme = prefs.getInt(KeyboardSettings.KEY_THEME, KeyboardSettings.THEME_P5)
+        val currentTheme = prefs.getInt(KeyboardSettings.KEY_THEME, KeyboardSettings.THEME_DEFAULT)
         val position = flat.indexOfFirst { it.second == currentTheme }.coerceAtLeast(0)
         val readout = body("Theme: " + flat[position].first + "  (" + (position + 1) + " of " + flat.size + ")")
         readout.typeface = Typeface.DEFAULT_BOLD
@@ -212,7 +212,7 @@ class SetupActivity : ThemedScreen() {
         root.addView(sectionTitle("Look"))
         addThemePicker(root)
         // The P5 theme's accent colour: red, yellow, blue, purple, green, orange and six in-betweens.
-        if (prefs.getInt(KeyboardSettings.KEY_THEME, KeyboardSettings.THEME_P5) == KeyboardSettings.THEME_P5) {
+        if (prefs.getInt(KeyboardSettings.KEY_THEME, KeyboardSettings.THEME_DEFAULT) == KeyboardSettings.THEME_P5) {
             addAccentPicker(root)
         }
         addChoice(
@@ -353,7 +353,7 @@ class SetupActivity : ThemedScreen() {
 
     /** Moves to the previous or next theme in the order they are listed, wrapping round at the ends. */
     private fun stepTheme(flat: List<Pair<String, Int>>, direction: Int) {
-        val current = prefs.getInt(KeyboardSettings.KEY_THEME, KeyboardSettings.THEME_P5)
+        val current = prefs.getInt(KeyboardSettings.KEY_THEME, KeyboardSettings.THEME_DEFAULT)
         val position = flat.indexOfFirst { it.second == current }.coerceAtLeast(0)
         chooseTheme(flat[(position + direction + flat.size) % flat.size].second)
     }
@@ -369,7 +369,7 @@ class SetupActivity : ThemedScreen() {
      */
     private fun addThemePicker(root: LinearLayout) {
         root.addView(label("Theme"))
-        val current = prefs.getInt(KeyboardSettings.KEY_THEME, KeyboardSettings.THEME_P5)
+        val current = prefs.getInt(KeyboardSettings.KEY_THEME, KeyboardSettings.THEME_DEFAULT)
         if (current != lastThemeShown) {
             // A new theme was picked (or this is the first time here): make sure it can be seen.
             themeGroups.firstOrNull { g -> g.themes.any { it.second == current } }?.let { openSections.add(it.title) }
