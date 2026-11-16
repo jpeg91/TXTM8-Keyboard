@@ -181,13 +181,17 @@ class AboutActivity : ThemedScreen() {
                 "game consoles. SNES comes in US and EU versions, and Dreamcast in US, Japan and EU versions, each " +
                 "with its own colours. Windows XP, Media Player, MS-DOS / BIOS, GeoCities, Palm Pilot, Walkman, " +
                 "Virtual Boy, PSP, Matrix and Saved by the Bell are drawn from gadgets, software and screens of the " +
-                "90s and early 2000s, and most of them have their own animation behind the keys or under your finger.",
+                "90s and early 2000s, and most of them have their own animation behind the keys or under your finger. " +
+                "The Nokia 3210, 7210 and 3510i, Sony Ericsson T610, N-Gage, Razr V3 and Kawaii Flip Phone themes " +
+                "bring back the mobile phones of the late 90s and 2000s, MonsterGear is a blue handheld communicator " +
+                "with orange tabs, and Evangelion Unit-00 is orange armour with hexagonal shields that flash from " +
+                "every tap.",
         )
         feature(
             root, "Tap animations",
             "Bubbles rise, embers float up, petals flutter down and ripples spread from every spot you touch, " +
                 "not just from the key. The newer themes add loading-bar blocks, equaliser bars, rainbow sparkles, " +
-                "fading LCD pixels, music notes, falling code and confetti. The Effect amount setting changes how " +
+                "fading LCD pixels, music notes, falling code, confetti, hearts and hexagonal shields. The Effect amount setting changes how " +
                 "much appears, and at 0% it turns the theme's background animation off too. A few themes also have a " +
                 "slow animation behind the keys; it only runs while the keyboard is on screen. On the settings screen " +
                 "the themes sit in sections you can open and close, and Previous and Next above the test box step " +

@@ -710,6 +710,12 @@ enum class TapEffectKind {
 
     /** Squiggles, triangles, rings and plus signs that burst out and tumble down. */
     CONFETTI,
+
+    /** Little hearts that float up and sway. */
+    HEARTS,
+
+    /** Hexagonal shields that flash out from the tap, grow and fade. */
+    HEXAGONS,
 }
 
 /**
@@ -769,6 +775,8 @@ class TapEffectDrawable(
             TapEffectKind.NOTES -> 2f
             TapEffectKind.GLYPHS -> 1f
             TapEffectKind.CONFETTI -> 9f
+            TapEffectKind.HEARTS -> 4f
+            TapEffectKind.HEXAGONS -> 2f
         }
         var count = expected.toInt() + if (random.nextFloat() < expected - expected.toInt()) 1 else 0
         if (count < 1) count = 1
@@ -852,6 +860,19 @@ class TapEffectDrawable(
                         bornAt = now, life = rnd(1100f, 1800f).toLong(),
                         colour = colour, phase = rnd(0f, 6.28f), spin = rnd(-300f, 300f),
                     )
+                    TapEffectKind.HEARTS -> Particle(
+                        x = x + rnd(-10f, 10f) * d, y = y,
+                        vx = rnd(-25f, 25f) * d, vy = -rnd(45f, 95f) * d,
+                        size = rnd(0.8f, 1.3f),
+                        bornAt = now + rnd(0f, 200f).toLong(), life = rnd(1200f, 1900f).toLong(),
+                        colour = colour, phase = rnd(0f, 6.28f), spin = 0f,
+                    )
+                    TapEffectKind.HEXAGONS -> Particle(
+                        x = x, y = y, vx = 0f, vy = 0f,
+                        size = (30f + i * 16f + rnd(0f, 8f)) * d,
+                        bornAt = now + i * 120L, life = rnd(700f, 900f).toLong(),
+                        colour = colour, phase = rnd(0f, 1.05f), spin = 0f,
+                    )
                 },
             )
         }
@@ -886,6 +907,8 @@ class TapEffectDrawable(
                 TapEffectKind.NOTES -> drawNote(canvas, p, sec, fade)
                 TapEffectKind.GLYPHS -> drawGlyphs(canvas, p, sec, t)
                 TapEffectKind.CONFETTI -> drawConfetti(canvas, p, sec, fade)
+                TapEffectKind.HEARTS -> drawHeart(canvas, p, sec, fade)
+                TapEffectKind.HEXAGONS -> drawHexagon(canvas, p, t)
             }
         }
         if (particles.isNotEmpty()) invalidateSelf() // ask for the next frame
@@ -1122,6 +1145,58 @@ class TapEffectDrawable(
         }
         canvas.drawPath(path, paint)
         canvas.restore()
+        paint.style = Paint.Style.FILL
+    }
+
+    /** A small heart with a white shine that rises, sways and tilts. */
+    private fun drawHeart(canvas: Canvas, p: Particle, sec: Float, fade: Float) {
+        val sway = kotlin.math.sin(sec * 3.6f + p.phase)
+        val cx = p.x + p.vx * sec + sway * 9f * density
+        val cy = p.y + p.vy * sec
+        val s = 6.5f * density * p.size // half the width of the heart
+        paint.style = Paint.Style.FILL
+        paint.color = p.colour
+        paint.alpha = (fade * 235f).toInt().coerceIn(0, 255)
+        canvas.save()
+        canvas.translate(cx, cy)
+        canvas.rotate(sway * 14f)
+        path.reset()
+        path.moveTo(0f, s * 0.95f)
+        path.cubicTo(-s * 1.7f, -s * 0.1f, -s * 0.9f, -s * 1.25f, 0f, -s * 0.45f)
+        path.cubicTo(s * 0.9f, -s * 1.25f, s * 1.7f, -s * 0.1f, 0f, s * 0.95f)
+        path.close()
+        canvas.drawPath(path, paint)
+        paint.color = 0xFFFFFFFF.toInt()
+        paint.alpha = (fade * 170f).toInt().coerceIn(0, 255)
+        canvas.drawCircle(-s * 0.5f, -s * 0.3f, maxOf(1f, s * 0.16f), paint)
+        canvas.restore()
+    }
+
+    /** A hexagonal shield that flashes out from the tap: a bright outline that thins and fades, and a faint fill at first. */
+    private fun drawHexagon(canvas: Canvas, p: Particle, t: Float) {
+        val ease = 1f - (1f - t) * (1f - t)
+        val start = 5f * density
+        val radius = start + (p.size - start) * ease
+        path.reset()
+        for (i in 0 until 6) {
+            val angle = p.phase + i * Math.PI / 3.0
+            val x = p.x + kotlin.math.cos(angle).toFloat() * radius
+            val y = p.y + kotlin.math.sin(angle).toFloat() * radius
+            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+        path.close()
+        if (t < 0.25f) {
+            paint.style = Paint.Style.FILL
+            paint.color = p.colour
+            paint.alpha = ((0.25f - t) / 0.25f * 60f).toInt().coerceIn(0, 255)
+            canvas.drawPath(path, paint)
+        }
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = maxOf(1f, (2.4f * (1f - t) + 0.8f) * density)
+        paint.strokeJoin = Paint.Join.MITER
+        paint.color = p.colour
+        paint.alpha = ((1f - t) * (1f - t) * 235f).toInt().coerceIn(0, 255)
+        canvas.drawPath(path, paint)
         paint.style = Paint.Style.FILL
     }
 

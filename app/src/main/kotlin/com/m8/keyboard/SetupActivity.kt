@@ -79,7 +79,14 @@ class SetupActivity : ThemedScreen() {
             ThemeGroup(
                 "Phones and handhelds",
                 listOf(
+                    "Nokia 3210" to KeyboardSettings.THEME_NOKIA_3210,
                     "Nokia 3310" to KeyboardSettings.THEME_NOKIA,
+                    "Nokia 7210" to KeyboardSettings.THEME_NOKIA_7210,
+                    "Nokia 3510i" to KeyboardSettings.THEME_NOKIA_3510I,
+                    "Sony Ericsson T610" to KeyboardSettings.THEME_SONY_ERICSSON_T610,
+                    "N-Gage" to KeyboardSettings.THEME_NGAGE,
+                    "Razr V3" to KeyboardSettings.THEME_RAZR_V3,
+                    "Kawaii Flip Phone" to KeyboardSettings.THEME_KAWAII,
                     "Amber Backlight" to KeyboardSettings.THEME_AMBER_BACKLIGHT,
                     "Game Boy" to KeyboardSettings.THEME_GAME_BOY,
                     "Game Boy Advance" to KeyboardSettings.THEME_GAME_BOY_ADVANCE,
@@ -87,6 +94,7 @@ class SetupActivity : ThemedScreen() {
                     "Palm Pilot" to KeyboardSettings.THEME_PALM,
                     "Walkman" to KeyboardSettings.THEME_WALKMAN,
                     "PSP" to KeyboardSettings.THEME_PSP,
+                    "MonsterGear" to KeyboardSettings.THEME_MONSTERGEAR,
                 ),
             ),
             ThemeGroup(
@@ -132,6 +140,7 @@ class SetupActivity : ThemedScreen() {
                     "Sakura" to KeyboardSettings.THEME_SAKURA,
                     "Neon Ripples" to KeyboardSettings.THEME_RIPPLES,
                     "Saved by the Bell" to KeyboardSettings.THEME_SATURDAY,
+                    "Evangelion Unit-00" to KeyboardSettings.THEME_EVANGELION_00,
                 ),
             ),
         )

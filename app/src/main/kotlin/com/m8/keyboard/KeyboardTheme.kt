@@ -983,6 +983,239 @@ class KeyboardTheme(
             typeface = Typeface.create("sans-serif-black", Typeface.NORMAL),
         )
 
+        /**
+         * Nokia 3210 (1999): the green-backlit monochrome phone in a purple Xpress-on cover with a black keypad.
+         * The keys and the candidate strip are dark with the yellow-green glow of the backlight on the lettering,
+         * and the selected word is shown inverse, like a pixel-black selection on the old LCD. Colours are
+         * estimates, not researched values.
+         */
+        val NOKIA_3210 = KeyboardTheme(
+            background = 0xFF5B3A8C.toInt(),
+            strip = 0xFF232A14.toInt(),
+            key = 0xFF1E201C.toInt(),
+            keyPressed = 0xFF3C4430.toInt(),
+            text = 0xFFC9E04A.toInt(),
+            accent = 0xFFC9E04A.toInt(),
+            accentText = 0xFF1F2A10.toInt(),
+            actionKey = 0xFF2C3022.toInt(),
+            actionKeyPressed = 0xFF4A5436.toInt(),
+            actionText = 0xFFC9E04A.toInt(),
+            subText = 0xFF8FA23A.toInt(),
+            border = 0xFF3A4030.toInt(),
+            typeface = Typeface.create("monospace", Typeface.BOLD),
+        )
+
+        /**
+         * Nokia 3510i (2002): a slate-blue shell with pale silver, domed keys and a colour-screen candidate strip.
+         * The orange of its translucent sides (they flashed on a call) is the action keys, the highlight and the
+         * typing pulse. Colours are estimates, not researched values.
+         */
+        val NOKIA_3510I = KeyboardTheme(
+            background = 0xFF2A4A78.toInt(),
+            strip = 0xFFD8E8F8.toInt(),
+            key = 0xFFDDE3EA.toInt(),
+            keyPressed = 0xFFB3BECB.toInt(),
+            text = 0xFF14233F.toInt(),
+            accent = 0xFFFF8A1F.toInt(),
+            accentText = 0xFF14233F.toInt(),
+            actionKey = 0xFFFF8A1F.toInt(),
+            actionKeyPressed = 0xFFFFB066.toInt(),
+            actionText = 0xFF14233F.toInt(),
+            subText = 0xFF4A5C7A.toInt(),
+            shadow = 0xFF182C4A.toInt(),
+            deep = 0xFF182C4A.toInt(),
+            isNokia = true,
+            typeface = Typeface.create("sans-serif", Typeface.BOLD),
+        )
+
+        /**
+         * Nokia 7210 (2002), the fashion phone, in its turquoise Xpress-on cover: light grey keys with a thin
+         * silver edge, a pale aqua colour-screen strip, deep teal action keys and a navy selection bar. Colours
+         * are estimates, not researched values.
+         */
+        val NOKIA_7210 = KeyboardTheme(
+            background = 0xFF12A5A8.toInt(),
+            strip = 0xFFD6F4F1.toInt(),
+            key = 0xFFE8ECEC.toInt(),
+            keyPressed = 0xFFBFC9C9.toInt(),
+            text = 0xFF0C2A2C.toInt(),
+            accent = 0xFF1B3A8A.toInt(),
+            accentText = 0xFFFFFFFF.toInt(),
+            actionKey = 0xFF0E7F83.toInt(),
+            actionKeyPressed = 0xFF3FA9AC.toInt(),
+            actionText = 0xFFFFFFFF.toInt(),
+            subText = 0xFF3A5E60.toInt(),
+            border = 0xFF8FA9AA.toInt(),
+            typeface = Typeface.create("sans-serif", Typeface.BOLD),
+        )
+
+        /**
+         * Sony Ericsson T610 (2003) in Abyss Blue: silver pill-shaped keys with an aluminium edge, a pale
+         * colour-screen strip, and the green of the lit joystick centre (and the Sony Ericsson logo) on the Enter
+         * key, the highlight and the ring that appears inside a pressed key. Colours are estimates, not
+         * researched values.
+         */
+        val SONY_ERICSSON_T610 = KeyboardTheme(
+            background = 0xFF1B3868.toInt(),
+            strip = 0xFFD5DEEA.toInt(),
+            key = 0xFFC8CDD5.toInt(),
+            keyPressed = 0xFFA9B0BB.toInt(),
+            text = 0xFF161C28.toInt(),
+            accent = 0xFF86C232.toInt(),
+            accentText = 0xFF10200A.toInt(),
+            actionKey = 0xFFAAB2BE.toInt(),
+            actionKeyPressed = 0xFFC4CAD3.toInt(),
+            actionText = 0xFF161C28.toInt(),
+            subText = 0xFF4A5362.toInt(),
+            border = 0xFF7E8795.toInt(),
+            actionKeyColours = intArrayOf(0xFF86C232.toInt(), 0xFFAAB2BE.toInt(), 0xFFAAB2BE.toInt(), 0xFFAAB2BE.toInt()),
+            actionTextColours = intArrayOf(0xFF10200A.toInt(), 0xFF161C28.toInt(), 0xFF161C28.toInt(), 0xFF161C28.toInt()),
+            keyStyle = KeyStyle.GLOSS,
+            keyRing = 0xFF86C232.toInt(),
+            keyGloss = 70,
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL),
+        )
+
+        /**
+         * N-Gage (2003): the grey "taco" with an orange backlight and a green accent. Dark grey keys, orange
+         * lettering and an amber edge; Enter is green, Delete is orange and the other action keys are grey.
+         * Colours are estimates, not researched values.
+         */
+        val NGAGE = KeyboardTheme(
+            background = 0xFF3B3E44.toInt(),
+            backgroundBottom = 0xFF26282C.toInt(),
+            strip = 0xFF14161A.toInt(),
+            key = 0xFF23262B.toInt(),
+            keyPressed = 0xFF5A3A12.toInt(),
+            text = 0xFFFF9B2E.toInt(),
+            accent = 0xFF9ACD1F.toInt(),
+            accentText = 0xFF11180A.toInt(),
+            actionKey = 0xFF9ACD1F.toInt(),
+            actionKeyPressed = 0xFFC2E76A.toInt(),
+            actionText = 0xFF11180A.toInt(),
+            subText = 0xFFC77A22.toInt(),
+            border = 0xFF9A5418.toInt(),
+            actionKeyColours = intArrayOf(0xFF9ACD1F.toInt(), 0xFFF07A1A.toInt(), 0xFF5A5F68.toInt(), 0xFF5A5F68.toInt()),
+            actionTextColours = intArrayOf(0xFF11180A.toInt(), 0xFF1A0E04.toInt(), 0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt()),
+            typeface = Typeface.create("sans-serif-condensed", Typeface.BOLD),
+        )
+
+        /**
+         * Motorola RAZR V3 (2004): black with square, flat keys edged in silver like the etched metal keypad, and
+         * the cool electroluminescent blue of its backlight on the lettering. The typing pulse glows in that
+         * same blue. Colours are estimates, not researched values.
+         */
+        val RAZR_V3 = KeyboardTheme(
+            background = 0xFF07090D.toInt(),
+            backgroundBottom = 0xFF12171F.toInt(),
+            strip = 0xFF0B0E13.toInt(),
+            key = 0xFF141920.toInt(),
+            keyPressed = 0xFF1C4F7A.toInt(),
+            text = 0xFF5CC8FF.toInt(),
+            accent = 0xFF2FA8FF.toInt(),
+            accentText = 0xFF04121F.toInt(),
+            actionKey = 0xFF1B222B.toInt(),
+            actionKeyPressed = 0xFF23628F.toInt(),
+            actionText = 0xFF9BE0FF.toInt(),
+            subText = 0xFF2F86BF.toInt(),
+            border = 0xFFA9B2BF.toInt(),
+            squareKeys = true,
+            typeface = Typeface.create("sans-serif-light", Typeface.NORMAL),
+        )
+
+        /**
+         * Kawaii flip phone: a pink-to-lilac screen, glossy sticker keys with white outlines in pastel pink, lilac,
+         * mint, sky, lemon and peach, candy-coloured action keys, and little hearts that float up from every tap.
+         * Colours are estimates, not researched values.
+         */
+        val KAWAII = KeyboardTheme(
+            background = 0xFFFFD6E8.toInt(),
+            backgroundBottom = 0xFFD9C8FF.toInt(),
+            strip = 0xFFFFF4FA.toInt(),
+            key = 0xFFFFF0F7.toInt(),
+            keyPressed = 0xFFFFB3D4.toInt(),
+            text = 0xFF7A2E64.toInt(),
+            accent = 0xFFFF6FAE.toInt(),
+            accentText = 0xFFFFFFFF.toInt(),
+            actionKey = 0xFFFF6FAE.toInt(),
+            actionKeyPressed = 0xFFFF9CC8.toInt(),
+            actionText = 0xFFFFFFFF.toInt(),
+            subText = 0xFFB24F8F.toInt(),
+            border = 0xFFFFFFFF.toInt(),
+            actionKeyColours = intArrayOf(0xFFFF6FAE.toInt(), 0xFFB48CFF.toInt(), 0xFF5FD3B3.toInt(), 0xFF6FB8FF.toInt()),
+            actionTextColours = intArrayOf(0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0xFF3A1A40.toInt(), 0xFF3A1A40.toInt()),
+            keyStyle = KeyStyle.GLOSS,
+            keyRing = 0xFFFFFFFF.toInt(),
+            keyGloss = 150,
+            keyCycle = intArrayOf(
+                0xFFFFC2DD.toInt(), 0xFFE0CFFF.toInt(), 0xFFC4F2E4.toInt(),
+                0xFFC2E4FF.toInt(), 0xFFFFF0B8.toInt(), 0xFFFFD6C2.toInt(),
+            ),
+            tapEffect = TapEffectKind.HEARTS,
+            effectColours = intArrayOf(0xFFFF6FAE.toInt(), 0xFFFF9CC8.toInt(), 0xFFB48CFF.toInt(), 0xFF6FB8FF.toInt()),
+            typeface = Typeface.create("sans-serif-rounded", Typeface.BOLD),
+        )
+
+        /**
+         * Evangelion Unit-00, the prototype: orange armour keys with white edges on a dark screen, a white
+         * armour candidate strip, white Enter, a red Delete and a red "eye" highlight. A faint orange band rolls
+         * down the screen, and hexagonal shields flash out from every tap. Colours are estimates, not
+         * researched values.
+         */
+        val EVANGELION_00 = KeyboardTheme(
+            background = 0xFF0B0A0E.toInt(),
+            backgroundBottom = 0xFF2A1206.toInt(),
+            strip = 0xFFEDEAE4.toInt(),
+            key = 0xFFE9751B.toInt(),
+            keyPressed = 0xFFFFA24D.toInt(),
+            text = 0xFF1A0E06.toInt(),
+            accent = 0xFFD7191C.toInt(),
+            accentText = 0xFFFFFFFF.toInt(),
+            actionKey = 0xFFEDEAE4.toInt(),
+            actionKeyPressed = 0xFFFFFFFF.toInt(),
+            actionText = 0xFF1A0E06.toInt(),
+            subText = 0xFF3A1A06.toInt(),
+            border = 0xFFF4F1EA.toInt(),
+            actionKeyColours = intArrayOf(0xFFEDEAE4.toInt(), 0xFFD7191C.toInt(), 0xFF8C8F96.toInt(), 0xFF8C8F96.toInt()),
+            actionTextColours = intArrayOf(0xFF1A0E06.toInt(), 0xFFFFFFFF.toInt(), 0xFF111111.toInt(), 0xFF111111.toInt()),
+            squareKeys = true,
+            ambient = AmbientKind.SCAN,
+            ambientColours = intArrayOf(0x22FF8A1F),
+            tapEffect = TapEffectKind.HEXAGONS,
+            effectColours = intArrayOf(0xFFFF8A1F.toInt(), 0xFFFFC14D.toInt(), 0xFFFFFFFF.toInt()),
+            typeface = Typeface.create("serif", Typeface.BOLD),
+        )
+
+        /**
+         * MonsterGear: a blue handheld communicator with pale silver notched keys, a pale green-white screen strip
+         * for the candidates, orange tabs for Enter and the highlight, a red Delete, and signal rings spreading
+         * from every tap. Inspired by the look of a late-90s handheld gadget; it uses no logos or artwork.
+         * Colours are estimates, not researched values.
+         */
+        val MONSTERGEAR = KeyboardTheme(
+            background = 0xFF2C58B0.toInt(),
+            backgroundBottom = 0xFF1F3F86.toInt(),
+            strip = 0xFFE4EFD8.toInt(),
+            key = 0xFFF2F4F8.toInt(),
+            keyPressed = 0xFFC9D3E6.toInt(),
+            text = 0xFF14234D.toInt(),
+            accent = 0xFFF28C28.toInt(),
+            accentText = 0xFF14234D.toInt(),
+            actionKey = 0xFFF28C28.toInt(),
+            actionKeyPressed = 0xFFFFB566.toInt(),
+            actionText = 0xFF14234D.toInt(),
+            subText = 0xFF4A5C8F.toInt(),
+            shadow = 0xFFA7B4D0.toInt(),
+            border = 0xFF14264F.toInt(),
+            actionKeyColours = intArrayOf(0xFFF28C28.toInt(), 0xFFD9453A.toInt(), 0xFF9DB4E6.toInt(), 0xFF9DB4E6.toInt()),
+            actionTextColours = intArrayOf(0xFF14234D.toInt(), 0xFFFFFFFF.toInt(), 0xFF14234D.toInt(), 0xFF14234D.toInt()),
+            keyStyle = KeyStyle.LCD,
+            tapEffect = TapEffectKind.RIPPLES,
+            effectColours = intArrayOf(0xFFF28C28.toInt(), 0xFFFFFFFF.toInt(), 0xFF9DB4E6.toInt()),
+            typeface = Typeface.create("monospace", Typeface.BOLD),
+        )
+
+
         private fun heavyItalic(): Typeface =
             if (Build.VERSION.SDK_INT >= 28) {
                 Typeface.create(Typeface.SANS_SERIF, 900, true)
@@ -1035,6 +1268,15 @@ class KeyboardTheme(
                 KeyboardSettings.THEME_PSP -> PSP
                 KeyboardSettings.THEME_MATRIX -> MATRIX
                 KeyboardSettings.THEME_SATURDAY -> SATURDAY
+                KeyboardSettings.THEME_NOKIA_3210 -> NOKIA_3210
+                KeyboardSettings.THEME_NOKIA_3510I -> NOKIA_3510I
+                KeyboardSettings.THEME_NOKIA_7210 -> NOKIA_7210
+                KeyboardSettings.THEME_SONY_ERICSSON_T610 -> SONY_ERICSSON_T610
+                KeyboardSettings.THEME_NGAGE -> NGAGE
+                KeyboardSettings.THEME_RAZR_V3 -> RAZR_V3
+                KeyboardSettings.THEME_KAWAII -> KAWAII
+                KeyboardSettings.THEME_EVANGELION_00 -> EVANGELION_00
+                KeyboardSettings.THEME_MONSTERGEAR -> MONSTERGEAR
                 KeyboardSettings.THEME_DARK -> DARK
                 KeyboardSettings.THEME_LIGHT -> LIGHT
                 else -> if (night) DARK else LIGHT

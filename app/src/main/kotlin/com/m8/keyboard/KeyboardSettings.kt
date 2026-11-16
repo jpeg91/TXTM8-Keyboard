@@ -112,6 +112,15 @@ data class KeyboardSettings(
         const val THEME_PSP = 41
         const val THEME_MATRIX = 42
         const val THEME_SATURDAY = 43 // the bright, Memphis-patterned "Saved by the Bell" theme
+        const val THEME_NOKIA_3210 = 44
+        const val THEME_NOKIA_3510I = 45
+        const val THEME_NOKIA_7210 = 46
+        const val THEME_SONY_ERICSSON_T610 = 47
+        const val THEME_NGAGE = 48
+        const val THEME_RAZR_V3 = 49 // the new RAZR V3 theme (THEME_RETIRED_RAZR is the old, removed one)
+        const val THEME_KAWAII = 50
+        const val THEME_EVANGELION_00 = 51
+        const val THEME_MONSTERGEAR = 52
 
         /** Index in [P5_ACCENTS] of the original red (the default) and of the purple. */
         const val P5_ACCENT_RED = 0
