@@ -183,8 +183,8 @@ class AboutActivity : ThemedScreen() {
                 "Virtual Boy, PSP, Matrix and Saved by the Bell are drawn from gadgets, software and screens of the " +
                 "90s and early 2000s, and most of them have their own animation behind the keys or under your finger. " +
                 "The Nokia 3210, 7210 and 3510i, Sony Ericsson T610, N-Gage, Razr V3 and Kawaii Flip Phone themes " +
-                "bring back the mobile phones of the late 90s and 2000s, MonsterGear is a blue handheld communicator " +
-                "with orange tabs, MonsterNav is a red navigator with a dark screen, and Evangelion Unit-00, " +
+                "bring back the mobile phones of the late 90s and 2000s, MonsterGear is a lavender-grey handheld " +
+                "communicator with a green screen, MonsterNav is a beige navigator with a blue lens, and Evangelion Unit-00, " +
                 "Unit-01 and Unit-02 are angular armour keys in orange, purple and red with hexagonal shields that " +
                 "flash from every tap.",
         )
