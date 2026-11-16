@@ -582,24 +582,24 @@ class KeyboardTheme(
         /**
          * Early-2000s black console (PlayStation 2): black pad with the blue of the PS2 logo for outlines and the
          * highlight, a black-to-navy background, and the four symbol colours (blue, red, green, pink) as the
-         * action keys. The symbol colours are estimates, not researched values.
+         * action keys. The logo blue and symbol colours are researched visual estimates, not Sony-published values.
          */
         val PS2 = KeyboardTheme(
-            background = 0xFF0A0A0C.toInt(),
+            background = 0xFF000000.toInt(),
             backgroundBottom = 0xFF0D0A3A.toInt(),
             strip = 0xFF121216.toInt(),
             key = 0xFF1C1C21.toInt(),
             keyPressed = 0xFF34343C.toInt(),
             text = 0xFFF2F4F8.toInt(),
-            accent = 0xFF118FDB.toInt(),
-            accentText = 0xFF0A0A0C.toInt(),
-            actionKey = 0xFF0072CE.toInt(),
-            actionKeyPressed = 0xFF4C9CDC.toInt(),
+            accent = 0xFF003791.toInt(),
+            accentText = 0xFFFFFFFF.toInt(),
+            actionKey = 0xFF0070CC.toInt(),
+            actionKeyPressed = 0xFF4C9ADB.toInt(),
             actionText = 0xFFFFFFFF.toInt(),
             subText = 0xFFA8AAB4.toInt(),
-            border = 0xFF118FDB.toInt(),
-            actionKeyColours = intArrayOf(0xFF0072CE.toInt(), 0xFFD22630.toInt(), 0xFF2EB67D.toInt(), 0xFFE8A0C4.toInt()),
-            actionTextColours = intArrayOf(0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0xFF0A0A0C.toInt(), 0xFF0A0A0C.toInt()),
+            border = 0xFF003791.toInt(),
+            actionKeyColours = intArrayOf(0xFF0070CC.toInt(), 0xFFE60012.toInt(), 0xFF00A651.toInt(), 0xFFE6007E.toInt()),
+            actionTextColours = intArrayOf(0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0xFF0A0A0C.toInt(), 0xFFFFFFFF.toInt()),
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
@@ -622,8 +622,8 @@ class KeyboardTheme(
 
         /**
          * Late-90s white console (Japan): the same white keys and light grey shell, with the orange swirl.
-         * The orange is an estimate, not a researched value; the lettering is dark because white on this
-         * orange is hard to read.
+         * The orange is a researched visual estimate from Japanese hardware imagery, not a published value; the
+         * lettering is dark because white on this orange is hard to read.
          */
         val DREAMCAST_JP = KeyboardTheme(
             background = 0xFFF2F2F0.toInt(),
@@ -631,10 +631,10 @@ class KeyboardTheme(
             key = 0xFFFFFFFF.toInt(),
             keyPressed = 0xFFE2E2DF.toInt(),
             text = 0xFF2D3036.toInt(),
-            accent = 0xFFF26A1B.toInt(),
+            accent = 0xFFF58220.toInt(),
             accentText = 0xFF1E2024.toInt(),
-            actionKey = 0xFFF26A1B.toInt(),
-            actionKeyPressed = 0xFFF5965F.toInt(),
+            actionKey = 0xFFF58220.toInt(),
+            actionKeyPressed = 0xFFF8A762.toInt(),
             actionText = 0xFF1E2024.toInt(),
             subText = 0xFF5E626B.toInt(),
             border = 0xFFA8A8A4.toInt(),
@@ -699,11 +699,11 @@ class KeyboardTheme(
          * across the sky and a loading bar of blue blocks marches away from every tap.
          */
         val XP = KeyboardTheme(
-            background = 0xFF2A6FD6.toInt(),
-            backgroundBottom = 0xFF9DD3F6.toInt(),
-            strip = 0xFF0A4FCB.toInt(),
-            key = 0xEBF5F4EE.toInt(),
-            keyPressed = 0xFFE4E2D6.toInt(),
+            background = 0xFF3E8FD4.toInt(),
+            backgroundBottom = 0xFF8FC4EC.toInt(),
+            strip = 0xFF0054E3.toInt(),
+            key = 0xEBFCFCFB.toInt(),
+            keyPressed = 0xFFEAE9E1.toInt(),
             text = 0xFF14181F.toInt(),
             accent = 0xFF3C963C.toInt(),
             accentText = 0xFFFFFFFF.toInt(),
@@ -712,13 +712,13 @@ class KeyboardTheme(
             actionText = 0xFFFFFFFF.toInt(),
             subText = 0xFF4A5A78.toInt(),
             border = 0xFF003C74.toInt(),
-            actionKeyColours = intArrayOf(0xFF3C963C.toInt(), 0xFFD0432A.toInt(), 0xFF2F6FE0.toInt(), 0xFF2F6FE0.toInt()),
+            actionKeyColours = intArrayOf(0xFF3C963C.toInt(), 0xFFD0432A.toInt(), 0xFF316AC5.toInt(), 0xFF316AC5.toInt()),
             keyStyle = KeyStyle.GLOSS,
-            keyRing = 0xFFF4A52A.toInt(),
+            keyRing = 0xFFF8B330.toInt(),
             keyGloss = 110,
             ambient = AmbientKind.CLOUDS,
             tapEffect = TapEffectKind.BLOCKS,
-            effectColours = intArrayOf(0xFF2D6BF0.toInt()),
+            effectColours = intArrayOf(0xFF316AC5.toInt()),
             typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL),
         )
 
@@ -783,7 +783,7 @@ class KeyboardTheme(
          * bevelled grey-style buttons in loud web-safe colours, and a rainbow sparkle trail from every tap.
          */
         val GEOCITIES = KeyboardTheme(
-            background = 0xFF2EC4C4.toInt(),
+            background = 0xFF008080.toInt(),
             strip = 0xFFFFFFFF.toInt(),
             key = 0xFFFFFF66.toInt(),
             keyPressed = 0xFFD8D84A.toInt(),
@@ -794,13 +794,13 @@ class KeyboardTheme(
             actionKeyPressed = 0xFFFF7070.toInt(),
             actionText = 0xFFFFFF00.toInt(),
             subText = 0xFF000080.toInt(),
-            actionKeyColours = intArrayOf(0xFF00AA00.toInt(), 0xFFFF0000.toInt(), 0xFF0000EE.toInt(), 0xFF800080.toInt()),
+            actionKeyColours = intArrayOf(0xFF00AA00.toInt(), 0xFFFF0000.toInt(), 0xFF0000EE.toInt(), 0xFF551A8B.toInt()),
             actionTextColours = intArrayOf(0xFFFFFFFF.toInt(), 0xFFFFFF00.toInt(), 0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt()),
             isRetro = true,
             squareKeys = true,
             keyCycle = intArrayOf(0xFFFFFF66.toInt(), 0xFF66FFFF.toInt(), 0xFFFF99FF.toInt(), 0xFF99FF66.toInt()),
             ambient = AmbientKind.HAZARD,
-            ambientColours = intArrayOf(0xFFFFFFFF.toInt(), 0xFFFFFF66.toInt(), 0xFFFFD800.toInt(), 0xFF111111.toInt()),
+            ambientColours = intArrayOf(0xFFFFFFFF.toInt(), 0xFFFFFF66.toInt(), 0xFFFFFF00.toInt(), 0xFF000000.toInt()),
             tapEffect = TapEffectKind.SPARKLE,
             effectColours = intArrayOf(
                 0xFFFF3030.toInt(), 0xFFFFA000.toInt(), 0xFFFFE000.toInt(),
@@ -872,7 +872,7 @@ class KeyboardTheme(
             strip = 0xB3000000.toInt(),
             key = 0x992A0000.toInt(),
             keyPressed = 0xFF7A0000.toInt(),
-            text = 0xFFFF3B3B.toInt(),
+            text = 0xFFFF0000.toInt(),
             accent = 0xFFFF2020.toInt(),
             accentText = 0xFF000000.toInt(),
             actionKey = 0xB33A0000.toInt(),
@@ -902,13 +902,13 @@ class KeyboardTheme(
             text = 0xFFFFFFFF.toInt(),
             accent = 0xFFBFD9FF.toInt(),
             accentText = 0xFF03123A.toInt(),
-            actionKey = 0xFF2DBE8B.toInt(),
+            actionKey = 0xFF00A651.toInt(),
             actionKeyPressed = 0xFF6AD8B0.toInt(),
             actionText = 0xFF04140E.toInt(),
             subText = 0xFFA9C4EE.toInt(),
             border = 0xFF8FB4F0.toInt(),
-            actionKeyColours = intArrayOf(0xFF2DBE8B.toInt(), 0xFFE0413A.toInt(), 0xFF4E8DF4.toInt(), 0xFFE98AC3.toInt()),
-            actionTextColours = intArrayOf(0xFF04140E.toInt(), 0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0xFF2A0A1A.toInt()),
+            actionKeyColours = intArrayOf(0xFF00A651.toInt(), 0xFFE60012.toInt(), 0xFF0070CC.toInt(), 0xFFE6007E.toInt()),
+            actionTextColours = intArrayOf(0xFF04140E.toInt(), 0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt()),
             keyStyle = KeyStyle.GLOSS,
             keyRing = 0xFFFFFFFF.toInt(),
             keyGloss = 60,
@@ -928,7 +928,7 @@ class KeyboardTheme(
             strip = 0xB3000000.toInt(),
             key = 0x99021A08.toInt(),
             keyPressed = 0xFF0F4A1E.toInt(),
-            text = 0xFF3DFF72.toInt(),
+            text = 0xFF00FF41.toInt(),
             accent = 0xFF33FF66.toInt(),
             accentText = 0xFF000000.toInt(),
             actionKey = 0xB3042A0C.toInt(),
@@ -1246,60 +1246,61 @@ class KeyboardTheme(
         )
 
         /**
-         * MonsterGear: a blue handheld communicator with pale silver notched keys, a pale green-white screen strip
-         * for the candidates, orange tabs for Enter and the highlight, a red Delete, and signal rings spreading
-         * from every tap. Inspired by the look of a late-90s handheld gadget; it uses no logos or artwork.
-         * Colours are estimates, not researched values.
+         * MonsterGear: a lavender-grey handheld communicator with pale grey keys, a lime-green screen strip for the
+         * candidates, yellow-gold tabs for Enter and the highlight, a red Delete, green mode and settings keys, and
+         * signal rings spreading from every tap. Inspired by the look of a late-90s handheld gadget; it uses no logos
+         * or artwork. Colours are researched visual estimates from the device illustration in an official guide.
          */
         val MONSTERGEAR = KeyboardTheme(
-            background = 0xFF2C58B0.toInt(),
-            backgroundBottom = 0xFF1F3F86.toInt(),
-            strip = 0xFFE4EFD8.toInt(),
-            key = 0xFFF2F4F8.toInt(),
-            keyPressed = 0xFFC9D3E6.toInt(),
-            text = 0xFF14234D.toInt(),
-            accent = 0xFFF28C28.toInt(),
-            accentText = 0xFF14234D.toInt(),
-            actionKey = 0xFFF28C28.toInt(),
-            actionKeyPressed = 0xFFFFB566.toInt(),
-            actionText = 0xFF14234D.toInt(),
-            subText = 0xFF4A5C8F.toInt(),
-            shadow = 0xFFA7B4D0.toInt(),
-            border = 0xFF14264F.toInt(),
-            actionKeyColours = intArrayOf(0xFFF28C28.toInt(), 0xFFD9453A.toInt(), 0xFF9DB4E6.toInt(), 0xFF9DB4E6.toInt()),
-            actionTextColours = intArrayOf(0xFF14234D.toInt(), 0xFFFFFFFF.toInt(), 0xFF14234D.toInt(), 0xFF14234D.toInt()),
+            background = 0xFFA9A6B6.toInt(),
+            backgroundBottom = 0xFF777486.toInt(),
+            strip = 0xFFC8E98A.toInt(),
+            key = 0xFFE0DFE5.toInt(),
+            keyPressed = 0xFFB9B8BE.toInt(),
+            text = 0xFF2B2A30.toInt(),
+            accent = 0xFFE5C84D.toInt(),
+            accentText = 0xFF2B2A30.toInt(),
+            actionKey = 0xFFE5C84D.toInt(),
+            actionKeyPressed = 0xFFECD882.toInt(),
+            actionText = 0xFF2B2A30.toInt(),
+            subText = 0xFF5A5864.toInt(),
+            shadow = 0xFF8F8C9C.toInt(),
+            border = 0xFF38363D.toInt(),
+            actionKeyColours = intArrayOf(0xFFE5C84D.toInt(), 0xFFE33E32.toInt(), 0xFF55B84A.toInt(), 0xFF55B84A.toInt()),
+            actionTextColours = intArrayOf(0xFF2B2A30.toInt(), 0xFFFFFFFF.toInt(), 0xFF2B2A30.toInt(), 0xFF2B2A30.toInt()),
             keyStyle = KeyStyle.LCD,
             tapEffect = TapEffectKind.RIPPLES,
-            effectColours = intArrayOf(0xFFF28C28.toInt(), 0xFFFFFFFF.toInt(), 0xFF9DB4E6.toInt()),
+            effectColours = intArrayOf(0xFFE5C84D.toInt(), 0xFF55B84A.toInt(), 0xFF38363D.toInt()),
             typeface = Typeface.create("monospace", Typeface.BOLD),
         )
 
 
         /**
-         * MonsterNav: a red handheld navigator with a dark navy screen. Navy keys with pale-blue lettering and a
-         * cyan edge, a yellow-orange Enter and highlight, a pale Delete, a faint radar band behind the keys and blips
-         * of pixels wherever you tap. It uses no logos or artwork. Colours are estimates, not researched values.
+         * MonsterNav: a beige handheld navigator with a slate-grey candidate strip. Cyan-blue keys with pale-blue
+         * lettering and a dark brown outline, an orange Enter and highlight, a peach Delete, cream mode and settings
+         * keys, a faint radar band behind the keys and blips of pixels wherever you tap. It uses no logos or artwork.
+         * Colours are researched visual estimates from the official artwork.
          */
         val MONSTERNAV = KeyboardTheme(
-            background = 0xFFC62A2F.toInt(),
-            backgroundBottom = 0xFF8E1B20.toInt(),
-            strip = 0xFF0B1B3A.toInt(),
-            key = 0xFF14284F.toInt(),
-            keyPressed = 0xFF2F6BC4.toInt(),
-            text = 0xFFDFF3FF.toInt(),
-            accent = 0xFFFFB02E.toInt(),
+            background = 0xFFE9D0A5.toInt(),
+            backgroundBottom = 0xFFB99A68.toInt(),
+            strip = 0xFF66686D.toInt(),
+            key = 0xFF0799CF.toInt(),
+            keyPressed = 0xFF067AA6.toInt(),
+            text = 0xFFD9F4FF.toInt(),
+            accent = 0xFFF18B3C.toInt(),
             accentText = 0xFF1A1000.toInt(),
-            actionKey = 0xFFFFB02E.toInt(),
-            actionKeyPressed = 0xFFFFD27A.toInt(),
+            actionKey = 0xFFF18B3C.toInt(),
+            actionKeyPressed = 0xFFF5AE76.toInt(),
             actionText = 0xFF1A1000.toInt(),
-            subText = 0xFF86B8E8.toInt(),
-            border = 0xFF5FB4F0.toInt(),
-            actionKeyColours = intArrayOf(0xFFFFB02E.toInt(), 0xFFEAF2FF.toInt(), 0xFF2F5DA8.toInt(), 0xFF2F5DA8.toInt()),
-            actionTextColours = intArrayOf(0xFF1A1000.toInt(), 0xFF14284F.toInt(), 0xFFDFF3FF.toInt(), 0xFFDFF3FF.toInt()),
+            subText = 0xFFC4ECFA.toInt(),
+            border = 0xFF51463B.toInt(),
+            actionKeyColours = intArrayOf(0xFFF18B3C.toInt(), 0xFFF0B58D.toInt(), 0xFFF5E3C4.toInt(), 0xFFF5E3C4.toInt()),
+            actionTextColours = intArrayOf(0xFF1A1000.toInt(), 0xFF2A2118.toInt(), 0xFF2A2118.toInt(), 0xFF2A2118.toInt()),
             ambient = AmbientKind.SCAN,
-            ambientColours = intArrayOf(0x1E7FE0FF),
+            ambientColours = intArrayOf(0x1E0799CF),
             tapEffect = TapEffectKind.GHOST,
-            effectColours = intArrayOf(0xFF7FE0FF.toInt(), 0xFFFFFFFF.toInt()),
+            effectColours = intArrayOf(0xFF0799CF.toInt(), 0xFF51463B.toInt()),
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
