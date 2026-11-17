@@ -312,6 +312,23 @@ class KeyboardService :
 
     override fun onKeypadBackspaceSlideEnd(delete: Boolean) = endSlideSelect(delete)
 
+    override fun onKeypadBackspaceFlick() = deleteWordBack()
+
+    /**
+     * The 1 key was held on past the long press that typed a 1: take the 1 back and open the symbol page, the
+     * same one holding * opens. Does nothing if that 1 is not still the pending character.
+     */
+    override fun onKeypadOneHeld() {
+        if (digitsOnly || mtKey != '1') return
+        uiHandler.removeCallbacks(mtTimeout)
+        currentInputConnection?.setComposingText("", 1)
+        mtKey = null
+        mtIndex = 0
+        mtDroppedSpace = false
+        padView?.showSymbols(true)
+        refreshUi()
+    }
+
     override fun onKeypadEnter() = doEnter()
 
     override fun onKeypadCursorMove(steps: Int, startDirection: Int) {
@@ -336,6 +353,10 @@ class KeyboardService :
     override fun onKeypadCandidate(index: Int) {
         spaceTapAt = 0L
         autoSpace = false
+        if (mode == InputMode.MULTI_TAP) {
+            acceptTypedWord() // the strip shows the word typed so far; tapping it teaches the keyboard
+            return
+        }
         if (!session.isComposing) {
             acceptNextWord(index)
             return
@@ -384,7 +405,7 @@ class KeyboardService :
         autoSpace = false
         pulse()
         fixContraction()
-        learnTrailingWord()
+        if (fullKeyboard) learnTrailingWord() // not when the space comes from the emoji page over the number pad
         insertSpace()
         updateAutoCap()
         refreshUi()
@@ -398,6 +419,8 @@ class KeyboardService :
     }
 
     override fun onQwertyBackspaceSlideEnd(delete: Boolean) = endSlideSelect(delete)
+
+    override fun onQwertyBackspaceFlick() = deleteWordBack()
 
     override fun onQwertyCursorMove(steps: Int, startDirection: Int) {
         pulse()
@@ -451,6 +474,8 @@ class KeyboardService :
 
     override fun onEmojiBackspaceSlideEnd(delete: Boolean) = endSlideSelect(delete)
 
+    override fun onEmojiBackspaceFlick() = deleteWordBack()
+
     override fun onEmojiEnter() = doEnter()
 
     // ---------------------------------------------------------------- key actions
@@ -469,10 +494,8 @@ class KeyboardService :
 
     private fun onSpace() {
         commitWord()
-        if (mode == InputMode.MULTI_TAP) {
-            fixContraction()
-            learnTrailingWord()
-        }
+        // Multi-tap words are only learned when tapped in the strip (see acceptTypedWord), not by being typed.
+        if (mode == InputMode.MULTI_TAP) fixContraction()
         insertSpace()
         updateAutoCap()
     }
@@ -534,14 +557,64 @@ class KeyboardService :
         refreshUi()
     }
 
+    /**
+     * A fast flick left from backspace: deletes the whole word before the cursor. A word being typed goes
+     * entirely; otherwise spaces just before the cursor are taken along with the word (or the run of punctuation)
+     * in front of them. With text selected, the selection is deleted instead.
+     */
+    private fun deleteWordBack() {
+        val ic = currentInputConnection ?: return
+        pulse()
+        spaceTapAt = 0L
+        autoSpace = false
+        slideSelected = 0
+        if (!ic.getSelectedText(0).isNullOrEmpty()) {
+            sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL)
+            updateAutoCap()
+            refreshUi()
+            return
+        }
+        if (mtKey != null) {
+            // a multi-tap character still being cycled goes first; the word it belonged to follows below
+            uiHandler.removeCallbacks(mtTimeout)
+            ic.setComposingText(if (mtDroppedSpace) " " else "", 1)
+            if (mtDroppedSpace) ic.finishComposingText()
+            mtDroppedSpace = false
+            mtKey = null
+            mtIndex = 0
+        }
+        if (session.isComposing) {
+            // the word being typed is the word before the cursor
+            session.cancel()
+            ic.setComposingText("", 1)
+        } else {
+            val before = ic.getTextBeforeCursor(80, 0)?.toString().orEmpty()
+            val spaces = before.takeLastWhile { it.isWhitespace() }.length
+            val rest = before.dropLast(spaces)
+            val wordLength = if (rest.isEmpty()) 0 else if (isWordChar(rest.last())) {
+                rest.takeLastWhile { isWordChar(it) }.length
+            } else {
+                rest.takeLastWhile { !isWordChar(it) && !it.isWhitespace() }.length
+            }
+            val total = spaces + wordLength
+            if (total == 0) {
+                sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL) // nothing before the cursor on this line to take
+            } else {
+                ic.deleteSurroundingText(total, 0)
+            }
+        }
+        updateAutoCap()
+        refreshUi()
+    }
+
+    private fun isWordChar(c: Char): Boolean = c.isLetterOrDigit() || c == '\'' || c == '_'
+
     private fun doEnter() {
         spaceTapAt = 0L
         autoSpace = false
         commitWord()
-        if (fullKeyboard || mode == InputMode.MULTI_TAP) {
-            fixContraction()
-            learnTrailingWord()
-        }
+        if (fullKeyboard || mode == InputMode.MULTI_TAP) fixContraction()
+        if (fullKeyboard) learnTrailingWord() // the full keyboard has no strip, so typed words are learned as they are finished
         val info = currentInputEditorInfo
         val ic = currentInputConnection
         if (info != null && ic != null) {
@@ -756,7 +829,7 @@ class KeyboardService :
      */
     private fun removeSuggestion(index: Int) {
         if (session.isComposing) {
-            val word = session.candidateList.getOrNull(index)?.word ?: return
+            val word = session.stripWords.getOrNull(index) ?: return
             if (!engine.removeWord(word)) return
             session.restore(session.digitString) // look the keys up again, without the word
             showComposing()
@@ -891,17 +964,44 @@ class KeyboardService :
         ic.commitText(out, 1)
     }
 
-    /** Words typed letter by letter (multi-tap or QWERTY) are added to the user dictionary. */
-    private fun learnTrailingWord() {
+    /**
+     * Adds the word typed letter by letter before the cursor to the user dictionary, with the word that came before it.
+     * A single letter is only added when [deliberate] (tapped in the multi-tap strip), never just from typing it.
+     */
+    private fun learnTrailingWord(deliberate: Boolean = false) {
         if (!learningEnabled || !settings.learnWords) return
         val before = currentInputConnection?.getTextBeforeCursor(60, 0)?.toString() ?: return
         val raw = before.takeLastWhile { it.isLetter() || it == '\'' }
         val word = raw.trim('\'').lowercase()
-        if (word.length < 2) return
+        if (word.length < (if (deliberate) 1 else 2)) return
         engine.addUserWord(word)
         val prev = PREV_WORD.find(before.dropLast(raw.length))?.groupValues?.get(1)?.lowercase()
         if (prev != null) engine.learnPair(prev, word)
         scheduleSave()
+    }
+
+    /**
+     * The word typed letter by letter just before the cursor, for the strip in multi-tap mode; null when there is
+     * none to show (no letters yet, learning switched off, or a password or number field).
+     */
+    private fun typedWord(): String? {
+        if (!learningEnabled || !settings.learnWords || digitsOnly) return null
+        val before = currentInputConnection?.getTextBeforeCursor(40, 0)?.toString() ?: return null
+        val word = before.takeLastWhile { it.isLetter() || it == '\'' }.trim('\'')
+        return word.ifEmpty { null }
+    }
+
+    /** Multi-tap: tapped the typed word in the strip. It is learned (with the word before it), and a space follows. */
+    private fun acceptTypedWord() {
+        commitMultiTap() // lock in a letter that is still being cycled
+        if (typedWord() == null) return
+        pulse()
+        fixContraction()
+        learnTrailingWord(deliberate = true)
+        insertSpace()
+        markAutoSpace()
+        updateAutoCap()
+        refreshUi()
     }
 
     private fun findNextWords(): List<String> {
@@ -982,18 +1082,20 @@ class KeyboardService :
                     (caseMode == CaseMode.CAP_NEXT && !(mode == InputMode.PREDICTIVE && session.isComposing)),
             )
             if (mode == InputMode.MULTI_TAP) {
+                // The word typed so far sits in the strip; tap it to teach the keyboard the word.
                 nextWords = emptyList()
-                k.setCandidates(emptyList(), -1)
+                val typed = typedWord()
+                if (typed != null) k.setCandidates(listOf(typed), 0) else k.setCandidates(emptyList(), -1)
             } else if (!session.isComposing) {
                 // Nothing being typed: offer the words that usually come next.
                 nextWords = findNextWords()
                 k.setCandidates(nextWords.map { displayWord(it) }, -1)
             } else {
                 nextWords = emptyList()
-                val words = session.candidateList.map { displayWord(it.word) }
+                val words = session.stripWords.map { displayWord(it) }
                 k.setCandidates(
                     if (words.isEmpty()) listOf(displayWord(session.displayText)) else words,
-                    session.selectedIndex,
+                    session.stripSelected,
                 )
             }
             k.setModeLabel("$caseLabel \u00B7 " + if (mode == InputMode.PREDICTIVE) "predict" else "multi")
@@ -1009,7 +1111,7 @@ class KeyboardService :
         /** How long after a tapped suggestion's automatic space punctuation may still take it back. */
         const val AUTO_SPACE_MS = 10_000L
 
-        /** Punctuation that belongs right against the word before it. */
-        const val AUTO_SPACE_PUNCTUATION = ".,!?;:"
+        /** Punctuation that belongs right against the word before it: stops, and closing brackets and the percent sign. */
+        const val AUTO_SPACE_PUNCTUATION = ".,!?;:)]}>%"
     }
 }

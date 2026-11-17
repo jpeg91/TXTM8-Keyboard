@@ -33,6 +33,7 @@ class QwertyKeypadView(
         fun onQwertyBackspace()
         fun onQwertyBackspaceSlide(steps: Int)
         fun onQwertyBackspaceSlideEnd(delete: Boolean)
+        fun onQwertyBackspaceFlick()
         fun onQwertyCursorMove(steps: Int, startDirection: Int)
         fun onQwertyPaste()
         fun onQwertyCopy()
@@ -215,6 +216,7 @@ class QwertyKeypadView(
                 onDelete = { listener.onQwertyBackspace() },
                 onSlide = { listener.onQwertyBackspaceSlide(it) },
                 onSlideEnd = { listener.onQwertyBackspaceSlideEnd(it) },
+                onFlick = { listener.onQwertyBackspaceFlick() },
             ),
         )
         return del

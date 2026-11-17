@@ -55,8 +55,10 @@ class AboutActivity : ThemedScreen() {
             "Hold # to switch between predictive and multi-tap; the label under # shows which one you are in. " +
                 "In multi-tap you press a key repeatedly to cycle through its letters: 7 once is P, twice Q, " +
                 "three times R, four times S.\n\n" +
-                "Pause (the timeout is in Settings) or press another key and the letter is locked in. Words " +
-                "typed this way are added to your own dictionary, so predictive mode finds them next time.",
+                "Pause (the timeout is in Settings) or press another key and the letter is locked in.\n\n" +
+                "The word you have typed so far appears in the suggestion strip. Tap it to add it to your own " +
+                "dictionary (a space follows), so predictive mode finds it next time. A word is not learned just " +
+                "by typing it here.",
         )
         feature(
             root, "Digits",
@@ -76,7 +78,8 @@ class AboutActivity : ThemedScreen() {
         )
         feature(
             root, "Symbols",
-            "Hold * (or tap it when nothing is being typed) to open the symbol page. Tap ABC to come back.",
+            "Hold * (or tap it when nothing is being typed) to open the symbol page. Holding 1 gets you there too: it " +
+                "types a 1 and, if you keep holding, takes the 1 back and opens the page. Tap ABC to come back.",
         )
 
         // ---- Smart suggestions ----
@@ -96,13 +99,14 @@ class AboutActivity : ThemedScreen() {
         feature(
             root, "Removing suggestions",
             "Hold a suggestion to remove it. A word you are typing is taken out of the suggestions for good " +
-                "(typing it out letter by letter brings it back). A next-word suggestion only forgets that " +
+                "(adding it again, by tapping it in the strip in multi-tap mode or typing it on the full keyboard, " +
+                "brings it back). A next-word suggestion only forgets that " +
                 "pairing of words.",
         )
         feature(
             root, "Automatic spaces",
-            "Tapping a suggestion adds the space for you. Type . , ! ? ; or : straight afterwards and the space is " +
-                "taken back, so the punctuation sits against the word.",
+            "Tapping a suggestion adds the space for you. Type . , ! ? ; : or a closing bracket ) ] } > or % straight " +
+                "afterwards and the space is taken back, so it sits against the word.",
         )
         feature(
             root, "Double space",
@@ -116,7 +120,9 @@ class AboutActivity : ThemedScreen() {
         feature(
             root, "Backspace re-opens a word",
             "Press backspace straight after a word and the word re-opens with its suggestions, so you can choose " +
-                "a different one instead of retyping.",
+                "a different one instead of retyping.\n\n" +
+                "Every press of backspace takes away one character: while you are typing a word, each press shortens " +
+                "it by one letter rather than holding on to a longer guess.",
         )
 
         // ---- Editing ----
@@ -134,6 +140,12 @@ class AboutActivity : ThemedScreen() {
                 "Slide left from backspace to select backwards a character at a time, slide back to give characters " +
                 "back, and lift your finger to delete the selection. Nothing is deleted until you let go, so " +
                 "changing your mind costs nothing. A plain tap deletes one character, and holding repeats.",
+        )
+        feature(
+            root, "Delete a word",
+            "Flick left across backspace, quickly and without worrying about aiming, and the whole word before " +
+                "the cursor is deleted (a word you are still typing goes in one go). Slide slowly instead and " +
+                "you select a character at a time as above. Both are part of Slide gestures in Settings.",
         )
         feature(
             root, "Copy and paste",

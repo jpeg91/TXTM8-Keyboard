@@ -26,6 +26,9 @@ private const val MATCH = ViewGroup.LayoutParams.MATCH_PARENT
 // KeyboardTheme.keyBackground), so there are no dead zones between keys.
 private const val GAP_DP = 3
 
+/** How long past the long press the 1 key must be held for the symbol page to open (shorter than the multi-tap timeout). */
+private const val ONE_HOLD_EXTRA_MS = 350L
+
 /**
  * The number pad: [keyboard icon] [candidate strip] [paste] [enter] [backspace] on top, followed by
  * a 4x3 key grid.
@@ -44,6 +47,8 @@ class NumberPadView(
         fun onKeypadBackspace()
         fun onKeypadBackspaceSlide(steps: Int)
         fun onKeypadBackspaceSlideEnd(delete: Boolean)
+        fun onKeypadBackspaceFlick()
+        fun onKeypadOneHeld()
         fun onKeypadEnter()
         fun onKeypadCursorMove(steps: Int, startDirection: Int)
         fun onKeypadPaste()
@@ -98,6 +103,7 @@ class NumberPadView(
                 onDelete = { listener.onKeypadBackspace() },
                 onSlide = { listener.onKeypadBackspaceSlide(it) },
                 onSlideEnd = { listener.onKeypadBackspaceSlideEnd(it) },
+                onFlick = { listener.onKeypadBackspaceFlick() },
             ),
         )
 
@@ -152,6 +158,8 @@ class NumberPadView(
                 if (k in '2'..'9') letterKeys.add(Pair(key, k))
                 // Slide along the space key to move the cursor.
                 if (k == '0') key.setOnTouchListener(SpaceSlideTouch(settings) { steps, dir -> listener.onKeypadCursorMove(steps, dir) })
+                // Keep holding 1 after it has typed a 1, and the symbol page opens.
+                if (k == '1') key.setOnTouchListener(LongerHoldTouch(ONE_HOLD_EXTRA_MS) { listener.onKeypadOneHeld() })
                 r.addView(key, keyParams())
             }
             grid.addView(r, LinearLayout.LayoutParams(MATCH, WRAP))

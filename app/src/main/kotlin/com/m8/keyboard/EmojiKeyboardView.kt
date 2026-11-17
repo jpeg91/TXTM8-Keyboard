@@ -45,6 +45,7 @@ class EmojiKeyboardView(
         fun onEmojiBackspace()
         fun onEmojiBackspaceSlide(steps: Int)
         fun onEmojiBackspaceSlideEnd(delete: Boolean)
+        fun onEmojiBackspaceFlick()
         fun onEmojiEnter()
     }
 
@@ -179,6 +180,7 @@ class EmojiKeyboardView(
                 onDelete = { listener.onEmojiBackspace() },
                 onSlide = { listener.onEmojiBackspaceSlide(it) },
                 onSlideEnd = { listener.onEmojiBackspaceSlideEnd(it) },
+                onFlick = { listener.onEmojiBackspaceFlick() },
             ),
         )
 

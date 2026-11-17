@@ -370,7 +370,7 @@ class SetupActivity : ThemedScreen() {
         root.addView(gesturesCard)
         addToggle(
             gesturesCard, "Slide gestures", KeyboardSettings.KEY_SLIDE, true,
-            note = "Slide along space to move the cursor, or to adjust a selection. Slide left from backspace to select text, then let go to delete it. Hold the paste key and slide to select from the cursor. Switch off if they trigger by accident.",
+            note = "Slide along space to move the cursor, or to adjust a selection. Slide left from backspace to select text, then let go to delete it, or flick quickly left to delete the whole word. Hold the paste key and slide to select from the cursor. Switch off if they trigger by accident.",
         )
         gesturesCard.addView(divider())
         addChoice(
@@ -393,7 +393,7 @@ class SetupActivity : ThemedScreen() {
         root.addView(wordsCard)
         addToggle(
             wordsCard, "Learn new words", KeyboardSettings.KEY_LEARN, true,
-            note = "Words you use rank higher, and words you type letter by letter are added. Nothing is learned in password fields, and it all stays on your phone.",
+            note = "Words you use rank higher. A word typed in multi-tap is added when you tap it in the strip, and words typed on the full keyboard are added as you go. Nothing is learned in password fields, and it all stays on your phone.",
         )
         wordsCard.addView(
             button("Clear learned words", action = false) {
