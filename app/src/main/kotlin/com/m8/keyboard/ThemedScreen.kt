@@ -127,6 +127,55 @@ abstract class ThemedScreen : Activity() {
         return tv
     }
 
+    /** One line of dim text under a section heading, saying what the section is for. */
+    protected fun sectionBlurb(text: String): TextView {
+        val tv = TextView(this)
+        tv.text = text
+        tv.textSize = 13f
+        tv.setTextColor(look.subText)
+        tv.setLineSpacing(0f, 1.1f)
+        tv.setPadding(dp(4), 0, dp(4), dp(10))
+        return tv
+    }
+
+    /** Mixes [fraction] (0 to 1) of the colour [over] into [base]; the result is always opaque. */
+    protected fun blend(base: Int, over: Int, fraction: Float): Int {
+        fun mix(shift: Int): Int {
+            val a = (base shr shift) and 0xFF
+            val b = (over shr shift) and 0xFF
+            return (a + (b - a) * fraction).toInt().coerceIn(0, 255)
+        }
+        return (0xFF shl 24) or (mix(16) shl 16) or (mix(8) shl 8) or mix(0)
+    }
+
+    /**
+     * A panel that holds one section's settings: the page colour nudged towards the text colour, with a
+     * fine outline, so it reads as a surface on every theme. Settings are added to it like any other parent.
+     */
+    protected fun card(): LinearLayout {
+        val c = LinearLayout(this)
+        c.orientation = LinearLayout.VERTICAL
+        c.setPadding(dp(16), dp(6), dp(16), dp(14))
+        val shape = GradientDrawable()
+        shape.setColor(blend(look.background, look.text, 0.07f))
+        shape.setStroke(dp(1), blend(look.background, look.text, 0.22f))
+        shape.cornerRadius = (if (look.squareKeys) dp(2) else dp(10)).toFloat()
+        c.background = shape
+        c.layoutParams = LinearLayout.LayoutParams(MATCH, WRAP)
+        return c
+    }
+
+    /** A fine rule between two settings in a [card]. */
+    protected fun divider(): View {
+        val v = View(this)
+        v.setBackgroundColor(blend(look.background, look.text, 0.16f))
+        v.layoutParams = LinearLayout.LayoutParams(MATCH, dp(1)).apply {
+            topMargin = dp(8)
+            bottomMargin = dp(2)
+        }
+        return v
+    }
+
     /** A small heading above a group of choices. */
     protected fun label(text: String): TextView {
         val tv = TextView(this)
