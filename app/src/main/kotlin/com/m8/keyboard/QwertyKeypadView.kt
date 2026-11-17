@@ -45,10 +45,7 @@ class QwertyKeypadView(
         fun onQwertyEmoji()
     }
 
-    private val tapEffect: TapEffectDrawable? = theme.tapEffectDrawable(this, settings)
-    private val keyTracker = KeyTracker(this)
-    private val keyCursor: KeyCursorDrawable? = theme.cursorDrawable(keyTracker, resources.displayMetrics.density)
-    private val pulseBackground: Drawable = if (!theme.usesPulse) GlitterPulseBackground(theme.backgroundDrawable(this, animated = true, effectAmount = settings.effectAmount), settings.pulseStrength, resources.displayMetrics.density) else PulseBackground(theme.backgroundDrawable(this, animated = true, effectAmount = settings.effectAmount), theme.accent, settings.pulseStrength)
+    private val layers = ThemeLayers(this, theme, settings)
     private val letterKeys = ArrayList<Pair<TextView, Char>>()
     private var shiftKey: TextView? = null
     private var shiftLabel = "abc"
@@ -57,8 +54,8 @@ class QwertyKeypadView(
 
     init {
         orientation = VERTICAL
-        background = pulseBackground
-        if (theme.isGlitter) foreground = theme.twinkleDrawable(this, settings) else if (tapEffect != null) foreground = tapEffect else if (keyCursor != null) foreground = keyCursor
+        background = layers.background
+        layers.foreground?.let { foreground = it }
         setPadding(0, dp(4), 0, 0) // no side padding: the outer keys reach the screen edge
         buildPage()
     }
@@ -70,15 +67,12 @@ class QwertyKeypadView(
         if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
             val x = ev.getX(ev.actionIndex)
             val y = ev.getY(ev.actionIndex)
-            // Remember which key this is: the typing pulse, the sound wave and the cursor all start from it.
-            keyTracker.down(x, y, 3f * resources.displayMetrics.density)
-            keyCursor?.moved()
-            tapEffect?.spawn(x, y)
+            layers.touchDown(x, y)
         }
         return super.dispatchTouchEvent(ev)
     }
 
-    fun pulse() = (pulseBackground as KeyboardPulseEffect).pulse(keyTracker.current())
+    fun pulse() = layers.pulse()
 
     /** [label] is the shift key text (abc / Abc / ABC); [upper] shows capital letters on the keys. */
     fun setCase(label: String, upper: Boolean) {
@@ -131,7 +125,7 @@ class QwertyKeypadView(
             val leftFrac = if (first) pad / weight else 0f
             val rightFrac = if (last) pad / weight else 0f
             val keyColour = when {
-                theme.isGameBoyAdvance && isLetter -> gbaKeyColour(ch)
+                theme.rainbowLetters && isLetter -> gbaKeyColour(ch)
                 isLetter -> theme.keyCycle?.let { it[(ch.lowercaseChar() - 'a').mod(it.size)] }
                 else -> theme.keyCycle?.let { it[ch.code.mod(it.size)] } // symbols and digits take the colours too
             }
@@ -182,7 +176,7 @@ class QwertyKeypadView(
             settings.feedback(it)
             listener.onQwertyEmoji()
         }
-        val space = makeKey(if (theme.isSlanted) "SPACE" else "space", 14f)
+        val space = makeKey(if (theme.shoutLabels) "SPACE" else "space", 14f)
         space.setOnClickListener {
             settings.feedback(it)
             listener.onQwertySpace()

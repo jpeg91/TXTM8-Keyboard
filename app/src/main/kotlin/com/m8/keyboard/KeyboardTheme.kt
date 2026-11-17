@@ -23,25 +23,35 @@ class KeyboardTheme(
     val actionKeyPressed: Int = keyPressed,
     val actionText: Int = text,
     val subText: Int = text,
-    val isSlanted: Boolean = false,
     val border: Int = 0,
     val shadow: Int = 0,
     val deep: Int = 0,
-    val isNokia: Boolean = false,
-    val isGameBoyAdvance: Boolean = false,
-    val isGameBoy: Boolean = false,
-    val isGlitter: Boolean = false,
-    /** Glitter-style themes that skip the pink pinstripe and hearts and use a plain (or gradient) background. */
-    val plainBackground: Boolean = false,
-    /** Border colour of the pixel keys on a glitter-style theme; 0 keeps the theme's own default. */
+    /** Border colour of the [KeyStyle.PIXEL] keys; 0 uses [shadow]. */
     val pixelBorder: Int = 0,
-    /** Star colours for the twinkles on a glitter-style theme; null keeps the pink Glitter Graphics stars. */
+    /** Colours the [KeyStyle.PIXEL] keys' corner pixels take in turn (the Game Boy Advance); null for plain pixels. */
+    val pixelColours: IntArray? = null,
+    /** Twinkling stars drawn over the keys (their own slot: they can sit alongside a tap animation or the cursor). */
+    val stars: Boolean = false,
+    /** Star colours for [stars]; null keeps the pink Glitter Graphics stars. */
     val starColours: IntArray? = null,
+    /** What is drawn behind the keys when [backgroundBottom] does not make it a gradient. */
+    val backdrop: Backdrop = Backdrop.FLAT,
+    /** What is drawn behind the candidate words. */
+    val stripStyle: StripStyle = StripStyle.FLAT,
+    /** The text view the candidate words use. */
+    val candidateFont: CandidateFont = CandidateFont.NORMAL,
+    /**
+     * The highlight behind the selected candidate. Null follows the key style (see [candidateShape]); a theme
+     * only sets it when it wants something different, like the Game Boy's rounded highlight on pixel keys.
+     */
+    val candidateStyle: CandidateStyle? = null,
+    /** Capital-letter labels ("SPACE", "NEXT") for the themes that shout. */
+    val shoutLabels: Boolean = false,
+    /** Digit legends and QWERTY keys in the bright Game Boy Advance colours. */
+    val rainbowLetters: Boolean = false,
     /** When not 0, the background fades from [background] at the top to this colour at the bottom. */
     val backgroundBottom: Int = 0,
-    /** Grey 90s-desktop keys with raised and sunken bevelled edges. */
-    val isRetro: Boolean = false,
-    /** Square-cornered keys (the terminal themes). */
+    /** Square corners on the keys (and on the settings screens' buttons), whatever the key style. */
     val squareKeys: Boolean = false,
     /** An animation that starts wherever the keyboard is tapped (bubbles, embers and so on); null for none. */
     val tapEffect: TapEffectKind? = null,
@@ -55,7 +65,7 @@ class KeyboardTheme(
     val actionKeyColours: IntArray? = null,
     /** Lettering colour for each slot of [actionKeyColours], so a yellow key can have dark lettering. */
     val actionTextColours: IntArray? = null,
-    /** How the keys are drawn when none of the older flags above decide it. */
+    /** How the keys are drawn. */
     val keyStyle: KeyStyle = KeyStyle.DEFAULT,
     /** For [KeyStyle.GLOSS]: the colour of the ring inside a pressed key (0 for none), and the strength (0..255) of the shine. */
     val keyRing: Int = 0,
@@ -103,8 +113,25 @@ class KeyboardTheme(
     /** The lettering colour of the action key in [slot]. */
     fun actionLabel(slot: Int): Int = actionTextColours?.let { it[slot.coerceIn(0, it.size - 1)] } ?: actionText
 
-    /** True when the background flashes with the typing pulse; the star and tap-animation themes have their own effects. */
-    val usesPulse: Boolean get() = !isGlitter && tapEffect == null
+    /** True when the "Effect amount" setting also switches the [ambient] animation (it is shared with the tap animation). */
+    val ambientFollowsEffectAmount: Boolean get() = tapEffect != null
+
+    /**
+     * The highlight behind the selected candidate word: [candidateStyle] when the theme sets one, otherwise
+     * whatever goes with its key style and corners.
+     */
+    val candidateShape: CandidateStyle
+        get() = candidateStyle ?: when {
+            keyStyle == KeyStyle.BEVEL -> CandidateStyle.BEVEL
+            keyStyle == KeyStyle.PILL -> CandidateStyle.PILL
+            keyStyle == KeyStyle.CHAMFER -> CandidateStyle.CHAMFER
+            keyStyle == KeyStyle.RETRO || squareKeys || keyStyle == KeyStyle.LCD -> CandidateStyle.SQUARE
+            keyStyle == KeyStyle.MEMPHIS -> CandidateStyle.OUTLINED_SQUARE
+            keyStyle == KeyStyle.PIXEL -> CandidateStyle.PIXEL
+            keyStyle == KeyStyle.NOKIA -> CandidateStyle.NOKIA
+            keyStyle == KeyStyle.SLANTED -> CandidateStyle.SLANTED
+            else -> CandidateStyle.ROUNDED
+        }
 
     companion object {
         val DARK = KeyboardTheme(
@@ -146,7 +173,9 @@ class KeyboardTheme(
                 actionKeyPressed = accent.bright,
                 actionText = onAccent,
                 subText = 0xFFC4C4C4.toInt(),           // light grey
-                isSlanted = true,
+                keyStyle = KeyStyle.SLANTED,
+                backdrop = Backdrop.STRIPES,
+                shoutLabels = true,
                 border = 0xFFFFFFFF.toInt(),
                 shadow = accent.deep,
                 deep = accent.deep,
@@ -172,7 +201,7 @@ class KeyboardTheme(
             subText = 0xFF53645A.toInt(),
             shadow = 0xFF53636A.toInt(),
             deep = 0xFF53636A.toInt(),
-            isNokia = true,
+            keyStyle = KeyStyle.NOKIA,
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
@@ -193,7 +222,9 @@ class KeyboardTheme(
             subText = 0xFF34452B.toInt(),
             shadow = 0xFF777684.toInt(),
             deep = 0xFF777684.toInt(),
-            isGameBoy = true,
+            keyStyle = KeyStyle.PIXEL,
+            candidateStyle = CandidateStyle.ROUNDED,
+            candidateFont = CandidateFont.PIXEL,
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
@@ -212,8 +243,13 @@ class KeyboardTheme(
             subText = 0xFFEADDF9.toInt(),
             shadow = 0xFF3D285E.toInt(),
             deep = 0xFF3D285E.toInt(),
-            isGameBoy = true,
-            isGameBoyAdvance = true,
+            keyStyle = KeyStyle.PIXEL,
+            candidateStyle = CandidateStyle.ROUNDED,
+            pixelBorder = 0xFFE8D9FF.toInt(),
+            pixelColours = GBA_PIXEL_COLOURS,
+            stripStyle = StripStyle.PIXEL_SCREEN,
+            stripText = 0xFFFFFFFF.toInt(),
+            rainbowLetters = true,
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
@@ -232,7 +268,11 @@ class KeyboardTheme(
             subText = 0xFFFFE2F2.toInt(),
             shadow = 0xFF9B235F.toInt(),
             deep = 0xFF8F145C.toInt(),
-            isGlitter = true,
+            keyStyle = KeyStyle.PIXEL,
+            stars = true,
+            backdrop = Backdrop.HEARTS,
+            stripStyle = StripStyle.PATTERN,
+            pixelBorder = 0xFFFFE2F2.toInt(),
             typeface = Typeface.create("monospace", Typeface.BOLD),
         )
 
@@ -254,10 +294,10 @@ class KeyboardTheme(
             subText = NIGHT_SKY_ICY,
             shadow = 0xFF050A1F.toInt(),
             deep = 0xFF050A1F.toInt(),
-            isGlitter = true,
-            plainBackground = true,
             pixelBorder = NIGHT_SKY_ICY,
             starColours = NIGHT_SKY_STAR_COLOURS,
+            keyStyle = KeyStyle.PIXEL,
+            stars = true,
             typeface = Typeface.create("monospace", Typeface.BOLD),
         )
 
@@ -277,10 +317,10 @@ class KeyboardTheme(
             subText = 0xFFCFE8F8.toInt(),
             shadow = 0xFF081624.toInt(),
             deep = 0xFF081624.toInt(),
-            isGlitter = true,
-            plainBackground = true,
             pixelBorder = 0xFFF2FAFF.toInt(),
             starColours = WINTER_STAR_COLOURS,
+            keyStyle = KeyStyle.PIXEL,
+            stars = true,
             typeface = Typeface.create("monospace", Typeface.BOLD),
         )
 
@@ -300,10 +340,10 @@ class KeyboardTheme(
             subText = 0xFFB8F5DC.toInt(),
             shadow = 0xFF03070F.toInt(),
             deep = 0xFF03070F.toInt(),
-            isGlitter = true,
-            plainBackground = true,
             pixelBorder = 0xFF63F5B8.toInt(),
             starColours = AURORA_STAR_COLOURS,
+            keyStyle = KeyStyle.PIXEL,
+            stars = true,
             typeface = Typeface.create("monospace", Typeface.BOLD),
         )
 
@@ -323,10 +363,10 @@ class KeyboardTheme(
             subText = 0xFF9BE8F0.toInt(),
             shadow = 0xFF0A0420.toInt(),
             deep = 0xFF0A0420.toInt(),
-            isGlitter = true,
-            plainBackground = true,
             pixelBorder = 0xFFFF2E97.toInt(),
             starColours = SYNTHWAVE_STAR_COLOURS,
+            keyStyle = KeyStyle.PIXEL,
+            stars = true,
             typeface = Typeface.create("monospace", Typeface.BOLD),
         )
 
@@ -345,10 +385,10 @@ class KeyboardTheme(
             subText = 0xFFC9A227.toInt(),
             shadow = 0xFF1A1405.toInt(),
             deep = 0xFF1A1405.toInt(),
-            isGlitter = true,
-            plainBackground = true,
             pixelBorder = 0xFFD4AF37.toInt(),
             starColours = GOLD_STAR_COLOURS,
+            keyStyle = KeyStyle.PIXEL,
+            stars = true,
             typeface = Typeface.create("monospace", Typeface.BOLD),
         )
 
@@ -418,8 +458,8 @@ class KeyboardTheme(
             actionKeyPressed = 0xFFB0B0B0.toInt(),
             actionText = 0xFF000000.toInt(),
             subText = 0xFF000080.toInt(),
-            isRetro = true,
             squareKeys = true,
+            keyStyle = KeyStyle.RETRO,
             typeface = Typeface.create("sans-serif", Typeface.NORMAL),
         )
 
@@ -816,7 +856,6 @@ class KeyboardTheme(
             subText = 0xFF000080.toInt(),
             actionKeyColours = intArrayOf(0xFF00AA00.toInt(), 0xFFFF0000.toInt(), 0xFF0000EE.toInt(), 0xFF551A8B.toInt()),
             actionTextColours = intArrayOf(0xFFFFFFFF.toInt(), 0xFFFFFF00.toInt(), 0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt()),
-            isRetro = true,
             squareKeys = true,
             keyCycle = intArrayOf(0xFFFFFF66.toInt(), 0xFF66FFFF.toInt(), 0xFFFF99FF.toInt(), 0xFF99FF66.toInt()),
             ambient = AmbientKind.HAZARD,
@@ -826,6 +865,7 @@ class KeyboardTheme(
                 0xFFFF3030.toInt(), 0xFFFFA000.toInt(), 0xFFFFE000.toInt(),
                 0xFF30D030.toInt(), 0xFF2090FF.toInt(), 0xFFB040FF.toInt(),
             ),
+            keyStyle = KeyStyle.RETRO,
             typeface = Typeface.create("casual", Typeface.BOLD),
         )
 
@@ -1045,7 +1085,7 @@ class KeyboardTheme(
             subText = 0xFFB9C8E0.toInt(),
             shadow = 0xFF182C4A.toInt(),
             deep = 0xFF182C4A.toInt(),
-            isNokia = true,
+            keyStyle = KeyStyle.NOKIA,
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
             keyLabel = 0xFF14233F.toInt(),
             keySubLabel = 0xFF4A5C7A.toInt(),
@@ -1619,7 +1659,7 @@ class KeyboardTheme(
             }
 
         /** The theme for the [setting] (see [KeyboardSettings]); [p5Accent] only matters for the P5 theme. */
-        fun resolve(context: Context, setting: Int, p5Accent: Int = 0): KeyboardTheme {
+        fun resolve(context: Context, setting: Int, p5Accent: Int = 0, custom: CustomParts = CustomParts()): KeyboardTheme {
             val night = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
                 Configuration.UI_MODE_NIGHT_YES
             return when (setting) {
@@ -1687,6 +1727,19 @@ class KeyboardTheme(
                 KeyboardSettings.THEME_PAGER -> PAGER
                 KeyboardSettings.THEME_DARK -> DARK
                 KeyboardSettings.THEME_LIGHT -> LIGHT
+                KeyboardSettings.THEME_CUSTOM -> {
+                    // Each part comes from its own theme; the sources are themselves ordinary themes (never the custom mix).
+                    fun source(id: Int): KeyboardTheme =
+                        resolve(context, if (id == KeyboardSettings.THEME_CUSTOM) KeyboardSettings.THEME_DARK else id, p5Accent)
+                    fun part(id: Int): KeyboardTheme? = if (id == CustomParts.NONE) null else source(id)
+                    ThemeComposer.compose(
+                        colours = source(custom.colours),
+                        keys = part(custom.keys),
+                        background = part(custom.background),
+                        animation = part(custom.animation),
+                        font = part(custom.font),
+                    )
+                }
                 else -> if (night) DARK else LIGHT
             }
         }

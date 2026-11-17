@@ -66,10 +66,7 @@ class NumberPadView(
     private val scroll = HorizontalScrollView(context)
     private val grid = LinearLayout(context)
     private val symbolPanel = LinearLayout(context)
-    private val tapEffect: TapEffectDrawable? = theme.tapEffectDrawable(this, settings)
-    private val keyTracker = KeyTracker(this)
-    private val keyCursor: KeyCursorDrawable? = theme.cursorDrawable(keyTracker, resources.displayMetrics.density)
-    private val pulseBackground: Drawable = if (!theme.usesPulse) GlitterPulseBackground(theme.backgroundDrawable(this, animated = true, effectAmount = settings.effectAmount), settings.pulseStrength, resources.displayMetrics.density) else PulseBackground(theme.backgroundDrawable(this, animated = true, effectAmount = settings.effectAmount), theme.accent, settings.pulseStrength)
+    private val layers = ThemeLayers(this, theme, settings)
     private lateinit var hashKey: TextView
     private var candidateWords: List<String> = emptyList()
     private var selectedCandidate: Int = -1
@@ -78,19 +75,14 @@ class NumberPadView(
 
     init {
         orientation = VERTICAL
-        background = pulseBackground
-        if (theme.isGlitter) foreground = theme.twinkleDrawable(this, settings) else if (tapEffect != null) foreground = tapEffect else if (keyCursor != null) foreground = keyCursor
+        background = layers.background
+        layers.foreground?.let { foreground = it }
         setPadding(0, dp(4), 0, 0) // no side padding: the outer keys reach the screen edge
 
         // --- top bar: QWERTY | candidates | PASTE | ENTER | DEL ---
         strip.orientation = HORIZONTAL
         scroll.isHorizontalScrollBarEnabled = false
-        scroll.background = when {
-            theme.plainBackground -> android.graphics.drawable.ColorDrawable(theme.strip)
-            theme.isGlitter -> GlitterPatternDrawable(theme.strip, context.resources.displayMetrics.density, stripMode = true)
-            theme.isGameBoyAdvance -> PixelScreenDrawable(theme.strip, context.resources.displayMetrics.density)
-            else -> android.graphics.drawable.ColorDrawable(theme.strip)
-        }
+        scroll.background = theme.stripDrawable(context.resources.displayMetrics.density)
         scroll.addView(strip, FrameLayout.LayoutParams(WRAP, MATCH))
 
         val barHeight = 52
@@ -218,15 +210,12 @@ class NumberPadView(
         if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
             val x = ev.getX(ev.actionIndex)
             val y = ev.getY(ev.actionIndex)
-            // Remember which key this is: the typing pulse, the sound wave and the cursor all start from it.
-            keyTracker.down(x, y, 3f * resources.displayMetrics.density)
-            keyCursor?.moved()
-            tapEffect?.spawn(x, y)
+            layers.touchDown(x, y)
         }
         return super.dispatchTouchEvent(ev)
     }
 
-    fun pulse() = (pulseBackground as KeyboardPulseEffect).pulse(keyTracker.current())
+    fun pulse() = layers.pulse()
 
     /** Swaps the number grid for the symbol picker (or back). */
     fun showSymbols(show: Boolean) {
@@ -241,7 +230,7 @@ class NumberPadView(
         selectedCandidate = selected
         strip.removeAllViews()
         words.forEachIndexed { i, w ->
-            val tv: TextView = if (theme.isGameBoy && !theme.isGameBoyAdvance) {
+            val tv: TextView = if (theme.candidateFont == CandidateFont.PIXEL) {
                 GameBoyPixelTextView(context)
             } else {
                 TextView(context)
@@ -256,7 +245,7 @@ class NumberPadView(
                 tv.setTextColor(theme.selectedCandidateText)
                 tv.background = theme.candidateBackground(density())
             } else {
-                tv.setTextColor(if (theme.isGameBoyAdvance) 0xFFFFFFFF.toInt() else theme.candidateText)
+                tv.setTextColor(theme.candidateText)
             }
             tv.setOnClickListener { listener.onKeypadCandidate(i) }
             tv.setOnLongClickListener {
@@ -293,7 +282,7 @@ class NumberPadView(
     private fun dp(v: Int): Int = (v * density()).toInt()
 
     /** The red and purple themes shout their labels. */
-    private fun caps(s: String): String = if (theme.isSlanted) s.uppercase() else s
+    private fun caps(s: String): String = if (theme.shoutLabels) s.uppercase() else s
 
     private fun newRow(): LinearLayout {
         val r = LinearLayout(context)
@@ -315,7 +304,7 @@ class NumberPadView(
         else -> twoLine(
             k.toString(),
             KeypadMap.keyLetters.getValue(k).let { if (upperLetters) it.uppercase() else it },
-            if (theme.isGameBoyAdvance) gbaLetterColour(k) else null,
+            if (theme.rainbowLetters) gbaLetterColour(k) else null,
         )
     }
 

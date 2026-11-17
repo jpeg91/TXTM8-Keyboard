@@ -43,7 +43,7 @@ abstract class ThemedScreen : Activity() {
         super.onCreate(savedInstanceState)
         KeyboardSettings.migrateThemes(prefs)
         val chosen = prefs.getInt(KeyboardSettings.KEY_THEME, KeyboardSettings.THEME_DEFAULT)
-        look = KeyboardTheme.resolve(this, chosen, p5Accent())
+        look = KeyboardTheme.resolve(this, chosen, p5Accent(), CustomParts.load(prefs))
         window.statusBarColor = look.background
         window.navigationBarColor = look.background
         window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)

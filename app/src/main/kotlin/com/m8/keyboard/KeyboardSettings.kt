@@ -27,6 +27,7 @@ data class KeyboardSettings(
     val learnWords: Boolean = true,
     val slideGestures: Boolean = true,
     val slideSpeed: Int = 1, // 0 slow, 1 normal, 2 fast
+    val custom: CustomParts = CustomParts(), // where each part of the "Custom mix" theme comes from
 ) {
     /** How strong the typing pulse is, 0 (off) to 0.85. */
     val pulseStrength: Float
@@ -62,6 +63,11 @@ data class KeyboardSettings(
         const val KEY_SLIDE_SPEED = "slide_speed"
         const val KEY_CLEAR_TOKEN = "clear_token"
         const val KEY_P5_ACCENT = "p5_accent"
+        const val KEY_CUSTOM_COLOURS = "custom_colours"
+        const val KEY_CUSTOM_KEYS = "custom_keys"
+        const val KEY_CUSTOM_BACKGROUND = "custom_background"
+        const val KEY_CUSTOM_ANIMATION = "custom_animation"
+        const val KEY_CUSTOM_FONT = "custom_font"
 
         const val THEME_SYSTEM = 0
         const val THEME_DARK = 1
@@ -134,6 +140,8 @@ data class KeyboardSettings(
         const val THEME_WIPEOUT_2097 = 63
         const val THEME_WIPEOUT_HD = 64
         const val THEME_PAGER = 65
+        /** The mix-and-match theme: each part of the look comes from the theme chosen for it (see [CustomParts]). */
+        const val THEME_CUSTOM = 66
 
         /** Index in [P5_ACCENTS] of the original red (the default) and of the purple. */
         const val P5_ACCENT_RED = 0
@@ -173,6 +181,7 @@ data class KeyboardSettings(
                 learnWords = p.getBoolean(KEY_LEARN, true),
                 slideGestures = p.getBoolean(KEY_SLIDE, true),
                 slideSpeed = p.getInt(KEY_SLIDE_SPEED, 1),
+                custom = CustomParts.load(p),
             )
         }
     }
@@ -201,4 +210,47 @@ fun KeyboardSettings.slideStepDp(): Float = when (slideSpeed) {
     0 -> 16f
     2 -> 7f
     else -> 11f
+}
+
+/**
+ * The "Custom mix" theme: for each part of the look, the theme it is taken from (a `KeyboardSettings.THEME_*` id), or
+ * [NONE] for the plain version of that part. The colours always come from a theme, so they have no plain version.
+ */
+data class CustomParts(
+    val colours: Int = KeyboardSettings.THEME_DARK,
+    val keys: Int = KeyboardSettings.THEME_DARK,
+    val background: Int = KeyboardSettings.THEME_DARK,
+    val animation: Int = KeyboardSettings.THEME_DARK,
+    val font: Int = KeyboardSettings.THEME_DARK,
+) {
+    /** True when [theme] is the source of any part. */
+    fun uses(theme: Int): Boolean = colours == theme || keys == theme || background == theme || animation == theme || font == theme
+
+    companion object {
+        /** The plain version of a part: ordinary rounded keys, a flat background, no animation, the standard font. */
+        const val NONE = -1
+
+        /** Every part taken from [theme]: the starting point when someone first switches to the custom mix. */
+        fun allFrom(theme: Int) = CustomParts(theme, theme, theme, theme, theme)
+
+        fun isStored(p: SharedPreferences): Boolean = p.contains(KeyboardSettings.KEY_CUSTOM_COLOURS)
+
+        fun load(p: SharedPreferences): CustomParts = CustomParts(
+            colours = p.getInt(KeyboardSettings.KEY_CUSTOM_COLOURS, KeyboardSettings.THEME_DARK),
+            keys = p.getInt(KeyboardSettings.KEY_CUSTOM_KEYS, KeyboardSettings.THEME_DARK),
+            background = p.getInt(KeyboardSettings.KEY_CUSTOM_BACKGROUND, KeyboardSettings.THEME_DARK),
+            animation = p.getInt(KeyboardSettings.KEY_CUSTOM_ANIMATION, KeyboardSettings.THEME_DARK),
+            font = p.getInt(KeyboardSettings.KEY_CUSTOM_FONT, KeyboardSettings.THEME_DARK),
+        )
+
+        fun save(p: SharedPreferences, parts: CustomParts) {
+            p.edit()
+                .putInt(KeyboardSettings.KEY_CUSTOM_COLOURS, parts.colours)
+                .putInt(KeyboardSettings.KEY_CUSTOM_KEYS, parts.keys)
+                .putInt(KeyboardSettings.KEY_CUSTOM_BACKGROUND, parts.background)
+                .putInt(KeyboardSettings.KEY_CUSTOM_ANIMATION, parts.animation)
+                .putInt(KeyboardSettings.KEY_CUSTOM_FONT, parts.font)
+                .apply()
+        }
+    }
 }

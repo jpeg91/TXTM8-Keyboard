@@ -508,34 +508,6 @@ interface KeyboardPulseEffect {
 }
 
 /**
- * Glitter theme background. The old fixed-position pulse has been retired; the random twinkles
- * now live in a foreground drawable so they appear over the keycaps instead of behind them.
- */
-class GlitterPulseBackground(
-    private val base: Drawable,
-    @Suppress("unused") private val strength: Float,
-    @Suppress("unused") private val density: Float,
-) : Drawable(), KeyboardPulseEffect {
-    private val forward = ForwardCallback(this)
-
-    init { base.callback = forward }
-
-    override fun setVisible(visible: Boolean, restart: Boolean): Boolean {
-        base.setVisible(visible, restart)
-        return super.setVisible(visible, restart)
-    }
-
-    override fun onBoundsChange(bounds: Rect) { base.bounds = bounds }
-    override fun draw(canvas: Canvas) = base.draw(canvas)
-    override fun pulse() = pulse(null)
-    override fun pulse(key: RectF?) { (base as? KeyboardPulseEffect)?.pulse(key) }
-    override fun setAlpha(alpha: Int) { base.alpha = alpha }
-    override fun setColorFilter(colorFilter: ColorFilter?) { base.colorFilter = colorFilter }
-    @Suppress("OVERRIDE_DEPRECATION")
-    override fun getOpacity(): Int = base.opacity
-}
-
-/**
  * Random, low-frame-rate star flashes drawn as a view foreground, above the keys and their labels.
  * Each flash chooses a fresh clickable key corner, size, colour and lifetime. A new set is not
  * replayed: stars are continuously spawned and expire independently.
@@ -1282,7 +1254,7 @@ fun KeyboardTheme.backgroundDrawable(view: View, animated: Boolean = false, effe
     val kind = ambient
     // A theme with a tap animation shares one "Effect amount" slider between that and its background
     // animation, so 0% turns both off. (Themes without a tap animation have no such slider.)
-    val on = animated && kind != null && (tapEffect == null || effectAmount > 0)
+    val on = animated && kind != null && (!ambientFollowsEffectAmount || effectAmount > 0)
     return if (kind != null && on) {
         AmbientBackground(flat, kind, ambientColours ?: IntArray(0), view.resources.displayMetrics.density)
     } else {
@@ -1293,21 +1265,26 @@ fun KeyboardTheme.backgroundDrawable(view: View, animated: Boolean = false, effe
 private fun KeyboardTheme.flatBackgroundDrawable(view: View): Drawable =
     if (backgroundBottom != 0) {
         GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(background, backgroundBottom))
-    } else if (plainBackground) {
-        ColorDrawable(background)
-    } else if (isGlitter) {
-        GlitterPatternDrawable(background, view.resources.displayMetrics.density)
-    } else if (isSlanted) {
-        BackdropDrawable(
-            base = background,
-            stripe = 0x08FFFFFF,
-            red = accent,
-            deep = deep,
-            density = view.resources.displayMetrics.density,
-        )
     } else {
-        ColorDrawable(background)
+        when (backdrop) {
+            Backdrop.FLAT -> ColorDrawable(background)
+            Backdrop.HEARTS -> GlitterPatternDrawable(background, view.resources.displayMetrics.density)
+            Backdrop.STRIPES -> BackdropDrawable(
+                base = background,
+                stripe = 0x08FFFFFF,
+                red = accent,
+                deep = deep,
+                density = view.resources.displayMetrics.density,
+            )
+        }
     }
+
+/** The drawable behind the candidate words on the strip. */
+fun KeyboardTheme.stripDrawable(density: Float): Drawable = when (stripStyle) {
+    StripStyle.FLAT -> ColorDrawable(strip)
+    StripStyle.PATTERN -> GlitterPatternDrawable(strip, density, stripMode = true)
+    StripStyle.PIXEL_SCREEN -> PixelScreenDrawable(strip, density)
+}
 
 /** The blinking key cursor for themes that have one (MS-DOS), or null. */
 fun KeyboardTheme.cursorDrawable(tracker: KeyTracker, density: Float): KeyCursorDrawable? =
@@ -1473,44 +1450,30 @@ fun KeyboardTheme.keyBackground(
                 insetY = gapYDp * density,
                 density = density,
             )
-            KeyStyle.DEFAULT -> Unit
-        }
-        if (isRetro) {
-            return RetroKeyDrawable(
+            KeyStyle.RETRO -> return RetroKeyDrawable(
                 fill = color,
                 pressed = isPressed,
                 insetX = gapXDp * density,
                 insetY = gapYDp * density,
                 density = density,
             )
-        }
-        if (isGlitter || isGameBoy) {
-            return PixelGlitterKeyDrawable(
+            KeyStyle.PIXEL -> return PixelGlitterKeyDrawable(
                 fill = color,
                 shadow = this.shadow,
-                border = when {
-                    pixelBorder != 0 -> pixelBorder
-                    isGlitter -> 0xFFFFE2F2.toInt()
-                    isGameBoyAdvance -> 0xFFE8D9FF.toInt()
-                    else -> this.shadow
-                },
+                border = if (pixelBorder != 0) pixelBorder else this.shadow,
                 insetX = gapXDp * density,
                 insetY = gapYDp * density,
                 density = density,
-                pixelColors = if (isGameBoyAdvance) GBA_PIXEL_COLOURS else null,
+                pixelColors = pixelColours,
             )
-        }
-        if (isNokia) {
-            return NokiaKeyDrawable(
+            KeyStyle.NOKIA -> return NokiaKeyDrawable(
                 fill = color,
                 shadow = this.shadow,
                 insetX = gapXDp * density,
                 insetY = gapYDp * density,
                 radius = 7f * density,
             )
-        }
-        if (isSlanted) {
-            return SlantKeyDrawable(
+            KeyStyle.SLANTED -> return SlantKeyDrawable(
                 fill = color,
                 border = border,
                 shadow = shadow,
@@ -1522,6 +1485,7 @@ fun KeyboardTheme.keyBackground(
                 leftFrac = leftFrac,
                 rightFrac = rightFrac,
             )
+            KeyStyle.DEFAULT -> Unit
         }
         val shape = GradientDrawable().apply {
             setColor(color)
@@ -1540,69 +1504,57 @@ fun KeyboardTheme.keyBackground(
     }
 }
 
-/** Highlight behind the selected candidate word. */
-fun KeyboardTheme.candidateBackground(density: Float): Drawable {
-    if (keyStyle == KeyStyle.BEVEL) {
-        return BevelKeyDrawable(key, pressed = false, insetX = 2f * density, insetY = 6f * density, density = density)
-    }
-    if (keyStyle == KeyStyle.PILL) {
-        return PillKeyDrawable(accent, insetX = 2f * density, insetY = 6f * density, density = density)
-    }
-    if (keyStyle == KeyStyle.CHAMFER) {
-        return ChamferKeyDrawable(
-            fill = accent,
-            border = border,
-            pressed = false,
-            insetX = 2f * density,
-            insetY = 6f * density,
-            density = density,
-        )
-    }
-    if (isRetro || squareKeys || keyStyle == KeyStyle.LCD) {
-        return GradientDrawable().apply {
-            setColor(accent)
-            cornerRadius = 0f
-        }
-    }
-    if (keyStyle == KeyStyle.MEMPHIS) {
-        return GradientDrawable().apply {
-            setColor(accent)
-            setStroke(maxOf(1, (2f * density).toInt()), border)
-            cornerRadius = 0f
-        }
-    }
-    if (isGlitter) {
-        return GradientDrawable().apply {
-            setColor(accent)
-            setStroke(maxOf(1, (2f * density).toInt()), 0xFFFFFFFF.toInt())
-            cornerRadius = 0f
-        }
-    }
-    if (isNokia) {
-        return GradientDrawable().apply {
-            setColor(accent)
-            cornerRadius = 3f * density
-        }
-    }
-    if (isSlanted) {
-        return SlantKeyDrawable(
-            fill = accent,
-            border = border,
-            shadow = shadow,
-            insetX = 2f * density,
-            insetY = 6f * density,
-            slant = 6f * density,
-            borderWidth = 1.5f * density,
-            shadowOffset = 2f * density,
-            leftFrac = 0f,
-            rightFrac = 0f,
-        )
-    }
-    val shape = GradientDrawable().apply {
+/** Highlight behind the selected candidate word; the shape comes from [KeyboardTheme.candidateShape]. */
+fun KeyboardTheme.candidateBackground(density: Float): Drawable = when (candidateShape) {
+    CandidateStyle.BEVEL ->
+        BevelKeyDrawable(key, pressed = false, insetX = 2f * density, insetY = 6f * density, density = density)
+    CandidateStyle.PILL ->
+        PillKeyDrawable(accent, insetX = 2f * density, insetY = 6f * density, density = density)
+    CandidateStyle.CHAMFER -> ChamferKeyDrawable(
+        fill = accent,
+        border = border,
+        pressed = false,
+        insetX = 2f * density,
+        insetY = 6f * density,
+        density = density,
+    )
+    CandidateStyle.SQUARE -> GradientDrawable().apply {
         setColor(accent)
-        cornerRadius = 8f * density
+        cornerRadius = 0f
     }
-    val gx = (2f * density).toInt()
-    val gy = (6f * density).toInt()
-    return InsetDrawable(shape, gx, gy, gx, gy)
+    CandidateStyle.OUTLINED_SQUARE -> GradientDrawable().apply {
+        setColor(accent)
+        setStroke(maxOf(1, (2f * density).toInt()), border)
+        cornerRadius = 0f
+    }
+    CandidateStyle.PIXEL -> GradientDrawable().apply {
+        setColor(accent)
+        setStroke(maxOf(1, (2f * density).toInt()), 0xFFFFFFFF.toInt())
+        cornerRadius = 0f
+    }
+    CandidateStyle.NOKIA -> GradientDrawable().apply {
+        setColor(accent)
+        cornerRadius = 3f * density
+    }
+    CandidateStyle.SLANTED -> SlantKeyDrawable(
+        fill = accent,
+        border = border,
+        shadow = shadow,
+        insetX = 2f * density,
+        insetY = 6f * density,
+        slant = 6f * density,
+        borderWidth = 1.5f * density,
+        shadowOffset = 2f * density,
+        leftFrac = 0f,
+        rightFrac = 0f,
+    )
+    CandidateStyle.ROUNDED -> {
+        val shape = GradientDrawable().apply {
+            setColor(accent)
+            cornerRadius = 8f * density
+        }
+        val gx = (2f * density).toInt()
+        val gy = (6f * density).toInt()
+        InsetDrawable(shape, gx, gy, gx, gy)
+    }
 }

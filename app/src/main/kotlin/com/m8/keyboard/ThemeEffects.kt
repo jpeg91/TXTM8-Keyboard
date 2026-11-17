@@ -24,10 +24,22 @@ import kotlin.math.cos
 import kotlin.math.exp
 import kotlin.math.sin
 
-/** How a theme draws its keys, beyond the older per-theme flags (retro, Nokia, glitter and so on). */
+/** How a theme draws its keys. */
 enum class KeyStyle {
-    /** Whatever the older flags say: a plain, outlined or bevelled key. */
+    /** A plain key with rounded corners (square ones with [KeyboardTheme.squareKeys]), outlined when the theme has a border. */
     DEFAULT,
+
+    /** Grey 90s-desktop keys with raised and sunken bevelled edges (the older, simpler cousin of [BEVEL]). */
+    RETRO,
+
+    /** Chunky pixel-cut keys with a stepped shadow: Glitter Graphics, the Game Boy family. */
+    PIXEL,
+
+    /** The soft, rounded keys of an old Nokia, with a shadow underneath. */
+    NOKIA,
+
+    /** Slanted keys with an outline and an offset shadow: the P5 look. */
+    SLANTED,
 
     /** Rounded, glassy keys: a light top and dark bottom, a shine across the upper half, an outline. */
     GLOSS,

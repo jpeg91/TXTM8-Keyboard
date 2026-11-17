@@ -35,6 +35,24 @@ class SetupActivity : ThemedScreen() {
     /** A named group of themes in the picker: the label shown and the value stored. */
     private class ThemeGroup(val title: String, val themes: List<Pair<String, Int>>)
 
+    /** The parts of the custom mix: where each is saved, and what its plain version (none for the colours) is called. */
+    private enum class MixPart(val title: String, val prefKey: String, val plain: String?) {
+        COLOURS("Colours", KeyboardSettings.KEY_CUSTOM_COLOURS, null),
+        KEYS("Keys", KeyboardSettings.KEY_CUSTOM_KEYS, "Plain keys"),
+        BACKGROUND("Background", KeyboardSettings.KEY_CUSTOM_BACKGROUND, "Plain background"),
+        ANIMATION("Animation", KeyboardSettings.KEY_CUSTOM_ANIMATION, "No animation"),
+        FONT("Font", KeyboardSettings.KEY_CUSTOM_FONT, "Standard font"),
+        ;
+
+        fun source(parts: CustomParts): Int = when (this) {
+            COLOURS -> parts.colours
+            KEYS -> parts.keys
+            BACKGROUND -> parts.background
+            ANIMATION -> parts.animation
+            FONT -> parts.font
+        }
+    }
+
     private var status: TextView? = null
     private var statusTitle: TextView? = null
     private var setupHeading: View? = null
@@ -87,6 +105,7 @@ class SetupActivity : ThemedScreen() {
                     "P5" to KeyboardSettings.THEME_P5,
                     "Dark" to KeyboardSettings.THEME_DARK,
                     "Light" to KeyboardSettings.THEME_LIGHT,
+                    "Custom mix" to KeyboardSettings.THEME_CUSTOM,
                 ),
             ),
             ThemeGroup(
@@ -311,23 +330,21 @@ class SetupActivity : ThemedScreen() {
         val lookCard = card()
         root.addView(lookCard, LinearLayout.LayoutParams(MATCH, WRAP).apply { topMargin = dp(12) })
         // The P5 theme's accent colour: red, yellow, blue, purple, green, orange and six in-betweens.
-        if (currentTheme == KeyboardSettings.THEME_P5) {
+        if (currentTheme == KeyboardSettings.THEME_CUSTOM) addCustomizeControls(lookCard)
+        if (currentTheme == KeyboardSettings.THEME_P5 ||
+            (currentTheme == KeyboardSettings.THEME_CUSTOM && CustomParts.load(prefs).uses(KeyboardSettings.THEME_P5))
+        ) {
             addAccentPicker(lookCard)
         }
         addChoice(
             lookCard, "Key size", KeyboardSettings.KEY_SIZE,
             listOf("Small", "Medium", "Large"), listOf(0, 1, 2), 1,
         )
-        if (look.isGlitter) {
-            // The twinkling-star themes (Glitter Graphics, Night Sky, Winter, Aurora, Synthwave, Gold on Black) have stars instead of the typing pulse.
-            addStarDensityControl(lookCard)
-        } else if (look.tapEffect != null) {
-            // Bubbles, Embers, Sakura and Neon Ripples animate wherever you tap, instead of the typing pulse.
-            addEffectAmountControl(lookCard)
-        } else {
-            lookCard.addView(label("Typing pulse"))
-            addPulseControls(lookCard)
-        }
+        // One control for each animation the theme has (twinkling stars, a tap animation), and the typing pulse for every theme.
+        if (look.stars) addStarDensityControl(lookCard)
+        if (look.tapEffect != null) addEffectAmountControl(lookCard)
+        lookCard.addView(label("Typing pulse"))
+        addPulseControls(lookCard)
 
         // ---- Typing ----
         addHeading(root, anchors, "Typing", "Suggestions, capitals and punctuation.")
@@ -521,8 +538,102 @@ class SetupActivity : ThemedScreen() {
     }
 
     private fun chooseTheme(value: Int) {
+        // The first time the custom mix is chosen it starts as a copy of the theme being left, so nothing jumps.
+        if (value == KeyboardSettings.THEME_CUSTOM && !CustomParts.isStored(prefs)) {
+            val from = prefs.getInt(KeyboardSettings.KEY_THEME, KeyboardSettings.THEME_DEFAULT)
+            CustomParts.save(prefs, CustomParts.allFrom(if (from == KeyboardSettings.THEME_CUSTOM) KeyboardSettings.THEME_DARK else from))
+        }
         prefs.edit().putInt(KeyboardSettings.KEY_THEME, value).apply()
         recreate() // so this screen takes on the new theme's colours
+    }
+
+    /** The Customize controls of the custom mix: one button per part, showing which theme it comes from. */
+    private fun addCustomizeControls(parent: LinearLayout) {
+        parent.addView(label("Customize"))
+        parent.addView(hint("Take each part of the look from any theme. Type in the box below to see the result."))
+        val parts = CustomParts.load(prefs)
+        for (part in MixPart.values()) {
+            val source = part.source(parts)
+            val name = if (source == CustomParts.NONE) part.plain.orEmpty() else themeName(source)
+            parent.addView(
+                button(part.title + ": " + name, action = false) { chooseMixPart(part) },
+                LinearLayout.LayoutParams(MATCH, WRAP).apply { topMargin = dp(6) },
+            )
+        }
+    }
+
+    private fun themeName(id: Int): String =
+        themeGroups.flatMap { it.themes }.firstOrNull { it.second == id }?.first ?: "Dark"
+
+    /** Lets the person pick which theme [part] of the custom mix comes from; only themes that have something to offer are listed. */
+    private fun chooseMixPart(part: MixPart) {
+        val accent = p5Accent()
+        val ids = ArrayList<Int>()
+        val names = ArrayList<String>()
+        part.plain?.let {
+            ids.add(CustomParts.NONE)
+            names.add(it)
+        }
+        for ((name, id) in themeGroups.flatMap { it.themes }) {
+            if (id == KeyboardSettings.THEME_CUSTOM) continue
+            val note = mixNote(part, KeyboardTheme.resolve(this, id, accent)) ?: continue
+            ids.add(id)
+            names.add(if (note.isEmpty()) name else "$name ($note)")
+        }
+        val checked = ids.indexOf(part.source(CustomParts.load(prefs)))
+        AlertDialog.Builder(this, AlertDialog.THEME_DEVICE_DEFAULT_DARK)
+            .setTitle(part.title)
+            .setSingleChoiceItems(names.toTypedArray(), checked) { dialog, which ->
+                prefs.edit().putInt(part.prefKey, ids[which]).apply()
+                dialog.dismiss()
+                recreate() // so this screen takes on the new mix
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    /**
+     * A few words on what [theme] would give [part] of the mix, an empty string when there is nothing to add, or
+     * null when the theme has nothing to offer for that part (it has plain keys, no animation and so on).
+     */
+    private fun mixNote(part: MixPart, theme: KeyboardTheme): String? {
+        val notes = ArrayList<String>()
+        when (part) {
+            MixPart.COLOURS -> return ""
+            MixPart.KEYS -> {
+                when (theme.keyStyle) {
+                    KeyStyle.GLOSS -> notes.add("glossy")
+                    KeyStyle.LCD -> notes.add("LCD")
+                    KeyStyle.MEMPHIS -> notes.add("Memphis")
+                    KeyStyle.CHAMFER -> notes.add("cut corners")
+                    KeyStyle.BEVEL -> notes.add("bevelled")
+                    KeyStyle.PILL -> notes.add("pill")
+                    KeyStyle.RETRO -> notes.add("retro")
+                    KeyStyle.PIXEL -> notes.add("pixel")
+                    KeyStyle.NOKIA -> notes.add("soft")
+                    KeyStyle.SLANTED -> notes.add("slanted")
+                    KeyStyle.DEFAULT -> if (theme.squareKeys) notes.add("square")
+                }
+            }
+            MixPart.BACKGROUND -> {
+                if (theme.backgroundBottom != 0) notes.add("gradient")
+                if (theme.backdrop == Backdrop.HEARTS) notes.add("hearts")
+                if (theme.backdrop == Backdrop.STRIPES) notes.add("stripes")
+                if (theme.stripStyle == StripStyle.PIXEL_SCREEN) notes.add("pixel screen")
+            }
+            MixPart.ANIMATION -> {
+                if (theme.stars) notes.add("stars")
+                if (theme.tapEffect != null) notes.add("tap animation")
+                if (theme.ambient != null) notes.add("moving background")
+                if (theme.cursorColour != 0) notes.add("cursor")
+            }
+            MixPart.FONT -> {
+                val special = theme.typeface !== android.graphics.Typeface.DEFAULT || theme.shoutLabels ||
+                    theme.candidateFont != CandidateFont.NORMAL
+                return if (special) "" else null
+            }
+        }
+        return if (notes.isEmpty()) null else notes.joinToString(", ")
     }
 
     /**
