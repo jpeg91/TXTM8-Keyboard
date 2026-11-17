@@ -186,13 +186,16 @@ class AboutActivity : ThemedScreen() {
                 "bring back the mobile phones of the late 90s and 2000s, MonsterGear is a lavender-grey handheld " +
                 "communicator with a green screen, MonsterNav is a beige navigator with a blue lens, and Evangelion Unit-00, " +
                 "Unit-01 and Unit-02 are angular armour keys in orange, purple and red with hexagonal shields that " +
-                "flash from every tap.",
+                "flash from every tap. Windows 95 and Netscape Navigator use the real bevelled buttons of the time, " +
+                "Winamp has a spectrum analyser that leaps as you type, and a pager, Ghost in the Shell, Star Trek " +
+                "LCARS, Hackers, Serial Experiments Lain, WipEout 2097 and WipEout HD recreate more screens and " +
+                "gadgets of the 90s, several with their own animation behind the keys.",
         )
         feature(
             root, "Tap animations",
             "Bubbles rise, embers float up, petals flutter down and ripples spread from every spot you touch, " +
                 "not just from the key. The newer themes add loading-bar blocks, equaliser bars, rainbow sparkles, " +
-                "fading LCD pixels, music notes, falling code, confetti, hearts and hexagonal shields. The Effect amount setting changes how " +
+                "fading LCD pixels, music notes, falling code, confetti, hearts, hexagonal shields and targeting reticles. The Effect amount setting changes how " +
                 "much appears, and at 0% it turns the theme's background animation off too. A few themes also have a " +
                 "slow animation behind the keys; it only runs while the keyboard is on screen. On the settings screen " +
                 "the themes sit in sections you can open and close, and Previous and Next above the test box step " +

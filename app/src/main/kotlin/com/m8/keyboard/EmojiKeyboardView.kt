@@ -200,7 +200,7 @@ class EmojiKeyboardView(
         tv.textSize = size
         tv.typeface = theme.typeface
         tv.gravity = Gravity.CENTER
-        tv.setTextColor(theme.text)
+        tv.setTextColor(theme.keyText)
         tv.background = theme.keyBackground(resources.displayMetrics.density, false, GAP_X_DP, GAP_Y_DP, 10)
         return tv
     }

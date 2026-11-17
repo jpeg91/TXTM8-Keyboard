@@ -2,9 +2,11 @@
 package com.m8.keyboard
 
 import android.graphics.Bitmap
+import android.graphics.BitmapShader
 import android.graphics.Canvas
 import android.graphics.ColorFilter
 import android.graphics.LinearGradient
+import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PixelFormat
@@ -38,6 +40,12 @@ enum class KeyStyle {
 
     /** Angular armour plates: a hard outline, two opposite corners cut off and a fine inner panel line. */
     CHAMFER,
+
+    /** The grey 90s-desktop push button: a raised four-line bevel, and the black-and-grey frame when pushed. */
+    BEVEL,
+
+    /** A flat tab with a fully rounded left end and a nearly square right end, like a control panel button. */
+    PILL,
 }
 
 /**
@@ -72,6 +80,24 @@ enum class AmbientKind {
 
     /** Squiggles, triangles and dots that wobble as if redrawn by hand every few frames. */
     MEMPHIS,
+
+    /** A fine technical grid with tick marks, a scanning line and a few blinking markers. */
+    GRID,
+
+    /** A spectrum analyser: bars that idle low and leap when a key is pressed. */
+    EQUALISER,
+
+    /** Lines of scrolling text in different colours and speeds, with the odd glitch bar. */
+    SCROLL,
+
+    /** A CRT screen: scanlines, a rolling band, flicker, jumping fragments and a blinking red indicator. */
+    CRT,
+
+    /** Rows of speed chevrons streaming across the screen. */
+    CHEVRONS,
+
+    /** A still, tiled, speckled texture. */
+    TEXTURE,
 }
 
 // ------------------------------------------------------------------ colour helpers
@@ -290,6 +316,93 @@ class ChamferKeyDrawable(
 }
 
 /**
+ * The grey push button of a 90s desktop: raised, it has a white and black outer bevel and a light and dark grey
+ * inner one; pushed, it has a black frame with a dark grey line inside it and no highlights, as the real one did.
+ */
+class BevelKeyDrawable(
+    private val fill: Int,
+    private val pressed: Boolean,
+    private val insetX: Float,
+    private val insetY: Float,
+    private val density: Float,
+) : Drawable() {
+    private val paint = Paint().apply { isAntiAlias = false; style = Paint.Style.FILL }
+
+    override fun draw(canvas: Canvas) {
+        val b = bounds
+        val l = b.left + insetX
+        val t = b.top + insetY
+        val r = b.right - insetX
+        val bottom = b.bottom - insetY
+        val px = maxOf(1f, Math.round(density).toFloat())
+        if (r - l < 6f * px || bottom - t < 6f * px) return
+
+        paint.color = fill
+        canvas.drawRect(l, t, r, bottom, paint)
+        if (!pressed) {
+            paint.color = 0xFFDFDFDF.toInt()
+            canvas.drawRect(l + px, t + px, r - px, t + 2 * px, paint)
+            canvas.drawRect(l + px, t + px, l + 2 * px, bottom - px, paint)
+            paint.color = 0xFF808080.toInt()
+            canvas.drawRect(l + px, bottom - 2 * px, r - px, bottom - px, paint)
+            canvas.drawRect(r - 2 * px, t + px, r - px, bottom - px, paint)
+            paint.color = 0xFFFFFFFF.toInt()
+            canvas.drawRect(l, t, r, t + px, paint)
+            canvas.drawRect(l, t, l + px, bottom, paint)
+            paint.color = 0xFF000000.toInt()
+            canvas.drawRect(l, bottom - px, r, bottom, paint)
+            canvas.drawRect(r - px, t, r, bottom, paint)
+        } else {
+            paint.color = 0xFF808080.toInt()
+            canvas.drawRect(l + px, t + px, r - px, t + 2 * px, paint)
+            canvas.drawRect(l + px, t + px, l + 2 * px, bottom - px, paint)
+            canvas.drawRect(l + px, bottom - 2 * px, r - px, bottom - px, paint)
+            canvas.drawRect(r - 2 * px, t + px, r - px, bottom - px, paint)
+            paint.color = 0xFF000000.toInt()
+            canvas.drawRect(l, t, r, t + px, paint)
+            canvas.drawRect(l, t, l + px, bottom, paint)
+            canvas.drawRect(l, bottom - px, r, bottom, paint)
+            canvas.drawRect(r - px, t, r, bottom, paint)
+        }
+    }
+
+    override fun setAlpha(alpha: Int) { paint.alpha = alpha }
+    override fun setColorFilter(colorFilter: ColorFilter?) { paint.colorFilter = colorFilter }
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun getOpacity(): Int = PixelFormat.OPAQUE
+}
+
+/** A flat tab: the left end fully rounded, the right end almost square, no outline. */
+class PillKeyDrawable(
+    private val fill: Int,
+    private val insetX: Float,
+    private val insetY: Float,
+    private val density: Float,
+) : Drawable() {
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val path = Path()
+    private val rect = RectF()
+
+    override fun draw(canvas: Canvas) {
+        val b = bounds
+        rect.set(b.left + insetX, b.top + insetY, b.right - insetX, b.bottom - insetY)
+        if (rect.width() < 8f * density || rect.height() < 8f * density) return
+        val left = rect.height() / 2f
+        val right = 3f * density
+        path.reset()
+        path.addRoundRect(rect, floatArrayOf(left, left, right, right, right, right, left, left), Path.Direction.CW)
+        paint.style = Paint.Style.FILL
+        paint.color = fill
+        canvas.drawPath(path, paint)
+    }
+
+    override fun setAlpha(alpha: Int) { paint.alpha = alpha }
+    override fun setColorFilter(colorFilter: ColorFilter?) { paint.colorFilter = colorFilter }
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
+}
+
+/**
  * A flat key with a heavy dark outline and a hard, offset shadow. When pressed the key slides down onto its
  * shadow, so it looks pushed in.
  */
@@ -381,6 +494,17 @@ class AmbientBackground(
     private var hill: Shader? = null
     private var hillBack: Shader? = null
 
+    // Spectrum analyser: when a key was last pressed, and the gradient that colours the bars by height.
+    private var eqKickAt = 0L
+    private var barShader: Shader? = null
+
+    // CRT scanlines and the speckled texture are tiny bitmaps repeated across the screen, made once.
+    private var scanShader: Shader? = null
+    private var textureShader: Shader? = null
+
+    // Lines of text for the scrolling kind, made once.
+    private val scrollLines: Array<String> = if (kind == AmbientKind.SCROLL) Array(SCROLL_LINES) { scrollText(it) } else emptyArray()
+
     // The three drawings of the Memphis kind, each drawn once into a bitmap and then just blitted (see drawMemphis).
     private val memphisFrames = arrayOfNulls<Bitmap>(3)
     private var memphisW = 0
@@ -397,12 +521,22 @@ class AmbientBackground(
         AmbientKind.RED_SCAN -> 70L
         AmbientKind.RAIN -> 85L
         AmbientKind.MEMPHIS -> 220L
+        AmbientKind.GRID -> 110L
+        AmbientKind.EQUALISER -> 60L
+        AmbientKind.SCROLL -> 110L
+        AmbientKind.CRT -> 90L
+        AmbientKind.CHEVRONS -> 70L
+        AmbientKind.TEXTURE -> 1000L
     }
 
     init {
         if (kind == AmbientKind.RAIN) {
             paint.typeface = Typeface.MONOSPACE
             paint.textAlign = Paint.Align.CENTER
+        }
+        if (kind == AmbientKind.SCROLL) {
+            paint.typeface = Typeface.MONOSPACE
+            paint.textAlign = Paint.Align.LEFT
         }
     }
 
@@ -417,6 +551,10 @@ class AmbientBackground(
     override fun onBoundsChange(bounds: Rect) {
         base.bounds = bounds
         releaseMemphisFrames()
+        if (kind == AmbientKind.EQUALISER && colours.size >= 2) {
+            val h = bounds.height().toFloat()
+            barShader = LinearGradient(0f, h, 0f, h * 0.2f, colours, null, Shader.TileMode.CLAMP)
+        }
         if (kind == AmbientKind.CLOUDS) {
             val h = bounds.height().toFloat()
             hillBack = LinearGradient(0f, h * 0.6f, 0f, h, 0xFF7CC336.toInt(), 0xFF3F8F1A.toInt(), Shader.TileMode.CLAMP)
@@ -457,6 +595,12 @@ class AmbientBackground(
             AmbientKind.RED_SCAN -> drawRedScan(canvas, w, h, frame)
             AmbientKind.RAIN -> drawRain(canvas, w, h, frame)
             AmbientKind.MEMPHIS -> drawMemphis(canvas, w, h, frame)
+            AmbientKind.GRID -> drawGrid(canvas, w, h, frame)
+            AmbientKind.EQUALISER -> drawEqualiser(canvas, w, h, frame)
+            AmbientKind.SCROLL -> drawScroll(canvas, w, h, frame)
+            AmbientKind.CRT -> drawCrt(canvas, w, h, frame)
+            AmbientKind.CHEVRONS -> drawChevrons(canvas, w, h, frame)
+            AmbientKind.TEXTURE -> drawTexture(canvas, w, h)
         }
         canvas.restore()
         paint.shader = null
@@ -791,10 +935,236 @@ class AmbientBackground(
         paint.style = Paint.Style.FILL
     }
 
+    // -------------------------------------------------- Ghost in the Shell: technical grid
+
+    /** [colours]: 0 the grid lines, 1 the brighter tick marks, scanning line and blinking markers. */
+    private fun drawGrid(canvas: Canvas, w: Float, h: Float, frame: Int) {
+        val d = density
+        val cell = 26f * d
+        val cols = (w / cell).toInt() + 1
+        val rows = (h / cell).toInt() + 1
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = maxOf(1f, 0.8f * d)
+        paint.color = col(0)
+        for (c in 0..cols) canvas.drawLine(c * cell, 0f, c * cell, h, paint)
+        for (r in 0..rows) canvas.drawLine(0f, r * cell, w, r * cell, paint)
+        // Small plus marks at every fourth crossing.
+        paint.color = col(1)
+        val arm = 3f * d
+        for (c in 0..cols step 4) for (r in 0..rows step 4) {
+            val x = c * cell
+            val y = r * cell
+            canvas.drawLine(x - arm, y, x + arm, y, paint)
+            canvas.drawLine(x, y - arm, x, y + arm, paint)
+        }
+        // The scanning line, with a short fading trail.
+        val period = w + 60f * d
+        val x = (frame * 3.2f * d) % period - 30f * d
+        val a = (col(1) ushr 24) and 0xFF
+        for (i in 0 until 4) {
+            paint.color = withAlpha(col(1), a * (4 - i) / 4)
+            canvas.drawLine(x - i * 4f * d, 0f, x - i * 4f * d, h, paint)
+        }
+        // A few markers that blink on and off at crossings.
+        paint.style = Paint.Style.FILL
+        paint.color = col(1)
+        for (k in 0 until 6) {
+            if (hash3(k, frame / 6, 2) % 3 == 0) continue
+            val c = hash3(k, frame / 12, 3) % cols
+            val r = hash3(k, frame / 12, 4) % rows
+            canvas.drawRect(c * cell - 2f * d, r * cell - 2f * d, c * cell + 2f * d, r * cell + 2f * d, paint)
+        }
+    }
+
+    // -------------------------------------------------- Winamp: spectrum analyser
+
+    /** [colours]: the bar gradient from the bottom to the top. The bars idle low and jump when a key is pressed. */
+    private fun drawEqualiser(canvas: Canvas, w: Float, h: Float, frame: Int) {
+        val d = density
+        val barW = 6f * d
+        val gap = 2f * d
+        val n = (w / (barW + gap)).toInt() + 1
+        val since = (nowMs - eqKickAt) / 1000f
+        val kick = if (eqKickAt == 0L || since < 0f || since > 0.9f) 0f else 1f - since / 0.9f
+        val maxH = h * 0.85f
+        paint.style = Paint.Style.FILL
+        paint.shader = barShader
+        if (barShader == null) paint.color = col(0)
+        for (i in 0 until n) {
+            val a = (hash3(i, frame, 3) % 1000) / 1000f
+            val b = (hash3(i, frame, 8) % 1000) / 1000f
+            val hump = 0.55f + 0.45f * sin(i * 0.55f + frame * 0.35f)
+            val level = (0.04f + 0.10f * a + kick * (0.20f + 0.65f * hump * b)).coerceIn(0f, 1f)
+            val bh = maxOf(2f * d, level * maxH)
+            val x = i * (barW + gap)
+            canvas.drawRect(x, h - bh, x + barW, h, paint)
+        }
+        paint.shader = null
+    }
+
+    // -------------------------------------------------- Hackers: scrolling text
+
+    private fun scrollText(seed: Int): String {
+        val sb = StringBuilder()
+        for (i in 0 until 84) {
+            if (i % 7 == 6) {
+                sb.append(' ')
+            } else {
+                val v = hash3(seed, i, 9) % 36
+                sb.append(if (v < 10) ('0' + v) else ('A' + (v - 10)))
+            }
+        }
+        return sb.toString()
+    }
+
+    /** [colours]: the text colours, used in turn row by row (ARGB: the alpha is how strong the lines are). */
+    private fun drawScroll(canvas: Canvas, w: Float, h: Float, frame: Int) {
+        val d = density
+        val size = 10.5f * d
+        val rowH = 13f * d
+        paint.style = Paint.Style.FILL
+        paint.textSize = size
+        val charW = paint.measureText("0")
+        val rows = minOf((h / rowH).toInt() + 1, scrollLines.size)
+        for (r in 0 until rows) {
+            val line = scrollLines[r]
+            val total = charW * line.length
+            val speed = (0.8f + (hash3(r, 5, 1) % 6) * 0.45f) * d
+            val off = (frame * speed) % total
+            val colour = col(r)
+            val base = (colour ushr 24) and 0xFF
+            val glitch = hash3(r, frame / 3, 4) % 17 == 0
+            paint.color = colour
+            paint.alpha = if (glitch) 255 else base
+            val y = r * rowH + size
+            if (r % 2 == 0) {
+                canvas.drawText(line, -off, y, paint)
+                canvas.drawText(line, total - off, y, paint)
+            } else {
+                canvas.drawText(line, off - total, y, paint)
+                canvas.drawText(line, off, y, paint)
+            }
+        }
+        // The odd bar of glitch.
+        paint.alpha = 255
+        for (k in 0 until 3) {
+            if (hash3(frame / 2, k, 5) % 3 != 0) continue
+            val x = (hash3(frame / 2, k, 6) % 1000) / 1000f * w
+            val y = (hash3(frame / 2, k, 7) % 1000) / 1000f * h
+            paint.color = withAlpha(col(k), 0x70)
+            canvas.drawRect(x, y, x + (30f + hash3(frame, k, 8) % 90) * d, y + (2f + hash3(frame, k, 9) % 5) * d, paint)
+        }
+    }
+
+    // -------------------------------------------------- Serial Experiments Lain: CRT
+
+    /** [colours]: 0 the rolling band (and the flicker's tint), 1 the jumping fragments, 2 the red indicator. */
+    private fun drawCrt(canvas: Canvas, w: Float, h: Float, frame: Int) {
+        val d = density
+        paint.style = Paint.Style.FILL
+        // Fragments of grey blocks that jump to new places every few frames.
+        val seed = frame / 5
+        for (k in 0 until 7) {
+            if (hash3(seed, k, 6) % 3 == 0) continue
+            val x = (hash3(seed, k, 1) % 1000) / 1000f * w
+            val y = (hash3(seed, k, 2) % 1000) / 1000f * h
+            val bw = (14f + hash3(seed, k, 3) % 60) * d
+            val bh = (2f + hash3(seed, k, 4) % 4) * d
+            paint.color = withAlpha(col(1), 0x38 + hash3(seed, k, 5) % 0x38)
+            canvas.drawRect(x, y, x + bw, y + bh, paint)
+        }
+        // A slow band rolling down the screen.
+        val band = 26f * d
+        val y = (frame * 1.8f * d) % (h + band * 2f) - band
+        paint.color = col(0)
+        canvas.drawRect(0f, y, w, y + band, paint)
+        // Flicker: now and then the whole screen dips.
+        if (hash3(frame, 0, 7) % 9 == 0) {
+            paint.color = withAlpha(0xFF000000.toInt(), 22 + hash3(frame, 1, 7) % 30)
+            canvas.drawRect(0f, 0f, w, h, paint)
+        }
+        // Scanlines: a one-pixel dark line every four, a tiny bitmap repeated.
+        if (scanShader == null) {
+            val bmp = Bitmap.createBitmap(1, 4, Bitmap.Config.ARGB_8888)
+            bmp.setPixel(0, 0, 0x34000000)
+            val shader = BitmapShader(bmp, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT)
+            shader.setLocalMatrix(Matrix().apply { setScale(d, d) })
+            scanShader = shader
+        }
+        paint.shader = scanShader
+        paint.isFilterBitmap = false
+        canvas.drawRect(0f, 0f, w, h, paint)
+        paint.shader = null
+        paint.isFilterBitmap = false
+        // A red indicator that blinks in the corner.
+        if ((frame / 7) % 2 == 0) {
+            paint.color = col(2)
+            canvas.drawRect(w - 16f * d, 8f * d, w - 9f * d, 15f * d, paint)
+        }
+    }
+
+    // -------------------------------------------------- WipEout: speed chevrons
+
+    /** [colours]: the chevron colours, used in turn row by row (ARGB: the alpha sets how strong they are). */
+    private fun drawChevrons(canvas: Canvas, w: Float, h: Float, frame: Int) {
+        val d = density
+        val rowH = 22f * d
+        val step = 28f * d
+        val half = 7f * d
+        val rows = (h / rowH).toInt() + 1
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = 2.4f * d
+        paint.strokeJoin = Paint.Join.MITER
+        for (r in 0 until rows) {
+            val speed = (1.4f + (hash3(r, 2, 3) % 5) * 0.55f) * d
+            val off = (frame * speed) % step
+            val cy = r * rowH + rowH / 2f
+            path.reset()
+            var x = -step + off
+            while (x < w + step) {
+                path.moveTo(x, cy - half)
+                path.lineTo(x + half, cy)
+                path.lineTo(x, cy + half)
+                x += step
+            }
+            paint.color = col(r)
+            canvas.drawPath(path, paint)
+        }
+    }
+
+    // -------------------------------------------------- Netscape: speckled texture
+
+    /** [colours]: 0 the base, 1 the light specks, 2 the dark specks. Still: drawn when needed and then at rest. */
+    private fun drawTexture(canvas: Canvas, w: Float, h: Float) {
+        animating = false
+        if (textureShader == null) {
+            val size = 24
+            val bmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+            for (y in 0 until size) for (x in 0 until size) {
+                val v = hash3(x, y, 11) % 100
+                bmp.setPixel(x, y, if (v < 8) col(2) else if (v < 22) col(1) else col(0))
+            }
+            val shader = BitmapShader(bmp, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT)
+            shader.setLocalMatrix(Matrix().apply { setScale(2f * density, 2f * density) })
+            textureShader = shader
+        }
+        paint.style = Paint.Style.FILL
+        paint.shader = textureShader
+        paint.isFilterBitmap = false
+        canvas.drawRect(0f, 0f, w, h, paint)
+        paint.shader = null
+        paint.isFilterBitmap = false
+    }
+
     override fun pulse() = pulse(null)
 
     /** A key was pressed: the sound-wave kind rings from that key's position. Other kinds ignore it. */
     override fun pulse(key: RectF?) {
+        if (kind == AmbientKind.EQUALISER) {
+            eqKickAt = SystemClock.uptimeMillis()
+            invalidateSelf()
+            return
+        }
         if (kind != AmbientKind.SOUND) return
         val i = soundNext
         soundNext = (soundNext + 1) % SOUND_EVENTS
@@ -810,6 +1180,7 @@ class AmbientBackground(
 
     private companion object {
         const val SOUND_EVENTS = 4
+        const val SCROLL_LINES = 40
 
         /** Half-width katakana, digits and a few symbols: the look of the falling code. */
         fun matrixGlyphs(): CharArray {

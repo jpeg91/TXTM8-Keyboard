@@ -87,6 +87,7 @@ class SetupActivity : ThemedScreen() {
                     "N-Gage" to KeyboardSettings.THEME_NGAGE,
                     "Razr V3" to KeyboardSettings.THEME_RAZR_V3,
                     "Kawaii Flip Phone" to KeyboardSettings.THEME_KAWAII,
+                    "Pager" to KeyboardSettings.THEME_PAGER,
                     "Amber Backlight" to KeyboardSettings.THEME_AMBER_BACKLIGHT,
                     "Game Boy" to KeyboardSettings.THEME_GAME_BOY,
                     "Game Boy Advance" to KeyboardSettings.THEME_GAME_BOY_ADVANCE,
@@ -124,7 +125,24 @@ class SetupActivity : ThemedScreen() {
                     "Media Player" to KeyboardSettings.THEME_MEDIA_PLAYER,
                     "MS-DOS / BIOS" to KeyboardSettings.THEME_BIOS,
                     "GeoCities" to KeyboardSettings.THEME_GEOCITIES,
+                    "Windows 95" to KeyboardSettings.THEME_WINDOWS_95,
+                    "Netscape Navigator" to KeyboardSettings.THEME_NETSCAPE,
+                    "Winamp" to KeyboardSettings.THEME_WINAMP,
                     "Matrix" to KeyboardSettings.THEME_MATRIX,
+                ),
+            ),
+            ThemeGroup(
+                "Sci-fi and cyberpunk",
+                listOf(
+                    "Ghost in the Shell" to KeyboardSettings.THEME_GHOST_IN_THE_SHELL,
+                    "Star Trek LCARS" to KeyboardSettings.THEME_LCARS,
+                    "Hackers" to KeyboardSettings.THEME_HACKERS,
+                    "Serial Experiments Lain" to KeyboardSettings.THEME_LAIN,
+                    "Evangelion Unit-00" to KeyboardSettings.THEME_EVANGELION_00,
+                    "Evangelion Unit-01" to KeyboardSettings.THEME_EVANGELION_01,
+                    "Evangelion Unit-02" to KeyboardSettings.THEME_EVANGELION_02,
+                    "WipEout 2097" to KeyboardSettings.THEME_WIPEOUT_2097,
+                    "WipEout HD" to KeyboardSettings.THEME_WIPEOUT_HD,
                 ),
             ),
             ThemeGroup(
@@ -141,9 +159,6 @@ class SetupActivity : ThemedScreen() {
                     "Sakura" to KeyboardSettings.THEME_SAKURA,
                     "Neon Ripples" to KeyboardSettings.THEME_RIPPLES,
                     "Saved by the Bell" to KeyboardSettings.THEME_SATURDAY,
-                    "Evangelion Unit-00" to KeyboardSettings.THEME_EVANGELION_00,
-                    "Evangelion Unit-01" to KeyboardSettings.THEME_EVANGELION_01,
-                    "Evangelion Unit-02" to KeyboardSettings.THEME_EVANGELION_02,
                 ),
             ),
         )
@@ -405,7 +420,7 @@ class SetupActivity : ThemedScreen() {
             header.text = headerText()
             header.textSize = 14f
             header.typeface = look.typeface
-            header.setTextColor(look.text)
+            header.setTextColor(look.keyText)
             header.gravity = Gravity.CENTER_VERTICAL
             header.minHeight = dp(46)
             header.setPadding(dp(16), 0, dp(16), 0)

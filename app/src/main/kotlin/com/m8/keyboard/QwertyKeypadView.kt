@@ -283,7 +283,7 @@ class QwertyKeypadView(
         tv.textSize = size
         tv.typeface = theme.typeface
         tv.gravity = Gravity.CENTER
-        tv.setTextColor(if (action) theme.actionLabel(actionSlot) else theme.text)
+        tv.setTextColor(if (action) theme.actionLabel(actionSlot) else theme.keyText)
         val pressedColour = keyColour?.let { colour ->
             android.graphics.Color.rgb(
                 (android.graphics.Color.red(colour) * 0.78f).toInt(),

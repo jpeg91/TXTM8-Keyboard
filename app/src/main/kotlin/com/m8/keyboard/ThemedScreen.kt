@@ -145,7 +145,7 @@ abstract class ThemedScreen : Activity() {
         tv.textSize = 15f
         tv.typeface = look.typeface
         tv.gravity = Gravity.CENTER
-        tv.setTextColor(if (action) look.actionText else look.text)
+        tv.setTextColor(if (action) look.actionText else look.keyText)
         tv.minHeight = dp(58)
         tv.setPadding(dp(16), 0, dp(16), 0)
         tv.background = look.keyBackground(density, action, 4, 4, 10)

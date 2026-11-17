@@ -716,6 +716,9 @@ enum class TapEffectKind {
 
     /** Hexagonal shields that flash out from the tap, grow and fade. */
     HEXAGONS,
+
+    /** A targeting reticle: four corner brackets close in on the tap, then a crosshair and a dot. */
+    TARGET,
 }
 
 /**
@@ -777,6 +780,7 @@ class TapEffectDrawable(
             TapEffectKind.CONFETTI -> 9f
             TapEffectKind.HEARTS -> 4f
             TapEffectKind.HEXAGONS -> 3f
+            TapEffectKind.TARGET -> 1f
         }
         var count = expected.toInt() + if (random.nextFloat() < expected - expected.toInt()) 1 else 0
         if (count < 1) count = 1
@@ -873,6 +877,12 @@ class TapEffectDrawable(
                         bornAt = now + i * 110L, life = rnd(850f, 1050f).toLong(),
                         colour = colour, phase = 0f, spin = 0f,
                     )
+                    TapEffectKind.TARGET -> Particle(
+                        x = x, y = y, vx = 0f, vy = 0f,
+                        size = 44f * d,
+                        bornAt = now, life = 650L,
+                        colour = colour, phase = 0f, spin = 0f,
+                    )
                 },
             )
         }
@@ -909,6 +919,7 @@ class TapEffectDrawable(
                 TapEffectKind.CONFETTI -> drawConfetti(canvas, p, sec, fade)
                 TapEffectKind.HEARTS -> drawHeart(canvas, p, sec, fade)
                 TapEffectKind.HEXAGONS -> drawHexagon(canvas, p, t)
+                TapEffectKind.TARGET -> drawTarget(canvas, p, t)
             }
         }
         if (particles.isNotEmpty()) invalidateSelf() // ask for the next frame
@@ -1172,6 +1183,36 @@ class TapEffectDrawable(
         canvas.restore()
     }
 
+    /** A targeting reticle: four corner brackets close in on the tap, then a small crosshair and a dot appear in it. */
+    private fun drawTarget(canvas: Canvas, p: Particle, t: Float) {
+        val d = density
+        val ease = 1f - (1f - t) * (1f - t)
+        val half = p.size * (1f - 0.62f * ease)
+        val arm = 7f * d
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = maxOf(1f, 1.4f * d)
+        paint.strokeJoin = Paint.Join.MITER
+        paint.color = p.colour
+        paint.alpha = ((1f - t * t) * 235f).toInt().coerceIn(0, 255)
+        path.reset()
+        for (sx in -1..1 step 2) for (sy in -1..1 step 2) {
+            val cx = p.x + sx * half
+            val cy = p.y + sy * half
+            path.moveTo(cx - sx * arm, cy)
+            path.lineTo(cx, cy)
+            path.lineTo(cx, cy - sy * arm)
+        }
+        canvas.drawPath(path, paint)
+        if (t > 0.2f) {
+            val a = 5f * d
+            canvas.drawLine(p.x - a, p.y, p.x + a, p.y, paint)
+            canvas.drawLine(p.x, p.y - a, p.x, p.y + a, paint)
+            paint.style = Paint.Style.FILL
+            canvas.drawCircle(p.x, p.y, 1.8f * d, paint)
+        }
+        paint.style = Paint.Style.FILL
+    }
+
     /**
      * A hexagonal shield that flashes out from the tap: two nested outlines that thin and fade as they grow, and a
      * faint fill at first. Every hexagon is drawn the same way up, with a flat top and bottom.
@@ -1419,6 +1460,19 @@ fun KeyboardTheme.keyBackground(
                 insetY = gapYDp * density,
                 density = density,
             )
+            KeyStyle.BEVEL -> return BevelKeyDrawable(
+                fill = color,
+                pressed = isPressed,
+                insetX = gapXDp * density,
+                insetY = gapYDp * density,
+                density = density,
+            )
+            KeyStyle.PILL -> return PillKeyDrawable(
+                fill = color,
+                insetX = gapXDp * density,
+                insetY = gapYDp * density,
+                density = density,
+            )
             KeyStyle.DEFAULT -> Unit
         }
         if (isRetro) {
@@ -1488,6 +1542,12 @@ fun KeyboardTheme.keyBackground(
 
 /** Highlight behind the selected candidate word. */
 fun KeyboardTheme.candidateBackground(density: Float): Drawable {
+    if (keyStyle == KeyStyle.BEVEL) {
+        return BevelKeyDrawable(key, pressed = false, insetX = 2f * density, insetY = 6f * density, density = density)
+    }
+    if (keyStyle == KeyStyle.PILL) {
+        return PillKeyDrawable(accent, insetX = 2f * density, insetY = 6f * density, density = density)
+    }
     if (keyStyle == KeyStyle.CHAMFER) {
         return ChamferKeyDrawable(
             fill = accent,

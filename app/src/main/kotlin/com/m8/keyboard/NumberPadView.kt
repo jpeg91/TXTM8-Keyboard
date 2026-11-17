@@ -245,10 +245,10 @@ class NumberPadView(
             tv.minWidth = dp(48) // short words like "I" or "a" stay easy to tap
             tv.setPadding(dp(12), 0, dp(12), 0)
             if (i == selected) {
-                tv.setTextColor(theme.accentText)
+                tv.setTextColor(theme.selectedCandidateText)
                 tv.background = theme.candidateBackground(density())
             } else {
-                tv.setTextColor(if (theme.isGameBoyAdvance) 0xFFFFFFFF.toInt() else theme.text)
+                tv.setTextColor(if (theme.isGameBoyAdvance) 0xFFFFFFFF.toInt() else theme.candidateText)
             }
             tv.setOnClickListener { listener.onKeypadCandidate(i) }
             tv.setOnLongClickListener {
@@ -315,7 +315,7 @@ class NumberPadView(
         if (small.isEmpty()) return big
         val s = SpannableString("$big\n$small")
         s.setSpan(RelativeSizeSpan(0.55f), big.length + 1, s.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-        s.setSpan(ForegroundColorSpan(smallColour ?: theme.subText), big.length + 1, s.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        s.setSpan(ForegroundColorSpan(smallColour ?: theme.keySub), big.length + 1, s.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         return s
     }
 
@@ -341,7 +341,7 @@ class NumberPadView(
         tv.textSize = size
         tv.typeface = theme.typeface
         tv.gravity = Gravity.CENTER
-        tv.setTextColor(if (action) theme.actionLabel(actionSlot) else theme.text)
+        tv.setTextColor(if (action) theme.actionLabel(actionSlot) else theme.keyText)
         tv.background = theme.keyBackground(
             density(), action, GAP_DP, GAP_DP, 10,
             keyColor = keyColour, pressedKeyColor = keyColour?.let { darken(it, 0.22f) }, actionSlot = actionSlot,

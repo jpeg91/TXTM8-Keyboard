@@ -124,6 +124,16 @@ data class KeyboardSettings(
         const val THEME_EVANGELION_01 = 53
         const val THEME_EVANGELION_02 = 54
         const val THEME_MONSTERNAV = 55
+        const val THEME_GHOST_IN_THE_SHELL = 56
+        const val THEME_LCARS = 57
+        const val THEME_HACKERS = 58
+        const val THEME_LAIN = 59
+        const val THEME_WINDOWS_95 = 60
+        const val THEME_WINAMP = 61
+        const val THEME_NETSCAPE = 62
+        const val THEME_WIPEOUT_2097 = 63
+        const val THEME_WIPEOUT_HD = 64
+        const val THEME_PAGER = 65
 
         /** Index in [P5_ACCENTS] of the original red (the default) and of the purple. */
         const val P5_ACCENT_RED = 0
