@@ -95,6 +95,33 @@ class PredictiveEngineTest {
     }
 
     @Test
+    fun backspaceShowsTheWordOneLetterShorter() {
+        val s = PredictiveSession(engine())
+        "4663".forEach { s.pressDigit(it) }
+        assertEquals("good", s.displayText)
+        s.backspace() // 466: no word that short, only completions, so "goo" is held
+        assertEquals("goo", s.displayText)
+        assertEquals("goo", s.stripWords.first()) // the strip leads with the held start of the word
+        s.backspace()
+        assertEquals("go", s.displayText)
+        s.backspace()
+        assertEquals("g", s.displayText)
+        assertTrue(s.backspace())
+        assertFalse(s.isComposing)
+    }
+
+    @Test
+    fun backspaceNeverKeepsALongCompletion() {
+        val s = PredictiveSession(engine())
+        // "4663" + "7" = "46637": only the completions "goods" and "homes" match.
+        "46637".forEach { s.pressDigit(it) }
+        assertEquals("goods", s.displayText)
+        s.backspace()
+        assertEquals("good", s.displayText) // an exact word of the shorter length
+        assertTrue(s.candidateList.first().let { !it.isCompletion })
+    }
+
+    @Test
     fun previousWordPromotesFollowers() {
         val e = engine()
         assertEquals("good", e.lookup("4663").first().word)
