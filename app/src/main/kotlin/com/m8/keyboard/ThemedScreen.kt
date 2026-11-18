@@ -2,7 +2,9 @@
 package com.m8.keyboard
 
 import android.app.Activity
+import android.content.Context
 import android.content.res.ColorStateList
+import android.graphics.Rect
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
@@ -17,6 +19,38 @@ import android.widget.TextView
 
 private const val WRAP = ViewGroup.LayoutParams.WRAP_CONTENT
 private const val MATCH = ViewGroup.LayoutParams.MATCH_PARENT
+
+/**
+ * A scroll view that can be told to keep its position for a short while. The keyboard is closed and opened again to
+ * show a changed setting, and without this the page scrolls itself to the test box each time, away from the setting
+ * being changed. Outside that window it scrolls to a focused field as usual, so tapping the test box still works.
+ */
+class StableScrollView(context: Context) : ScrollView(context) {
+    private var holding = false
+    private val release = Runnable { holding = false }
+
+    /** Ignores scrolls caused by focus changes and the keyboard resizing the page, for the next [ms] milliseconds. */
+    fun holdPosition(ms: Long) {
+        holding = true
+        removeCallbacks(release)
+        postDelayed(release, ms)
+    }
+
+    override fun requestChildRectangleOnScreen(child: View?, rectangle: Rect?, immediate: Boolean): Boolean =
+        if (holding) false else super.requestChildRectangleOnScreen(child, rectangle, immediate)
+
+    override fun requestChildFocus(child: View?, focused: View?) {
+        val y = scrollY
+        super.requestChildFocus(child, focused)
+        if (holding) scrollTo(0, y)
+    }
+
+    override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+        val y = scrollY
+        super.onLayout(changed, l, t, r, b)
+        if (holding && scrollY != y) scrollTo(0, y)
+    }
+}
 
 /**
  * The look shared by the settings screen and the About page: the chosen keyboard theme's colours,
@@ -57,7 +91,7 @@ abstract class ThemedScreen : Activity() {
     }
 
     protected fun showPage(root: LinearLayout) {
-        val scroll = ScrollView(this)
+        val scroll = StableScrollView(this)
         look.applyBackground(scroll) // the pinstripe backdrop stays put while the content scrolls
         scroll.addView(root)
         pageScroll = scroll

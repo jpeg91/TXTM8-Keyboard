@@ -4,6 +4,7 @@ package com.m8.keyboard
 import android.app.AlertDialog
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Rect
 import android.graphics.Typeface
 import android.os.Handler
 import android.os.Looper
@@ -13,6 +14,7 @@ import android.view.inputmethod.InputMethodManager
 import android.text.InputType
 import android.view.Gravity
 import android.view.View
+import android.view.ViewTreeObserver
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
@@ -56,6 +58,8 @@ class SetupActivity : ThemedScreen() {
     private var statusTitle: TextView? = null
     private var setupHeading: View? = null
     private var setupButtons: View? = null
+    private var afterSetupSections: View? = null
+    private var afterSetupChips: View? = null
     private var step1Button: TextView? = null
     private var step2Button: TextView? = null
     private var testField: EditText? = null
@@ -77,6 +81,7 @@ class SetupActivity : ThemedScreen() {
     private val restartKeyboard = Runnable {
         val field = testField ?: return@Runnable
         if (!field.hasFocus()) return@Runnable // keyboard not up: the next start picks the settings up
+        (pageScroll as? StableScrollView)?.holdPosition(1500L) // don't let the page scroll up to the test box
         val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(field.windowToken, 0)
         handler.postDelayed({ if (field.hasFocus()) imm.showSoftInput(field, 0) }, 250L)
@@ -219,7 +224,6 @@ class SetupActivity : ThemedScreen() {
         super.onCreate(savedInstanceState)
 
         val root = newPage()
-        val anchors = LinkedHashMap<String, View>() // section headings the jump bar scrolls to
 
         // ---- Header ----
         val headerRow = LinearLayout(this)
@@ -232,11 +236,14 @@ class SetupActivity : ThemedScreen() {
         headerRow.addView(settingsButton, LinearLayout.LayoutParams(dp(54), dp(50)))
         root.addView(headerRow, LinearLayout.LayoutParams(MATCH, WRAP))
         root.addView(body("Predictive number-pad typing, the way phones used to do it. Everything stays on your phone."))
+        val anchors = LinkedHashMap<String, View>() // section headings the shortcut chips scroll to
         val jumpRow = LinearLayout(this)
         jumpRow.orientation = LinearLayout.HORIZONTAL
         val jumpScroll = HorizontalScrollView(this)
         jumpScroll.isHorizontalScrollBarEnabled = false
         jumpScroll.addView(jumpRow, FrameLayout.LayoutParams(WRAP, WRAP))
+        jumpScroll.visibility = View.GONE // shown by refreshStatus with the sections below the setup steps
+        afterSetupChips = jumpScroll
         root.addView(jumpScroll, LinearLayout.LayoutParams(MATCH, WRAP).apply { topMargin = dp(14) })
 
         // ---- Setup ----
@@ -274,10 +281,17 @@ class SetupActivity : ThemedScreen() {
         setupButtons = steps
         root.addView(steps, LinearLayout.LayoutParams(MATCH, WRAP).apply { topMargin = dp(12) })
 
+        // Everything below the setup steps (Try it and Look) stays hidden until setup is complete (see refreshStatus).
+        val afterSetup = LinearLayout(this)
+        afterSetup.orientation = LinearLayout.VERTICAL
+        afterSetupSections = afterSetup
+        afterSetup.visibility = View.GONE // shown by refreshStatus once setup is complete
+        root.addView(afterSetup, LinearLayout.LayoutParams(MATCH, WRAP))
+
         // ---- Try it ----
-        addHeading(root, anchors, "Try it", "Type in the box, or flip through the themes without leaving it.")
+        addHeading(afterSetup, anchors, "Try it", "Type in the box, or flip through the themes without leaving it.")
         val tryCard = card()
-        root.addView(tryCard)
+        afterSetup.addView(tryCard)
 
         // Flip through the themes without leaving the test box; the keyboard reopens in each new theme.
         val flat = themeGroups.flatMap { it.themes }
@@ -332,10 +346,10 @@ class SetupActivity : ThemedScreen() {
         )
 
         // ---- Look ----
-        addHeading(root, anchors, "Look", "Choose a theme, then adjust the keys and the animation.")
-        addThemePicker(root)
+        addHeading(afterSetup, anchors, "Look", "Choose a theme, then adjust the keys and the animation.")
+        addThemePicker(afterSetup)
         val lookCard = card()
-        root.addView(lookCard, LinearLayout.LayoutParams(MATCH, WRAP).apply { topMargin = dp(12) })
+        afterSetup.addView(lookCard, LinearLayout.LayoutParams(MATCH, WRAP).apply { topMargin = dp(12) })
         // The P5 theme's accent colour: red, yellow, blue, purple, green, orange and six in-betweens.
         if (currentTheme == KeyboardSettings.THEME_CUSTOM) addCustomizeControls(lookCard)
         if (currentTheme == KeyboardSettings.THEME_P5 ||
@@ -353,63 +367,9 @@ class SetupActivity : ThemedScreen() {
         lookCard.addView(label("Typing pulse"))
         addPulseControls(lookCard)
 
-        // ---- Layout ----
-        addHeading(root, anchors, "Layout", "Which keyboard opens, and where the keys sit.")
-        val layoutCard = card()
-        root.addView(layoutCard)
-        addToggle(
-            layoutCard, "Default to QWERTY", KeyboardSettings.KEY_DEFAULT_QWERTY, false,
-            note = "The keyboard opens on the QWERTY layout instead of the number pad. The keyboard key still switches between them while you type. Number and phone fields always use the number pad.",
-        )
-        layoutCard.addView(divider())
-        addToggle(
-            layoutCard, "Number row on QWERTY", KeyboardSettings.KEY_QWERTY_NUMBER_ROW, false,
-            note = "Adds a row of digits above the letters. It makes the keyboard one row taller.",
-        )
-        layoutCard.addView(divider())
-        layoutCard.addView(label("Swap Enter and Backspace"))
-        layoutCard.addView(hint("A separate switch for each screen. On the number pad and the emoji page Backspace comes before Enter. On QWERTY, Enter moves to the bottom row and Backspace to the end of the row above."))
-        addToggle(layoutCard, "Number pad", KeyboardSettings.KEY_SWAP_PAD, false)
-        addToggle(layoutCard, "QWERTY keyboard", KeyboardSettings.KEY_SWAP_QWERTY, false)
-        addToggle(layoutCard, "Emoji page", KeyboardSettings.KEY_SWAP_EMOJI, false)
-
-        // ---- More ----
-        addHeading(root, anchors, "More", "The full feature guide, and a way back to the defaults.")
-        root.addView(
-            button("About and feature guide", action = true) {
-                startActivity(Intent(this, AboutActivity::class.java))
-            },
-        )
-        root.addView(
-            button("Reset settings", action = false) {
-                AlertDialog.Builder(this, AlertDialog.THEME_DEVICE_DEFAULT_DARK)
-                    .setTitle("Reset settings?")
-                    .setMessage("Every setting goes back to its default. Your learned words are kept.")
-                    .setPositiveButton("Reset") { _, _ ->
-                        val token = prefs.getLong(KeyboardSettings.KEY_CLEAR_TOKEN, 0L)
-                        prefs.edit().clear().putLong(KeyboardSettings.KEY_CLEAR_TOKEN, token).apply()
-                        recreate()
-                    }
-                    .setNegativeButton("Cancel", null)
-                    .show()
-            },
-            LinearLayout.LayoutParams(MATCH, WRAP).apply { topMargin = dp(8) },
-        )
-
-        val footer = TextView(this)
-        val version = versionName()
-        footer.text = "TXTM8 Keyboard" + (if (version.isNotEmpty()) "  \u00B7  version $version" else "") + "\nMade in England"
-        footer.textSize = 12f
-        footer.setTextColor(look.subText)
-        footer.gravity = Gravity.CENTER
-        footer.setLineSpacing(0f, 1.2f)
-        footer.setPadding(0, dp(28), 0, dp(4))
-        root.addView(footer, LinearLayout.LayoutParams(MATCH, WRAP))
-
-        // The jump bar at the top: one chip per section.
         for ((name, heading) in anchors) {
             jumpRow.addView(
-                chip(name) { pageScroll?.smoothScrollTo(0, (heading.top - dp(8)).coerceAtLeast(0)) },
+                chip(name) { scrollToHeading(heading) },
                 LinearLayout.LayoutParams(WRAP, WRAP).apply { rightMargin = dp(2) },
             )
         }
@@ -422,7 +382,17 @@ class SetupActivity : ThemedScreen() {
         if (saved != null) {
             test.setText(saved.text)
             test.setSelection(saved.selStart.coerceIn(0, test.length()), saved.selEnd.coerceIn(0, test.length()))
-            pageScroll?.post { pageScroll?.scrollTo(0, saved.scrollY) }
+            val scroll = pageScroll
+            if (scroll != null) {
+                (scroll as? StableScrollView)?.holdPosition(1500L)
+                scroll.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
+                    override fun onPreDraw(): Boolean {
+                        scroll.viewTreeObserver.removeOnPreDrawListener(this)
+                        scroll.scrollTo(0, saved.scrollY) // before anything is drawn, so the page never shows at the top first
+                        return true
+                    }
+                })
+            }
             if (saved.keyboardUp) {
                 test.postDelayed({
                     test.requestFocus()
@@ -432,7 +402,7 @@ class SetupActivity : ThemedScreen() {
         }
     }
 
-    /** A section heading with a line of explanation under it; the heading is remembered so the jump bar can scroll to it. */
+    /** A section heading with a line of explanation under it; the heading is remembered so a chip can scroll to it. */
     private fun addHeading(root: LinearLayout, anchors: MutableMap<String, View>, name: String, blurb: String) {
         val heading = sectionTitle(name)
         anchors[name] = heading
@@ -440,7 +410,15 @@ class SetupActivity : ThemedScreen() {
         root.addView(sectionBlurb(blurb))
     }
 
-    /** A small tappable pill for the jump bar. */
+    /** Scrolls so the heading sits near the top; the headings are inside a container, so work out where they are on the page. */
+    private fun scrollToHeading(heading: View) {
+        val scroll = pageScroll ?: return
+        val rect = Rect(0, 0, heading.width, heading.height)
+        scroll.offsetDescendantRectToMyCoords(heading, rect)
+        scroll.smoothScrollTo(0, (scroll.scrollY + rect.top - dp(8)).coerceAtLeast(0))
+    }
+
+    /** A small tappable pill that scrolls to a section. */
     private fun chip(text: String, onClick: () -> Unit): TextView {
         val tv = TextView(this)
         tv.text = text.uppercase()
@@ -453,13 +431,6 @@ class SetupActivity : ThemedScreen() {
         tv.background = look.keyBackground(density, false, 3, 3, 10)
         tv.setOnClickListener { onClick() }
         return tv
-    }
-
-    @Suppress("DEPRECATION")
-    private fun versionName(): String = try {
-        packageManager.getPackageInfo(packageName, 0).versionName.orEmpty()
-    } catch (e: Exception) {
-        ""
     }
 
     /** Remembers the test box and scroll position, so [onCreate] can put them back after the screen is rebuilt. */
@@ -651,6 +622,11 @@ class SetupActivity : ThemedScreen() {
 
     override fun onResume() {
         super.onResume()
+        if (settingsWereReset) { // the Settings page reset everything: rebuild with the default look
+            settingsWereReset = false
+            recreate()
+            return
+        }
         refreshStatus()
         prefs.registerOnSharedPreferenceChangeListener(prefsListener)
     }
@@ -682,6 +658,8 @@ class SetupActivity : ThemedScreen() {
         val visibility = if (done) View.GONE else View.VISIBLE
         setupHeading?.visibility = visibility
         setupButtons?.visibility = visibility
+        afterSetupSections?.visibility = if (done) View.VISIBLE else View.GONE
+        afterSetupChips?.visibility = if (done) View.VISIBLE else View.GONE
 
         statusTitle?.text = when {
             done -> "\u2713 Setup complete"

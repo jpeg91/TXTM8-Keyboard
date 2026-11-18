@@ -2,17 +2,26 @@
 package com.m8.keyboard
 
 import android.app.AlertDialog
+import android.content.Intent
 import android.os.Bundle
+import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 
 private const val WRAP = ViewGroup.LayoutParams.WRAP_CONTENT
 private const val MATCH = ViewGroup.LayoutParams.MATCH_PARENT
 
+/** Set when Reset settings is used here, so the main screen rebuilds itself with the default look when it comes back. */
+internal var settingsWereReset = false
+
 /**
- * The Settings page, opened by the gear at the top right of the main screen: typing, gestures, feedback and the
- * learned words. The look and the layout stay on the main screen, where the test box shows them straight away.
+ * The Settings page, opened by the gear at the top right of the main screen: layout, typing, gestures, feedback, the
+ * learned words, and the About page and reset. The theme picker stays on the main screen, beside the test box.
  */
 class SettingsActivity : ThemedScreen() {
 
@@ -20,11 +29,40 @@ class SettingsActivity : ThemedScreen() {
         super.onCreate(savedInstanceState)
 
         val root = newPage()
+        val anchors = LinkedHashMap<String, View>() // section headings the shortcut chips scroll to
         root.addView(title("Settings"))
-        root.addView(body("Typing, gestures, feedback and your learned words. The look and the layout are on the main page."))
+        root.addView(body("Layout, typing, gestures, feedback and your learned words. The look is on the main page."))
+
+        // Shortcuts to each section, filled in once the headings exist (below).
+        val jumpRow = LinearLayout(this)
+        jumpRow.orientation = LinearLayout.HORIZONTAL
+        val jumpScroll = HorizontalScrollView(this)
+        jumpScroll.isHorizontalScrollBarEnabled = false
+        jumpScroll.addView(jumpRow, FrameLayout.LayoutParams(WRAP, WRAP))
+        root.addView(jumpScroll, LinearLayout.LayoutParams(MATCH, WRAP).apply { topMargin = dp(14) })
+
+        // ---- Layout ----
+        addHeading(root, anchors, "Layout", "Which keyboard opens, and where the keys sit.")
+        val layoutCard = card()
+        root.addView(layoutCard)
+        addToggle(
+            layoutCard, "Default to QWERTY", KeyboardSettings.KEY_DEFAULT_QWERTY, false,
+            note = "The keyboard opens on the QWERTY layout instead of the number pad. The keyboard key still switches between them while you type. Number and phone fields always use the number pad.",
+        )
+        layoutCard.addView(divider())
+        addToggle(
+            layoutCard, "Number row on QWERTY", KeyboardSettings.KEY_QWERTY_NUMBER_ROW, false,
+            note = "Adds a row of digits above the letters. It makes the keyboard one row taller.",
+        )
+        layoutCard.addView(divider())
+        layoutCard.addView(label("Swap Enter and Backspace"))
+        layoutCard.addView(hint("A separate switch for each screen. On the number pad and the emoji page Backspace comes before Enter. On QWERTY, Enter moves to the bottom row and Backspace to the end of the row above."))
+        addToggle(layoutCard, "Number pad", KeyboardSettings.KEY_SWAP_PAD, false)
+        addToggle(layoutCard, "QWERTY keyboard", KeyboardSettings.KEY_SWAP_QWERTY, false)
+        addToggle(layoutCard, "Emoji page", KeyboardSettings.KEY_SWAP_EMOJI, false)
 
         // ---- Typing ----
-        addHeading(root, "Typing", "Suggestions, capitals and punctuation.")
+        addHeading(root, anchors, "Typing", "Suggestions, capitals and punctuation.")
         val typingCard = card()
         root.addView(typingCard)
         addToggle(
@@ -76,7 +114,7 @@ class SettingsActivity : ThemedScreen() {
         )
 
         // ---- Gestures ----
-        addHeading(root, "Gestures", "Slide controls for the cursor and for selecting text.")
+        addHeading(root, anchors, "Gestures", "Slide controls for the cursor and for selecting text.")
         val gesturesCard = card()
         root.addView(gesturesCard)
         addToggle(
@@ -91,7 +129,7 @@ class SettingsActivity : ThemedScreen() {
         )
 
         // ---- Feedback ----
-        addHeading(root, "Feedback", "What you feel and hear as you type.")
+        addHeading(root, anchors, "Feedback", "What you feel and hear as you type.")
         val feedbackCard = card()
         root.addView(feedbackCard)
         addToggle(feedbackCard, "Vibrate on key press", KeyboardSettings.KEY_HAPTIC, true)
@@ -99,7 +137,7 @@ class SettingsActivity : ThemedScreen() {
         addToggle(feedbackCard, "Key click sound", KeyboardSettings.KEY_SOUND, false)
 
         // ---- Your words ----
-        addHeading(root, "Your words", "What the keyboard learns from you. It never leaves your phone.")
+        addHeading(root, anchors, "Your words", "What the keyboard learns from you. It never leaves your phone.")
         val wordsCard = card()
         root.addView(wordsCard)
         addToggle(
@@ -122,12 +160,77 @@ class SettingsActivity : ThemedScreen() {
             LinearLayout.LayoutParams(MATCH, WRAP).apply { topMargin = dp(10) },
         )
 
+        // ---- More ----
+        addHeading(root, anchors, "More", "The full feature guide, and a way back to the defaults.")
+        root.addView(
+            button("About and feature guide", action = true) {
+                startActivity(Intent(this, AboutActivity::class.java))
+            },
+        )
+        root.addView(
+            button("Reset settings", action = false) {
+                AlertDialog.Builder(this, AlertDialog.THEME_DEVICE_DEFAULT_DARK)
+                    .setTitle("Reset settings?")
+                    .setMessage("Every setting goes back to its default. Your learned words are kept.")
+                    .setPositiveButton("Reset") { _, _ ->
+                        val token = prefs.getLong(KeyboardSettings.KEY_CLEAR_TOKEN, 0L)
+                        prefs.edit().clear().putLong(KeyboardSettings.KEY_CLEAR_TOKEN, token).apply()
+                        settingsWereReset = true // the main page rebuilds itself when it comes back
+                        recreate()
+                    }
+                    .setNegativeButton("Cancel", null)
+                    .show()
+            },
+            LinearLayout.LayoutParams(MATCH, WRAP).apply { topMargin = dp(8) },
+        )
+
+        val footer = TextView(this)
+        val version = versionName()
+        footer.text = "TXTM8 Keyboard" + (if (version.isNotEmpty()) "  \u00B7  version $version" else "") + "\nMade in England"
+        footer.textSize = 12f
+        footer.setTextColor(look.subText)
+        footer.gravity = Gravity.CENTER
+        footer.setLineSpacing(0f, 1.2f)
+        footer.setPadding(0, dp(28), 0, dp(4))
+        root.addView(footer, LinearLayout.LayoutParams(MATCH, WRAP))
+
+        for ((name, heading) in anchors) {
+            jumpRow.addView(
+                chip(name) { pageScroll?.smoothScrollTo(0, (heading.top - dp(8)).coerceAtLeast(0)) },
+                LinearLayout.LayoutParams(WRAP, WRAP).apply { rightMargin = dp(2) },
+            )
+        }
+
         showPage(root)
     }
 
-    /** A section heading with a line of explanation under it. */
-    private fun addHeading(root: LinearLayout, name: String, blurb: String) {
-        root.addView(sectionTitle(name))
+    /** A section heading with a line of explanation under it; the heading is remembered so a chip can scroll to it. */
+    private fun addHeading(root: LinearLayout, anchors: MutableMap<String, View>, name: String, blurb: String) {
+        val heading = sectionTitle(name)
+        anchors[name] = heading
+        root.addView(heading)
         root.addView(sectionBlurb(blurb))
+    }
+
+    /** A small tappable pill that scrolls to a section. */
+    private fun chip(text: String, onClick: () -> Unit): TextView {
+        val tv = TextView(this)
+        tv.text = text.uppercase()
+        tv.textSize = 12.5f
+        tv.typeface = look.typeface
+        tv.setTextColor(look.keyText)
+        tv.gravity = Gravity.CENTER
+        tv.minHeight = dp(40)
+        tv.setPadding(dp(14), 0, dp(14), 0)
+        tv.background = look.keyBackground(density, false, 3, 3, 10)
+        tv.setOnClickListener { onClick() }
+        return tv
+    }
+
+    @Suppress("DEPRECATION")
+    private fun versionName(): String = try {
+        packageManager.getPackageInfo(packageName, 0).versionName.orEmpty()
+    } catch (e: Exception) {
+        ""
     }
 }
