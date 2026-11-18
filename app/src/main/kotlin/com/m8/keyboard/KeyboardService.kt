@@ -99,6 +99,8 @@ class KeyboardService :
         store = UserDataStore(this)
         settings = KeyboardSettings.load(this)
         kbTheme = KeyboardTheme.resolve(this, settings.theme, settings.p5Accent, settings.custom)
+        userFull = settings.defaultQwerty
+        userMode = startModeOf(settings)
         clearToken = getSharedPreferences(KeyboardSettings.PREFS, MODE_PRIVATE)
             .getLong(KeyboardSettings.KEY_CLEAR_TOKEN, 0L)
         loadEngine()
@@ -211,6 +213,9 @@ class KeyboardService :
         val s = KeyboardSettings.load(this)
         val th = KeyboardTheme.resolve(this, s.theme, s.p5Accent, s.custom)
         if (s != settings || th !== kbTheme) {
+            // A changed default applies at once; otherwise a layout or mode chosen while typing is kept.
+            if (s.defaultQwerty != settings.defaultQwerty) userFull = s.defaultQwerty
+            if (s.startMode != settings.startMode) userMode = startModeOf(s)
             settings = s
             kbTheme = th
             padView = null
@@ -226,6 +231,9 @@ class KeyboardService :
             loadEngine()
         }
     }
+
+    private fun startModeOf(s: KeyboardSettings): InputMode =
+        if (s.startMode == KeyboardSettings.START_MULTI_TAP) InputMode.MULTI_TAP else InputMode.PREDICTIVE
 
     private fun openEmoji() {
         commitWord()
@@ -364,8 +372,7 @@ class KeyboardService :
         pulse()
         session.select(index)
         commitWord()
-        insertSpace()
-        markAutoSpace()
+        addSuggestionSpace()
         updateAutoCap()
         refreshUi()
     }
@@ -713,6 +720,13 @@ class KeyboardService :
         requestHideSelf(0)
     }
 
+    /** The space after a tapped suggestion, unless the setting for it is off. */
+    private fun addSuggestionSpace() {
+        if (!settings.spaceAfterSuggestion) return
+        insertSpace()
+        markAutoSpace()
+    }
+
     /** Remembers that the space just typed was added automatically (after a tapped suggestion). */
     private fun markAutoSpace() {
         autoSpace = true
@@ -817,8 +831,7 @@ class KeyboardService :
             if (prev != null) engine.learnPair(prev, word)
             scheduleSave()
         }
-        insertSpace()
-        markAutoSpace()
+        addSuggestionSpace()
         updateAutoCap()
         refreshUi()
     }
@@ -959,7 +972,7 @@ class KeyboardService :
             raw[0].isUpperCase() -> fixed.replaceFirstChar { it.uppercaseChar() }
             else -> fixed
         }
-        if (fixed.startsWith("i'")) out = out.replaceFirstChar { it.uppercaseChar() }
+        if (settings.capitaliseI && fixed.startsWith("i'")) out = out.replaceFirstChar { it.uppercaseChar() }
         ic.deleteSurroundingText(raw.length, 0)
         ic.commitText(out, 1)
     }
@@ -998,8 +1011,7 @@ class KeyboardService :
         pulse()
         fixContraction()
         learnTrailingWord(deliberate = true)
-        insertSpace()
-        markAutoSpace()
+        addSuggestionSpace()
         updateAutoCap()
         refreshUi()
     }
@@ -1046,7 +1058,7 @@ class KeyboardService :
     }
 
     private fun displayWord(w: String): String {
-        val base = if (w == "i" || w.startsWith("i'")) w.replaceFirstChar { it.uppercaseChar() } else w
+        val base = if (settings.capitaliseI && (w == "i" || w.startsWith("i'"))) w.replaceFirstChar { it.uppercaseChar() } else w
         return caseAdjust(base)
     }
 

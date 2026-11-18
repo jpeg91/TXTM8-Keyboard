@@ -89,7 +89,11 @@ class QwertyKeypadView(
         letterKeys.clear()
         shiftKey = null
 
+        // With the swap setting, enter takes backspace's place in the bottom row and backspace goes to the end of the row above.
+        val swap = settings.swapQwertyKeys
         if (!symbolsPage) {
+            // The symbols page already starts with the digits, so only the letters page needs the extra row.
+            if (settings.qwertyNumberRow) addKeysRow("1234567890", isLetter = false)
             addKeysRow("qwertyuiop", isLetter = true)
             addKeysRow("asdfghjkl", isLetter = true, pad = 0.5f)
             val shift = makeKey(shiftLabel, 13f, action = true, actionSlot = 2)
@@ -98,11 +102,11 @@ class QwertyKeypadView(
                 listener.onQwertyShift()
             }
             shiftKey = shift
-            addKeysRow("zxcvbnm", isLetter = true, leading = shift, trailing = makeEnterKey())
+            addKeysRow("zxcvbnm", isLetter = true, leading = shift, trailing = if (swap) makeDelKey() else makeEnterKey())
         } else {
             addKeysRow("1234567890", isLetter = false)
             addKeysRow("@#\$%&-+()/", isLetter = false)
-            addKeysRow("*\"':;!?", isLetter = false, leading = makeSettingsKey(), trailing = makeEnterKey())
+            addKeysRow("*\"':;!?", isLetter = false, leading = makeSettingsKey(), trailing = if (swap) makeDelKey() else makeEnterKey())
         }
         addBottomRow()
     }
@@ -188,7 +192,7 @@ class QwertyKeypadView(
             settings.feedback(it)
             listener.onQwertyText(".", false)
         }
-        val del = makeDelKey()
+        val end = if (settings.swapQwertyKeys) makeEnterKey() else makeDelKey()
 
         row.addView(page, keyParams(1.4f))
         row.addView(pad, keyParams(1.2f))
@@ -197,7 +201,7 @@ class QwertyKeypadView(
         row.addView(comma, keyParams(1f))
         row.addView(space, keyParams(if (emoji != null) 2.4f else 3.4f))
         row.addView(period, keyParams(1f))
-        row.addView(del, keyParams(1.6f))
+        row.addView(end, keyParams(1.6f))
         addView(row, LinearLayout.LayoutParams(MATCH, WRAP))
     }
 

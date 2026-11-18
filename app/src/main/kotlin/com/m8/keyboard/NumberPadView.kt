@@ -127,8 +127,14 @@ class NumberPadView(
         top.addView(qwerty, LinearLayout.LayoutParams(dp(54), dp(barHeight)))
         top.addView(scroll, LinearLayout.LayoutParams(0, dp(barHeight)).apply { weight = 1f })
         top.addView(paste, LinearLayout.LayoutParams(dp(46), dp(barHeight)))
-        top.addView(enter, LinearLayout.LayoutParams(dp(62), dp(barHeight)))
-        top.addView(del, LinearLayout.LayoutParams(dp(56), dp(barHeight)))
+        // The swap setting puts backspace before enter; each key keeps its own width.
+        if (settings.swapPadKeys) {
+            top.addView(del, LinearLayout.LayoutParams(dp(56), dp(barHeight)))
+            top.addView(enter, LinearLayout.LayoutParams(dp(62), dp(barHeight)))
+        } else {
+            top.addView(enter, LinearLayout.LayoutParams(dp(62), dp(barHeight)))
+            top.addView(del, LinearLayout.LayoutParams(dp(56), dp(barHeight)))
+        }
         addView(top, LinearLayout.LayoutParams(MATCH, WRAP))
 
         // --- 4x3 number grid ---

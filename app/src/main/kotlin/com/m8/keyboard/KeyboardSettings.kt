@@ -28,6 +28,14 @@ data class KeyboardSettings(
     val slideGestures: Boolean = true,
     val slideSpeed: Int = 1, // 0 slow, 1 normal, 2 fast
     val custom: CustomParts = CustomParts(), // where each part of the "Custom mix" theme comes from
+    val defaultQwerty: Boolean = false, // new typing sessions open on the QWERTY keyboard instead of the number pad
+    val startMode: Int = START_PREDICTIVE, // the input mode a new typing session starts in
+    val spaceAfterSuggestion: Boolean = true, // tapping a suggestion also types a space after it
+    val capitaliseI: Boolean = true, // I, I'm, I'll and so on always get a capital I
+    val qwertyNumberRow: Boolean = false, // a row of digits above the letters on the QWERTY keyboard
+    val swapPadKeys: Boolean = false, // number pad: backspace before enter in the top bar
+    val swapQwertyKeys: Boolean = false, // QWERTY: enter and backspace trade places
+    val swapEmojiKeys: Boolean = false, // emoji page: backspace before enter in the top bar
 ) {
     /** How strong the typing pulse is, 0 (off) to 0.85. */
     val pulseStrength: Float
@@ -68,6 +76,18 @@ data class KeyboardSettings(
         const val KEY_CUSTOM_BACKGROUND = "custom_background"
         const val KEY_CUSTOM_ANIMATION = "custom_animation"
         const val KEY_CUSTOM_FONT = "custom_font"
+        const val KEY_DEFAULT_QWERTY = "default_qwerty"
+        const val KEY_START_MODE = "start_mode"
+        const val KEY_SPACE_AFTER_SUGGESTION = "space_after_suggestion"
+        const val KEY_CAPITALISE_I = "capitalise_i"
+        const val KEY_QWERTY_NUMBER_ROW = "qwerty_number_row"
+        const val KEY_SWAP_PAD = "swap_pad_keys"
+        const val KEY_SWAP_QWERTY = "swap_qwerty_keys"
+        const val KEY_SWAP_EMOJI = "swap_emoji_keys"
+
+        /** The input mode a new typing session starts in. */
+        const val START_PREDICTIVE = 0
+        const val START_MULTI_TAP = 1
 
         const val THEME_SYSTEM = 0
         const val THEME_DARK = 1
@@ -182,6 +202,14 @@ data class KeyboardSettings(
                 slideGestures = p.getBoolean(KEY_SLIDE, true),
                 slideSpeed = p.getInt(KEY_SLIDE_SPEED, 1),
                 custom = CustomParts.load(p),
+                defaultQwerty = p.getBoolean(KEY_DEFAULT_QWERTY, false),
+                startMode = p.getInt(KEY_START_MODE, START_PREDICTIVE).coerceIn(START_PREDICTIVE, START_MULTI_TAP),
+                spaceAfterSuggestion = p.getBoolean(KEY_SPACE_AFTER_SUGGESTION, true),
+                capitaliseI = p.getBoolean(KEY_CAPITALISE_I, true),
+                qwertyNumberRow = p.getBoolean(KEY_QWERTY_NUMBER_ROW, false),
+                swapPadKeys = p.getBoolean(KEY_SWAP_PAD, false),
+                swapQwertyKeys = p.getBoolean(KEY_SWAP_QWERTY, false),
+                swapEmojiKeys = p.getBoolean(KEY_SWAP_EMOJI, false),
             )
         }
     }

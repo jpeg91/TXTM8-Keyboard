@@ -346,6 +346,26 @@ class SetupActivity : ThemedScreen() {
         lookCard.addView(label("Typing pulse"))
         addPulseControls(lookCard)
 
+        // ---- Layout ----
+        addHeading(root, anchors, "Layout", "Which keyboard opens, and where the keys sit.")
+        val layoutCard = card()
+        root.addView(layoutCard)
+        addToggle(
+            layoutCard, "Default to QWERTY", KeyboardSettings.KEY_DEFAULT_QWERTY, false,
+            note = "The keyboard opens on the QWERTY layout instead of the number pad. The keyboard key still switches between them while you type. Number and phone fields always use the number pad.",
+        )
+        layoutCard.addView(divider())
+        addToggle(
+            layoutCard, "Number row on QWERTY", KeyboardSettings.KEY_QWERTY_NUMBER_ROW, false,
+            note = "Adds a row of digits above the letters. It makes the keyboard one row taller.",
+        )
+        layoutCard.addView(divider())
+        layoutCard.addView(label("Swap Enter and Backspace"))
+        layoutCard.addView(hint("A separate switch for each screen. On the number pad and the emoji page Backspace comes before Enter. On QWERTY, Enter moves to the bottom row and Backspace to the end of the row above."))
+        addToggle(layoutCard, "Number pad", KeyboardSettings.KEY_SWAP_PAD, false)
+        addToggle(layoutCard, "QWERTY keyboard", KeyboardSettings.KEY_SWAP_QWERTY, false)
+        addToggle(layoutCard, "Emoji page", KeyboardSettings.KEY_SWAP_EMOJI, false)
+
         // ---- Typing ----
         addHeading(root, anchors, "Typing", "Suggestions, capitals and punctuation.")
         val typingCard = card()
@@ -353,6 +373,11 @@ class SetupActivity : ThemedScreen() {
         addToggle(
             typingCard, "Suggest the next word", KeyboardSettings.KEY_NEXT_WORD, true,
             note = "After a word and a space, the strip offers the words that usually follow it.",
+        )
+        typingCard.addView(divider())
+        addToggle(
+            typingCard, "Add a space after a suggestion", KeyboardSettings.KEY_SPACE_AFTER_SUGGESTION, true,
+            note = "Tapping a suggestion types the word and a space. Switch off to get the word alone; the next-word suggestions then wait until you type a space.",
         )
         typingCard.addView(divider())
         addToggle(
@@ -366,6 +391,11 @@ class SetupActivity : ThemedScreen() {
         )
         typingCard.addView(divider())
         addToggle(
+            typingCard, "Capitalise I and I'm", KeyboardSettings.KEY_CAPITALISE_I, true,
+            note = "I, I'm, I'll, I've and I'd always get a capital I.",
+        )
+        typingCard.addView(divider())
+        addToggle(
             typingCard, "Fix contractions", KeyboardSettings.KEY_CONTRACTIONS, true,
             note = "When typing letter by letter, dont becomes don't and im becomes I'm.",
         )
@@ -373,6 +403,13 @@ class SetupActivity : ThemedScreen() {
         addToggle(
             typingCard, "Backspace re-opens the previous word", KeyboardSettings.KEY_REOPEN, true,
             note = "Backspace straight after a word brings its suggestions back, so you can pick another.",
+        )
+        typingCard.addView(divider())
+        addChoice(
+            typingCard, "Start typing in", KeyboardSettings.KEY_START_MODE,
+            listOf("Predictive", "Multi-tap"), listOf(KeyboardSettings.START_PREDICTIVE, KeyboardSettings.START_MULTI_TAP),
+            KeyboardSettings.START_PREDICTIVE,
+            note = "The mode the number pad starts in. Holding # still switches between them. Password fields always use multi-tap.",
         )
         typingCard.addView(divider())
         addChoice(

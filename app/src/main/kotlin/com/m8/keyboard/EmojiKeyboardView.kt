@@ -180,8 +180,14 @@ class EmojiKeyboardView(
 
         row.addView(back, LinearLayout.LayoutParams(dp(54), rowPx))
         row.addView(space, LinearLayout.LayoutParams(0, rowPx).apply { weight = 1f })
-        row.addView(enter, LinearLayout.LayoutParams(dp(62), rowPx))
-        row.addView(del, LinearLayout.LayoutParams(dp(56), rowPx))
+        // The swap setting puts backspace before enter; each key keeps its own width.
+        if (settings.swapEmojiKeys) {
+            row.addView(del, LinearLayout.LayoutParams(dp(56), rowPx))
+            row.addView(enter, LinearLayout.LayoutParams(dp(62), rowPx))
+        } else {
+            row.addView(enter, LinearLayout.LayoutParams(dp(62), rowPx))
+            row.addView(del, LinearLayout.LayoutParams(dp(56), rowPx))
+        }
         return row
     }
 
