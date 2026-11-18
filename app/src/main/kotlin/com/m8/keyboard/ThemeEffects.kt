@@ -58,6 +58,54 @@ enum class KeyStyle {
 
     /** A flat tab with a fully rounded left end and a nearly square right end, like a control panel button. */
     PILL,
+
+    /** A square key with a bracket on each side, like a text-mode "[ OK ]" button. */
+    BRACKET,
+
+    /** A faint hairline box with a bright tick in each corner, like a targeting reticle. */
+    RETICLE,
+
+    /** A square key crossed by fine horizontal scanlines, like a CRT or a stereo handheld screen. */
+    SCANLINE,
+
+    /** A square key in a double-line text-mode box, like the frames of a BIOS setup screen. */
+    FRAME,
+
+    /** A square key whose outline has split into two offset colours, with a torn band across it. */
+    GLITCH,
+
+    /** A dark key outlined in a glowing neon tube. */
+    NEON,
+
+    /** A rubber key with a soft halo of backlight behind its lettering. */
+    BACKLIT,
+
+    /** A fully rounded soap bubble with a rim and a glint. */
+    BUBBLE,
+
+    /** A dark key with a glow rising from its bottom edge, like embers or an indicator light under the key. */
+    UNDERGLOW,
+
+    /** A blossom petal: two opposite corners rounded right off, the other two nearly square. */
+    PETAL,
+
+    /** A concave, dished pill like the buttons of a 16-bit pad. */
+    DISH,
+
+    /** A convex, domed key lit from the upper left, standing on a soft shadow. */
+    DOME,
+
+    /** A flat top with a lit edge standing on a darker side wall, like a key cut from a block. */
+    SLAB,
+
+    /** A plate set into a lighter bezel, like a console button in its housing. */
+    PLATE,
+
+    /** A nearly square etched-metal plate with a brushed sheen and a silver edge. */
+    ETCHED,
+
+    /** A moulded plastic key with a shaded face and a lit-and-shadowed bevel. */
+    MOULDED,
 }
 
 /**

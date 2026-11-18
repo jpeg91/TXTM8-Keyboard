@@ -128,7 +128,8 @@ class KeyboardTheme(
             keyStyle == KeyStyle.BEVEL -> CandidateStyle.BEVEL
             keyStyle == KeyStyle.PILL -> CandidateStyle.PILL
             keyStyle == KeyStyle.CHAMFER -> CandidateStyle.CHAMFER
-            keyStyle == KeyStyle.RETRO || squareKeys || keyStyle == KeyStyle.LCD -> CandidateStyle.SQUARE
+            keyStyle == KeyStyle.RETRO || squareKeys || keyStyle == KeyStyle.LCD || keyStyle in SQUARE_STYLES ->
+                CandidateStyle.SQUARE
             keyStyle == KeyStyle.MEMPHIS -> CandidateStyle.OUTLINED_SQUARE
             keyStyle == KeyStyle.PIXEL -> CandidateStyle.PIXEL
             keyStyle == KeyStyle.NOKIA -> CandidateStyle.NOKIA
@@ -137,6 +138,11 @@ class KeyboardTheme(
         }
 
     companion object {
+        /** The key styles whose keys have square corners, so their candidate highlight does too. */
+        private val SQUARE_STYLES = setOf(
+            KeyStyle.BRACKET, KeyStyle.RETICLE, KeyStyle.SCANLINE, KeyStyle.FRAME, KeyStyle.GLITCH, KeyStyle.ETCHED,
+        )
+
         val DARK = KeyboardTheme(
             background = 0xFF15171A.toInt(),
             strip = 0xFF1E2126.toInt(),
@@ -409,6 +415,7 @@ class KeyboardTheme(
             actionText = 0xFFFFC433.toInt(),
             subText = 0xFFD98E00.toInt(),
             border = 0xFF6B4410.toInt(),
+            keyStyle = KeyStyle.BACKLIT,
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
@@ -427,6 +434,7 @@ class KeyboardTheme(
             subText = 0xFF1FB547.toInt(),
             border = 0xFF1FA040.toInt(),
             squareKeys = true,
+            keyStyle = KeyStyle.BRACKET,
             typeface = Typeface.create("monospace", Typeface.BOLD),
         )
 
@@ -445,6 +453,7 @@ class KeyboardTheme(
             subText = 0xFFC48600.toInt(),
             border = 0xFFA86F00.toInt(),
             squareKeys = true,
+            keyStyle = KeyStyle.BRACKET,
             typeface = Typeface.create("monospace", Typeface.BOLD),
         )
 
@@ -483,6 +492,7 @@ class KeyboardTheme(
             border = 0xFF7FD8E8.toInt(),
             tapEffect = TapEffectKind.BUBBLES,
             effectColours = intArrayOf(0xFFBFF3FF.toInt(), 0xFFE8FBFF.toInt(), 0xFF7FE0F0.toInt()),
+            keyStyle = KeyStyle.BUBBLE,
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
@@ -504,6 +514,7 @@ class KeyboardTheme(
             tapEffect = TapEffectKind.EMBERS,
             // Yellow-hot, then orange, then red, then dying dark red as each spark ages.
             effectColours = intArrayOf(0xFFFFE08A.toInt(), 0xFFFFA43A.toInt(), 0xFFFF5A1F.toInt(), 0xFFC21E0A.toInt()),
+            keyStyle = KeyStyle.UNDERGLOW,
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
@@ -524,6 +535,7 @@ class KeyboardTheme(
             border = 0xFFE58FA9.toInt(),
             tapEffect = TapEffectKind.PETALS,
             effectColours = intArrayOf(0xFFFF8FB0.toInt(), 0xFFFFA9C4.toInt(), 0xFFF76C9A.toInt(), 0xFFFFB7C9.toInt()),
+            keyStyle = KeyStyle.PETAL,
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
@@ -544,6 +556,7 @@ class KeyboardTheme(
             border = 0xFF2AA7D6.toInt(),
             tapEffect = TapEffectKind.RIPPLES,
             effectColours = intArrayOf(0xFF00E5FF.toInt(), 0xFFFF3DCB.toInt(), 0xFF00E5FF.toInt(), 0xFF7C4DFF.toInt()),
+            keyStyle = KeyStyle.NEON,
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
@@ -561,6 +574,7 @@ class KeyboardTheme(
             actionText = 0xFFFFFFFF.toInt(),
             subText = 0xFF3E3A55.toInt(),
             border = 0xFF7E7A94.toInt(),
+            keyStyle = KeyStyle.DISH,
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
@@ -583,6 +597,7 @@ class KeyboardTheme(
             border = 0xFF7A7A7A.toInt(),
             actionKeyColours = intArrayOf(0xFF168A45.toInt(), 0xFFC92B32.toInt(), 0xFF245AA6.toInt(), 0xFFE8C52A.toInt()),
             actionTextColours = intArrayOf(0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0xFF2A2A2E.toInt()),
+            keyStyle = KeyStyle.DISH,
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
@@ -605,6 +620,7 @@ class KeyboardTheme(
             border = 0xFF666666.toInt(),
             actionKeyColours = intArrayOf(0xFF1764B2.toInt(), 0xFFD71920.toInt(), 0xFF168A45.toInt(), 0xFFE6C51A.toInt()),
             actionTextColours = intArrayOf(0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0xFF22242A.toInt()),
+            keyStyle = KeyStyle.DOME,
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
@@ -622,6 +638,7 @@ class KeyboardTheme(
             actionText = 0xFFFFFFFF.toInt(),
             subText = 0xFFB6BAC4.toInt(),
             border = 0xFF6E727C.toInt(),
+            keyStyle = KeyStyle.SLAB,
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
@@ -639,6 +656,7 @@ class KeyboardTheme(
             actionText = 0xFFFFFFFF.toInt(),
             subText = 0xFF3E4048.toInt(),
             border = 0xFF6A6C74.toInt(),
+            keyStyle = KeyStyle.PLATE,
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
@@ -663,6 +681,7 @@ class KeyboardTheme(
             border = 0xFF003791.toInt(),
             actionKeyColours = intArrayOf(0xFF0070CC.toInt(), 0xFFE60012.toInt(), 0xFF00A651.toInt(), 0xFFE6007E.toInt()),
             actionTextColours = intArrayOf(0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0xFF0A0A0C.toInt(), 0xFFFFFFFF.toInt()),
+            keyStyle = KeyStyle.UNDERGLOW,
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
@@ -680,6 +699,7 @@ class KeyboardTheme(
             actionText = 0xFFFFFFFF.toInt(),
             subText = 0xFF5E626B.toInt(),
             border = 0xFFA8A8A4.toInt(),
+            keyStyle = KeyStyle.SLAB,
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
@@ -701,6 +721,7 @@ class KeyboardTheme(
             actionText = 0xFF1E2024.toInt(),
             subText = 0xFF5E626B.toInt(),
             border = 0xFFA8A8A4.toInt(),
+            keyStyle = KeyStyle.SLAB,
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
@@ -718,6 +739,7 @@ class KeyboardTheme(
             actionText = 0xFFFFFFFF.toInt(),
             subText = 0xFF5E626B.toInt(),
             border = 0xFFA8A8A4.toInt(),
+            keyStyle = KeyStyle.SLAB,
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
@@ -736,6 +758,7 @@ class KeyboardTheme(
             actionText = 0xFF0A0A0A.toInt(),
             subText = 0xFF9FB58A.toInt(),
             border = 0xFF4F7A25.toInt(),
+            keyStyle = KeyStyle.UNDERGLOW,
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
@@ -753,6 +776,7 @@ class KeyboardTheme(
             actionText = 0xFF2B2150.toInt(),
             subText = 0xFFD2CAF5.toInt(),
             border = 0xFF9C8FE8.toInt(),
+            keyStyle = KeyStyle.DOME,
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
@@ -838,6 +862,7 @@ class KeyboardTheme(
             ambient = AmbientKind.SCAN,
             ambientColours = intArrayOf(0x1CFFFFFF),
             cursorColour = 0xFFFFFFFF.toInt(),
+            keyStyle = KeyStyle.FRAME,
             typeface = Typeface.create("monospace", Typeface.BOLD),
         )
 
@@ -948,6 +973,7 @@ class KeyboardTheme(
             ambientColours = intArrayOf(0x55FF1A1A),
             tapEffect = TapEffectKind.GHOST,
             effectColours = intArrayOf(0xFFFF2A2A.toInt(), 0xFFFF6A6A.toInt()),
+            keyStyle = KeyStyle.SCANLINE,
             typeface = Typeface.create("monospace", Typeface.BOLD),
         )
 
@@ -1004,6 +1030,7 @@ class KeyboardTheme(
             ambientColours = intArrayOf(0xFFD8FFE0.toInt(), 0xFF22DD55.toInt()),
             tapEffect = TapEffectKind.GLYPHS,
             effectColours = intArrayOf(0xFFE6FFEA.toInt(), 0xFF33FF66.toInt(), 0xFF1FB547.toInt()),
+            keyStyle = KeyStyle.NEON,
             typeface = Typeface.create("monospace", Typeface.BOLD),
         )
 
@@ -1066,6 +1093,7 @@ class KeyboardTheme(
             actionText = 0xFFE4E7E2.toInt(),
             subText = 0xFF9AA39A.toInt(),
             border = 0xFF5A5E62.toInt(),
+            keyStyle = KeyStyle.MOULDED,
             typeface = Typeface.create("sans-serif-condensed", Typeface.BOLD),
         )
 
@@ -1113,6 +1141,7 @@ class KeyboardTheme(
             actionText = 0xFFFFFFFF.toInt(),
             subText = 0xFF3A5E60.toInt(),
             border = 0xFF8FA9AA.toInt(),
+            keyStyle = KeyStyle.MOULDED,
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
@@ -1167,6 +1196,7 @@ class KeyboardTheme(
             border = 0xFF9A5418.toInt(),
             actionKeyColours = intArrayOf(0xFF9ACD1F.toInt(), 0xFFF07A1A.toInt(), 0xFF5A5F68.toInt(), 0xFF5A5F68.toInt()),
             actionTextColours = intArrayOf(0xFF11180A.toInt(), 0xFF1A0E04.toInt(), 0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt()),
+            keyStyle = KeyStyle.BACKLIT,
             typeface = Typeface.create("sans-serif-condensed", Typeface.BOLD),
         )
 
@@ -1190,6 +1220,7 @@ class KeyboardTheme(
             subText = 0xFF2F86BF.toInt(),
             border = 0xFFA9B2BF.toInt(),
             squareKeys = true,
+            keyStyle = KeyStyle.ETCHED,
             typeface = Typeface.create("sans-serif-light", Typeface.NORMAL),
         )
 
@@ -1373,6 +1404,7 @@ class KeyboardTheme(
             ambientColours = intArrayOf(0x1E0799CF),
             tapEffect = TapEffectKind.GHOST,
             effectColours = intArrayOf(0xFF0799CF.toInt(), 0xFF51463B.toInt()),
+            keyStyle = KeyStyle.PLATE,
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
             keyLabel = 0xFFD9F4FF.toInt(),
             keySubLabel = 0xFFC4ECFA.toInt(),
@@ -1406,6 +1438,7 @@ class KeyboardTheme(
             ambientColours = intArrayOf(0x2038E8F0, 0x7AA8FFD8.toInt()),
             tapEffect = TapEffectKind.TARGET,
             effectColours = intArrayOf(0xFF7FF3FF.toInt(), 0xFFA8FFD8.toInt()),
+            keyStyle = KeyStyle.RETICLE,
             typeface = Typeface.create("monospace", Typeface.NORMAL),
         )
 
@@ -1464,6 +1497,7 @@ class KeyboardTheme(
             ambientColours = intArrayOf(0x5539FF14, 0x551E90FF, 0x55FF2BD6),
             tapEffect = TapEffectKind.GLYPHS,
             effectColours = intArrayOf(0xFF39FF14.toInt(), 0xFF1E90FF.toInt(), 0xFFFF2BD6.toInt()),
+            keyStyle = KeyStyle.GLITCH,
             typeface = Typeface.create("monospace", Typeface.BOLD),
         )
 
@@ -1493,6 +1527,7 @@ class KeyboardTheme(
             ambientColours = intArrayOf(0x1A36FF5A, 0xFFB8BDB8.toInt(), 0xFFD8272B.toInt()),
             tapEffect = TapEffectKind.BLOCKS,
             effectColours = intArrayOf(0xFF7FE57F.toInt(), 0xFFB8BDB8.toInt(), 0xFFD8272B.toInt()),
+            keyStyle = KeyStyle.SCANLINE,
             typeface = Typeface.create("monospace", Typeface.NORMAL),
         )
 

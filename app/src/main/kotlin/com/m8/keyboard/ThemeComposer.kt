@@ -23,7 +23,12 @@ object ThemeComposer {
     private val cache = HashMap<List<KeyboardTheme?>, KeyboardTheme>()
 
     /** The key styles that draw an outline and the ones that draw a shadow or edge, in the theme's own colours. */
-    private val OUTLINED = setOf(KeyStyle.LCD, KeyStyle.MEMPHIS, KeyStyle.CHAMFER, KeyStyle.SLANTED)
+    private val OUTLINED = setOf(
+        KeyStyle.LCD, KeyStyle.MEMPHIS, KeyStyle.CHAMFER, KeyStyle.SLANTED,
+        KeyStyle.BRACKET, KeyStyle.RETICLE, KeyStyle.SCANLINE, KeyStyle.FRAME, KeyStyle.GLITCH, KeyStyle.NEON,
+        KeyStyle.BACKLIT, KeyStyle.BUBBLE, KeyStyle.UNDERGLOW, KeyStyle.PETAL, KeyStyle.DISH, KeyStyle.PLATE,
+        KeyStyle.ETCHED, KeyStyle.MOULDED,
+    )
     private val SHADOWED = setOf(KeyStyle.LCD, KeyStyle.MEMPHIS, KeyStyle.NOKIA, KeyStyle.PIXEL, KeyStyle.SLANTED)
 
     @Synchronized

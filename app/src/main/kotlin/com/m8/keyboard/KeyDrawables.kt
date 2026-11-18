@@ -1398,6 +1398,13 @@ fun KeyboardTheme.keyBackground(
     val normal = keyColor ?: if (action) actionFill(actionSlot) else key
     val pressed = pressedKeyColor ?: if (action) actionFillPressed(actionSlot) else keyPressed
 
+    // The corner radius for the styles that round their keys (none when the theme asks for square keys).
+    val corner = if (squareKeys) 0f else cornerDp * density
+
+    // The wide end keys of an indented QWERTY row pull their shape in, so the lettering stays centred on it.
+    fun framed(shape: Drawable): Drawable =
+        if (leftFrac > 0f || rightFrac > 0f) InsetDrawable(shape, leftFrac, 0f, rightFrac, 0f) else shape
+
     fun layer(color: Int, isPressed: Boolean = false): Drawable {
         when (keyStyle) {
             KeyStyle.GLOSS -> return GlossKeyDrawable(
@@ -1484,6 +1491,72 @@ fun KeyboardTheme.keyBackground(
                 shadowOffset = 2f * density,
                 leftFrac = leftFrac,
                 rightFrac = rightFrac,
+            )
+            KeyStyle.BRACKET -> return framed(
+                BracketKeyDrawable(color, border, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.RETICLE -> return framed(
+                ReticleKeyDrawable(color, border, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.SCANLINE -> return framed(
+                ScanlineKeyDrawable(color, border, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.FRAME -> return framed(
+                FrameKeyDrawable(color, border, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.GLITCH -> return framed(
+                GlitchKeyDrawable(color, border, accent, keySub, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.NEON -> return framed(
+                NeonKeyDrawable(
+                    color, if (border != 0) border else accent, corner, isPressed,
+                    gapXDp * density, gapYDp * density, density,
+                ),
+            )
+            KeyStyle.BACKLIT -> return framed(
+                BacklitKeyDrawable(
+                    color, if (action) lighten(color, 0.35f) else keyText, border, corner, isPressed,
+                    gapXDp * density, gapYDp * density, density,
+                ),
+            )
+            KeyStyle.BUBBLE -> return framed(
+                BubbleKeyDrawable(
+                    color, if (border != 0) border else lighten(color, 0.5f), isPressed,
+                    gapXDp * density, gapYDp * density, density,
+                ),
+            )
+            KeyStyle.UNDERGLOW -> return framed(
+                UnderglowKeyDrawable(
+                    color, accent, border, corner * 0.8f, isPressed,
+                    gapXDp * density, gapYDp * density, density,
+                ),
+            )
+            KeyStyle.PETAL -> return framed(
+                PetalKeyDrawable(color, border, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.DISH -> return framed(
+                DishKeyDrawable(color, border, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.DOME -> return framed(
+                DomeKeyDrawable(
+                    color, border, corner * 1.3f, isPressed,
+                    gapXDp * density, gapYDp * density, density,
+                ),
+            )
+            KeyStyle.SLAB -> return framed(
+                SlabKeyDrawable(
+                    color, border, if (squareKeys) 0f else 5f * density, isPressed,
+                    gapXDp * density, gapYDp * density, density,
+                ),
+            )
+            KeyStyle.PLATE -> return framed(
+                PlateKeyDrawable(color, border, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.ETCHED -> return framed(
+                EtchedKeyDrawable(color, border, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.MOULDED -> return framed(
+                MouldedKeyDrawable(color, border, corner, isPressed, gapXDp * density, gapYDp * density, density),
             )
             KeyStyle.DEFAULT -> Unit
         }
