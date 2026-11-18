@@ -36,7 +36,7 @@ class StableScrollView(context: Context) : ScrollView(context) {
         postDelayed(release, ms)
     }
 
-    override fun requestChildRectangleOnScreen(child: View?, rectangle: Rect?, immediate: Boolean): Boolean =
+    override fun requestChildRectangleOnScreen(child: View, rectangle: Rect, immediate: Boolean): Boolean =
         if (holding) false else super.requestChildRectangleOnScreen(child, rectangle, immediate)
 
     override fun requestChildFocus(child: View?, focused: View?) {
