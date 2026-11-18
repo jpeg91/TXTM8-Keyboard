@@ -2,11 +2,15 @@
 package com.m8.keyboard
 
 import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.drawable.Drawable
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
 import android.text.style.RelativeSizeSpan
 import android.view.Gravity
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -22,9 +26,12 @@ private const val MATCH = ViewGroup.LayoutParams.MATCH_PARENT
 // KeyboardTheme.keyBackground), so there are no dead zones between keys.
 private const val GAP_DP = 3
 
+/** How long past the long press the 1 key must be held for the symbol page to open (shorter than the multi-tap timeout). */
+private const val ONE_HOLD_EXTRA_MS = 350L
+
 /**
  * The number pad: [keyboard icon] [candidate strip] [paste] [enter] [backspace] on top, followed by
- * (in the RAZR theme: the suggestion screen, then the soft keys and navigation ring), then a 4x3 key grid.
+ * a 4x3 key grid.
  * The grid can be swapped for a symbol picker with [showSymbols].
  */
 class NumberPadView(
@@ -40,13 +47,15 @@ class NumberPadView(
         fun onKeypadBackspace()
         fun onKeypadBackspaceSlide(steps: Int)
         fun onKeypadBackspaceSlideEnd(delete: Boolean)
+        fun onKeypadBackspaceFlick()
+        fun onKeypadOneHeld()
         fun onKeypadEnter()
-        fun onKeypadCursorMove(steps: Int)
+        fun onKeypadCursorMove(steps: Int, startDirection: Int)
         fun onKeypadPaste()
         fun onKeypadCopy()
+        fun onKeypadPasteSlide(steps: Int, startDirection: Int)
         fun onKeypadSettings()
         fun onKeypadCandidate(index: Int)
-        fun onKeypadCandidateMove(index: Int)
         fun onKeypadCandidateLong(index: Int)
         fun onKeypadSymbol(symbol: String)
         fun onKeypadQwerty()
@@ -57,7 +66,7 @@ class NumberPadView(
     private val scroll = HorizontalScrollView(context)
     private val grid = LinearLayout(context)
     private val symbolPanel = LinearLayout(context)
-    private val pulseBackground = PulseBackground(theme.backgroundDrawable(this), theme.accent, settings.pulseStrength)
+    private val layers = ThemeLayers(this, theme, settings)
     private lateinit var hashKey: TextView
     private var candidateWords: List<String> = emptyList()
     private var selectedCandidate: Int = -1
@@ -66,18 +75,19 @@ class NumberPadView(
 
     init {
         orientation = VERTICAL
-        background = pulseBackground
+        background = layers.background
+        layers.foreground?.let { foreground = it }
         setPadding(0, dp(4), 0, 0) // no side padding: the outer keys reach the screen edge
 
         // --- top bar: QWERTY | candidates | PASTE | ENTER | DEL ---
         strip.orientation = HORIZONTAL
         scroll.isHorizontalScrollBarEnabled = false
-        if (theme.isRazr) scroll.background = RazrDisplayDrawable(density()) else scroll.setBackgroundColor(theme.strip)
+        scroll.background = theme.stripDrawable(context.resources.displayMetrics.density)
         scroll.addView(strip, FrameLayout.LayoutParams(WRAP, MATCH))
 
-        val barHeight = if (theme.isRazr) 44 else 52
+        val barHeight = 52
 
-        val del = theme.iconKey(context, KeyIcon.BACKSPACE, true, GAP_DP, GAP_DP, 10, "Backspace")
+        val del = theme.iconKey(context, KeyIcon.BACKSPACE, true, GAP_DP, GAP_DP, 10, "Backspace", actionSlot = 1)
         // Tap or hold to delete; slide left to select text and let go to delete it.
         del.setOnTouchListener(
             BackspaceTouch(
@@ -85,69 +95,54 @@ class NumberPadView(
                 onDelete = { listener.onKeypadBackspace() },
                 onSlide = { listener.onKeypadBackspaceSlide(it) },
                 onSlideEnd = { listener.onKeypadBackspaceSlideEnd(it) },
+                onFlick = { listener.onKeypadBackspaceFlick() },
             ),
         )
 
         val paste = theme.iconKey(context, KeyIcon.PASTE, false, GAP_DP, GAP_DP, 10, "Paste")
-        paste.setOnClickListener {
-            settings.feedback(it)
-            listener.onKeypadPaste()
-        }
-        // Hold paste to copy the selected text.
-        paste.setOnLongClickListener {
-            settings.feedback(it, isLong = true)
-            listener.onKeypadCopy()
-            true
-        }
-
-        if (theme.isRazr) {
-            // The suggestion strip is the phone's screen; below it, the V3's soft keys and
-            // navigation ring (keyboard switch, enter, and candidate navigation).
-            val screen = newRow()
-            screen.gravity = Gravity.CENTER_VERTICAL
-            screen.addView(scroll, LinearLayout.LayoutParams(0, dp(barHeight)).apply { weight = 1f })
-            screen.addView(paste, LinearLayout.LayoutParams(dp(46), dp(barHeight)))
-            screen.addView(del, LinearLayout.LayoutParams(dp(60), dp(barHeight)))
-            addView(screen, LinearLayout.LayoutParams(MATCH, WRAP))
-
-            val cluster = RazrControlCluster(
-                context,
+        // Tap to paste. Hold and let go to copy the selection. Hold and slide to select from the cursor.
+        paste.setOnTouchListener(
+            PasteTouch(
                 settings,
-                onQwerty = { listener.onKeypadQwerty() },
-                onEnter = { listener.onKeypadEnter() },
-                onMove = { delta -> moveCandidate(delta) },
-                onSelect = { selectCandidate() },
-            )
-            addView(cluster, LinearLayout.LayoutParams(MATCH, dp(68)))
+                onPaste = { listener.onKeypadPaste() },
+                onCopy = { listener.onKeypadCopy() },
+                onSelect = { steps, dir -> listener.onKeypadPasteSlide(steps, dir) },
+            ),
+        )
+
+        val qwerty = theme.iconKey(context, KeyIcon.KEYBOARD, false, GAP_DP, GAP_DP, 10, "Full keyboard")
+        qwerty.setOnClickListener {
+            settings.feedback(it)
+            listener.onKeypadQwerty()
+        }
+
+        val enter = theme.iconKey(context, KeyIcon.ENTER, true, GAP_DP, GAP_DP, 10, "Enter")
+        enter.setOnClickListener {
+            settings.feedback(it)
+            listener.onKeypadEnter()
+        }
+
+        val top = newRow()
+        top.gravity = Gravity.CENTER_VERTICAL
+        top.addView(qwerty, LinearLayout.LayoutParams(dp(54), dp(barHeight)))
+        top.addView(scroll, LinearLayout.LayoutParams(0, dp(barHeight)).apply { weight = 1f })
+        top.addView(paste, LinearLayout.LayoutParams(dp(46), dp(barHeight)))
+        // The swap setting puts backspace before enter; each key keeps its own width.
+        if (settings.swapPadKeys) {
+            top.addView(del, LinearLayout.LayoutParams(dp(56), dp(barHeight)))
+            top.addView(enter, LinearLayout.LayoutParams(dp(62), dp(barHeight)))
         } else {
-            val qwerty = theme.iconKey(context, KeyIcon.KEYBOARD, false, GAP_DP, GAP_DP, 10, "Full keyboard")
-            qwerty.setOnClickListener {
-                settings.feedback(it)
-                listener.onKeypadQwerty()
-            }
-
-            val enter = theme.iconKey(context, KeyIcon.ENTER, true, GAP_DP, GAP_DP, 10, "Enter")
-            enter.setOnClickListener {
-                settings.feedback(it)
-                listener.onKeypadEnter()
-            }
-
-            val top = newRow()
-            top.gravity = Gravity.CENTER_VERTICAL
-            top.addView(qwerty, LinearLayout.LayoutParams(dp(54), dp(barHeight)))
-            top.addView(scroll, LinearLayout.LayoutParams(0, dp(barHeight)).apply { weight = 1f })
-            top.addView(paste, LinearLayout.LayoutParams(dp(46), dp(barHeight)))
             top.addView(enter, LinearLayout.LayoutParams(dp(62), dp(barHeight)))
             top.addView(del, LinearLayout.LayoutParams(dp(56), dp(barHeight)))
-            addView(top, LinearLayout.LayoutParams(MATCH, WRAP))
         }
+        addView(top, LinearLayout.LayoutParams(MATCH, WRAP))
 
         // --- 4x3 number grid ---
         grid.orientation = VERTICAL
-        for ((rowIndex, rowKeys) in listOf("123", "456", "789", "*0#").withIndex()) {
+        for (rowKeys in listOf("123", "456", "789", "*0#")) {
             val r = newRow()
-            for ((columnIndex, k) in rowKeys.withIndex()) {
-                val key = makeKey(labelFor(k), razrRow = rowIndex, razrColumn = columnIndex)
+            for (k in rowKeys) {
+                val key = makeKey(labelFor(k), keyColour = theme.keyCycle?.let { it[(k - '0').mod(it.size)] })
                 key.setOnClickListener {
                     settings.feedback(it)
                     listener.onKeypadKey(k)
@@ -160,7 +155,9 @@ class NumberPadView(
                 if (k == '#') hashKey = key
                 if (k in '2'..'9') letterKeys.add(Pair(key, k))
                 // Slide along the space key to move the cursor.
-                if (k == '0') key.setOnTouchListener(SpaceSlideTouch(settings) { listener.onKeypadCursorMove(it) })
+                if (k == '0') key.setOnTouchListener(SpaceSlideTouch(settings) { steps, dir -> listener.onKeypadCursorMove(steps, dir) })
+                // Keep holding 1 after it has typed a 1, and the symbol page opens.
+                if (k == '1') key.setOnTouchListener(LongerHoldTouch(ONE_HOLD_EXTRA_MS) { listener.onKeypadOneHeld() })
                 r.addView(key, keyParams())
             }
             grid.addView(r, LinearLayout.LayoutParams(MATCH, WRAP))
@@ -174,7 +171,7 @@ class NumberPadView(
         for (rowSymbols in symbolRows) {
             val r = newRow()
             for (ch in rowSymbols) {
-                val key = makeKey(ch.toString())
+                val key = makeKey(ch.toString(), keyColour = theme.keyCycle?.let { it[ch.code.mod(it.size)] })
                 key.setOnClickListener {
                     settings.feedback(it)
                     listener.onKeypadSymbol(ch.toString())
@@ -184,7 +181,7 @@ class NumberPadView(
             symbolPanel.addView(r, LinearLayout.LayoutParams(MATCH, WRAP))
         }
         val bottom = newRow()
-        val back = makeKey("ABC", 16f, action = true)
+        val back = makeKey("ABC", 16f, action = true, actionSlot = 2)
         back.setOnClickListener {
             settings.feedback(it)
             showSymbols(false)
@@ -213,7 +210,19 @@ class NumberPadView(
     }
 
     /** Flashes the background in the accent colour (a character was typed). */
-    fun pulse() = pulseBackground.pulse()
+    /** Starts the tap animation (bubbles, embers and so on) wherever a finger touches down. */
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        KeyTouch.at = android.os.SystemClock.uptimeMillis()
+        val action = ev.actionMasked
+        if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
+            val x = ev.getX(ev.actionIndex)
+            val y = ev.getY(ev.actionIndex)
+            layers.touchDown(x, y)
+        }
+        return super.dispatchTouchEvent(ev)
+    }
+
+    fun pulse() = layers.pulse()
 
     /** Swaps the number grid for the symbol picker (or back). */
     fun showSymbols(show: Boolean) {
@@ -228,7 +237,11 @@ class NumberPadView(
         selectedCandidate = selected
         strip.removeAllViews()
         words.forEachIndexed { i, w ->
-            val tv = TextView(context)
+            val tv: TextView = if (theme.candidateFont == CandidateFont.PIXEL) {
+                GameBoyPixelTextView(context)
+            } else {
+                TextView(context)
+            }
             tv.text = w
             tv.textSize = 18f
             tv.typeface = theme.typeface
@@ -236,10 +249,10 @@ class NumberPadView(
             tv.minWidth = dp(48) // short words like "I" or "a" stay easy to tap
             tv.setPadding(dp(12), 0, dp(12), 0)
             if (i == selected) {
-                tv.setTextColor(theme.accentText)
+                tv.setTextColor(theme.selectedCandidateText)
                 tv.background = theme.candidateBackground(density())
             } else {
-                tv.setTextColor(theme.text)
+                tv.setTextColor(theme.candidateText)
             }
             tv.setOnClickListener { listener.onKeypadCandidate(i) }
             tv.setOnLongClickListener {
@@ -271,29 +284,12 @@ class NumberPadView(
 
     // ---- helpers ----
 
-    private fun moveCandidate(delta: Int) {
-        if (candidateWords.isEmpty()) return
-        val next = (selectedCandidate + delta).coerceIn(0, candidateWords.lastIndex)
-        if (next == selectedCandidate) return
-        selectedCandidate = next
-        setCandidates(candidateWords, next)
-        listener.onKeypadCandidateMove(next)
-        settings.feedback(this)
-    }
-
-    private fun selectCandidate() {
-        if (selectedCandidate in candidateWords.indices) {
-            listener.onKeypadCandidate(selectedCandidate)
-            settings.feedback(this)
-        }
-    }
-
     private fun density(): Float = resources.displayMetrics.density
 
     private fun dp(v: Int): Int = (v * density()).toInt()
 
     /** The red and purple themes shout their labels. */
-    private fun caps(s: String): String = if (theme.isSlanted) s.uppercase() else s
+    private fun caps(s: String): String = if (theme.shoutLabels) s.uppercase() else s
 
     private fun newRow(): LinearLayout {
         val r = LinearLayout(context)
@@ -312,37 +308,139 @@ class NumberPadView(
         '0' -> twoLine("0", caps("space"))
         '*' -> twoLine("*", caps("next"))
         '#' -> twoLine("#", "")
-        else -> twoLine(k.toString(), KeypadMap.keyLetters.getValue(k).let { if (upperLetters) it.uppercase() else it })
+        else -> twoLine(
+            k.toString(),
+            KeypadMap.keyLetters.getValue(k).let { if (upperLetters) it.uppercase() else it },
+            if (theme.rainbowLetters) gbaLetterColour(k) else null,
+        )
     }
 
-    private fun twoLine(big: String, small: String): CharSequence {
+    private fun twoLine(big: String, small: String, smallColour: Int? = null): CharSequence {
         if (small.isEmpty()) return big
         val s = SpannableString("$big\n$small")
         s.setSpan(RelativeSizeSpan(0.55f), big.length + 1, s.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-        s.setSpan(ForegroundColorSpan(theme.subText), big.length + 1, s.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        s.setSpan(ForegroundColorSpan(smallColour ?: theme.keySub), big.length + 1, s.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         return s
+    }
+
+    /** Bright GBA letter legends; yellow is deliberately excluded for contrast. */
+    private fun gbaLetterColour(key: Char): Int = when (key) {
+        '2', '5' -> GBA_PIXEL_COLOURS[0] // pink-red
+        '3', '6' -> GBA_PIXEL_COLOURS[2] // mint
+        '4', '7' -> GBA_PIXEL_COLOURS[3] // blue
+        '8' -> GBA_PIXEL_COLOURS[4] // violet
+        '9' -> GBA_PIXEL_COLOURS[5] // orange
+        else -> GBA_PIXEL_COLOURS[0]
     }
 
     private fun makeKey(
         label: CharSequence,
         size: Float = 20f,
         action: Boolean = false,
-        razrRow: Int = -1,
-        razrColumn: Int = -1,
+        actionSlot: Int = 0,
+        keyColour: Int? = null,
     ): TextView {
         val tv = TextView(context)
         tv.text = label
         tv.textSize = size
         tv.typeface = theme.typeface
         tv.gravity = Gravity.CENTER
-        tv.setTextColor(if (action) theme.actionText else theme.text)
+        tv.setTextColor(if (action) theme.actionLabel(actionSlot) else theme.keyText)
         tv.background = theme.keyBackground(
             density(), action, GAP_DP, GAP_DP, 10,
-            razrRow = razrRow,
-            razrColumn = razrColumn,
+            keyColor = keyColour, pressedKeyColor = keyColour?.let { darken(it, 0.22f) }, actionSlot = actionSlot,
         )
-        theme.bindKeyGlow(tv)
         return tv
     }
 }
 
+
+
+/** 5x7, one-colour bitmap lettering for the original Game Boy suggestion LCD. */
+private class GameBoyPixelTextView(context: Context) : TextView(context) {
+    private val pixelPaint = Paint().apply {
+        style = Paint.Style.FILL
+        isAntiAlias = false
+        isFilterBitmap = false
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        val value = text?.toString()?.uppercase().orEmpty()
+        if (value.isEmpty()) return
+
+        val availableWidth = (width - paddingLeft - paddingRight).toFloat()
+        val availableHeight = (height - paddingTop - paddingBottom).toFloat()
+        if (availableWidth <= 0f || availableHeight <= 0f) return
+
+        // Each glyph is 5x7 pixels, with one blank pixel between characters.
+        val columns = value.length * 6 - 1
+        val pixel = minOf(textSize / 7f, availableHeight / 7f, availableWidth / columns.coerceAtLeast(1))
+        if (pixel <= 0f) return
+        val glyphWidth = columns * pixel
+        val left = paddingLeft + (availableWidth - glyphWidth) / 2f
+        val top = paddingTop + (availableHeight - 7f * pixel) / 2f
+
+        pixelPaint.color = currentTextColor
+        value.forEachIndexed { index, character ->
+            val glyph = GLYPHS[character] ?: GLYPHS['?']!!
+            val x = left + index * 6f * pixel
+            glyph.forEachIndexed { row, bits ->
+                bits.forEachIndexed { column, bit ->
+                    if (bit == '1') {
+                        val l = x + column * pixel
+                        val t = top + row * pixel
+                        canvas.drawRect(l, t, l + pixel, t + pixel, pixelPaint)
+                    }
+                }
+            }
+        }
+    }
+
+    companion object {
+        private val GLYPHS = mapOf(
+            'A' to arrayOf("01110", "10001", "10001", "11111", "10001", "10001", "10001"),
+            'B' to arrayOf("11110", "10001", "10001", "11110", "10001", "10001", "11110"),
+            'C' to arrayOf("01111", "10000", "10000", "10000", "10000", "10000", "01111"),
+            'D' to arrayOf("11110", "10001", "10001", "10001", "10001", "10001", "11110"),
+            'E' to arrayOf("11111", "10000", "10000", "11110", "10000", "10000", "11111"),
+            'F' to arrayOf("11111", "10000", "10000", "11110", "10000", "10000", "10000"),
+            'G' to arrayOf("01111", "10000", "10000", "10111", "10001", "10001", "01111"),
+            'H' to arrayOf("10001", "10001", "10001", "11111", "10001", "10001", "10001"),
+            'I' to arrayOf("11111", "00100", "00100", "00100", "00100", "00100", "11111"),
+            'J' to arrayOf("00111", "00010", "00010", "00010", "10010", "10010", "01100"),
+            'K' to arrayOf("10001", "10010", "10100", "11000", "10100", "10010", "10001"),
+            'L' to arrayOf("10000", "10000", "10000", "10000", "10000", "10000", "11111"),
+            'M' to arrayOf("10001", "11011", "10101", "10101", "10001", "10001", "10001"),
+            'N' to arrayOf("10001", "11001", "11001", "10101", "10011", "10011", "10001"),
+            'O' to arrayOf("01110", "10001", "10001", "10001", "10001", "10001", "01110"),
+            'P' to arrayOf("11110", "10001", "10001", "11110", "10000", "10000", "10000"),
+            'Q' to arrayOf("01110", "10001", "10001", "10001", "10101", "10010", "01101"),
+            'R' to arrayOf("11110", "10001", "10001", "11110", "10100", "10010", "10001"),
+            'S' to arrayOf("01111", "10000", "10000", "01110", "00001", "00001", "11110"),
+            'T' to arrayOf("11111", "00100", "00100", "00100", "00100", "00100", "00100"),
+            'U' to arrayOf("10001", "10001", "10001", "10001", "10001", "10001", "01110"),
+            'V' to arrayOf("10001", "10001", "10001", "10001", "10001", "01010", "00100"),
+            'W' to arrayOf("10001", "10001", "10001", "10101", "10101", "10101", "01010"),
+            'X' to arrayOf("10001", "10001", "01010", "00100", "01010", "10001", "10001"),
+            'Y' to arrayOf("10001", "10001", "01010", "00100", "00100", "00100", "00100"),
+            'Z' to arrayOf("11111", "00001", "00010", "00100", "01000", "10000", "11111"),
+            '0' to arrayOf("01110", "10001", "10011", "10101", "11001", "10001", "01110"),
+            '1' to arrayOf("00100", "01100", "00100", "00100", "00100", "00100", "01110"),
+            '2' to arrayOf("01110", "10001", "00001", "00010", "00100", "01000", "11111"),
+            '3' to arrayOf("11110", "00001", "00001", "01110", "00001", "00001", "11110"),
+            '4' to arrayOf("00010", "00110", "01010", "10010", "11111", "00010", "00010"),
+            '5' to arrayOf("11111", "10000", "10000", "11110", "00001", "00001", "11110"),
+            '6' to arrayOf("01110", "10000", "10000", "11110", "10001", "10001", "01110"),
+            '7' to arrayOf("11111", "00001", "00010", "00100", "01000", "01000", "01000"),
+            '8' to arrayOf("01110", "10001", "10001", "01110", "10001", "10001", "01110"),
+            '9' to arrayOf("01110", "10001", "10001", "01111", "00001", "00001", "01110"),
+            '.' to arrayOf("00000", "00000", "00000", "00000", "00000", "00110", "00110"),
+            ',' to arrayOf("00000", "00000", "00000", "00000", "00110", "00100", "01000"),
+            '!' to arrayOf("00100", "00100", "00100", "00100", "00100", "00000", "00100"),
+            '?' to arrayOf("01110", "10001", "00001", "00010", "00100", "00000", "00100"),
+            '-' to arrayOf("00000", "00000", "00000", "11111", "00000", "00000", "00000"),
+            '\'' to arrayOf("00100", "00100", "01000", "00000", "00000", "00000", "00000"),
+            ' ' to arrayOf("00000", "00000", "00000", "00000", "00000", "00000", "00000"),
+        )
+    }
+}

@@ -3,7 +3,9 @@ package com.m8.keyboard
 
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.drawable.Drawable
 import android.view.Gravity
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.LinearLayout
@@ -31,9 +33,11 @@ class QwertyKeypadView(
         fun onQwertyBackspace()
         fun onQwertyBackspaceSlide(steps: Int)
         fun onQwertyBackspaceSlideEnd(delete: Boolean)
-        fun onQwertyCursorMove(steps: Int)
+        fun onQwertyBackspaceFlick()
+        fun onQwertyCursorMove(steps: Int, startDirection: Int)
         fun onQwertyPaste()
         fun onQwertyCopy()
+        fun onQwertyPasteSlide(steps: Int, startDirection: Int)
         fun onQwertySettings()
         fun onQwertyEnter()
         fun onQwertyShift()
@@ -41,7 +45,7 @@ class QwertyKeypadView(
         fun onQwertyEmoji()
     }
 
-    private val pulseBackground = PulseBackground(theme.backgroundDrawable(this), theme.accent, settings.pulseStrength)
+    private val layers = ThemeLayers(this, theme, settings)
     private val letterKeys = ArrayList<Pair<TextView, Char>>()
     private var shiftKey: TextView? = null
     private var shiftLabel = "abc"
@@ -50,13 +54,26 @@ class QwertyKeypadView(
 
     init {
         orientation = VERTICAL
-        background = pulseBackground
+        background = layers.background
+        layers.foreground?.let { foreground = it }
         setPadding(0, dp(4), 0, 0) // no side padding: the outer keys reach the screen edge
         buildPage()
     }
 
     /** Flashes the background in the accent colour (a character was typed). */
-    fun pulse() = pulseBackground.pulse()
+    /** Starts the tap animation (bubbles, embers and so on) wherever a finger touches down. */
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        KeyTouch.at = android.os.SystemClock.uptimeMillis()
+        val action = ev.actionMasked
+        if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
+            val x = ev.getX(ev.actionIndex)
+            val y = ev.getY(ev.actionIndex)
+            layers.touchDown(x, y)
+        }
+        return super.dispatchTouchEvent(ev)
+    }
+
+    fun pulse() = layers.pulse()
 
     /** [label] is the shift key text (abc / Abc / ABC); [upper] shows capital letters on the keys. */
     fun setCase(label: String, upper: Boolean) {
@@ -73,20 +90,24 @@ class QwertyKeypadView(
         letterKeys.clear()
         shiftKey = null
 
+        // With the swap setting, enter takes backspace's place in the bottom row and backspace goes to the end of the row above.
+        val swap = settings.swapQwertyKeys
         if (!symbolsPage) {
+            // The symbols page already starts with the digits, so only the letters page needs the extra row.
+            if (settings.qwertyNumberRow) addKeysRow("1234567890", isLetter = false)
             addKeysRow("qwertyuiop", isLetter = true)
             addKeysRow("asdfghjkl", isLetter = true, pad = 0.5f)
-            val shift = makeKey(shiftLabel, 13f, action = true)
+            val shift = makeKey(shiftLabel, 13f, action = true, actionSlot = 2)
             shift.setOnClickListener {
                 settings.feedback(it)
                 listener.onQwertyShift()
             }
             shiftKey = shift
-            addKeysRow("zxcvbnm", isLetter = true, leading = shift, trailing = makeEnterKey())
+            addKeysRow("zxcvbnm", isLetter = true, leading = shift, trailing = if (swap) makeDelKey() else makeEnterKey())
         } else {
             addKeysRow("1234567890", isLetter = false)
             addKeysRow("@#\$%&-+()/", isLetter = false)
-            addKeysRow("*\"':;!?", isLetter = false, leading = makeSettingsKey(), trailing = makeEnterKey())
+            addKeysRow("*\"':;!?", isLetter = false, leading = makeSettingsKey(), trailing = if (swap) makeDelKey() else makeEnterKey())
         }
         addBottomRow()
     }
@@ -108,7 +129,12 @@ class QwertyKeypadView(
             val weight = 1f + (if (first) pad else 0f) + (if (last) pad else 0f)
             val leftFrac = if (first) pad / weight else 0f
             val rightFrac = if (last) pad / weight else 0f
-            val key = makeKey(if (isLetter) shown(ch) else ch.toString(), 20f, leftFrac, rightFrac)
+            val keyColour = when {
+                theme.rainbowLetters && isLetter -> gbaKeyColour(ch)
+                isLetter -> theme.keyCycle?.let { it[(ch.lowercaseChar() - 'a').mod(it.size)] }
+                else -> theme.keyCycle?.let { it[ch.code.mod(it.size)] } // symbols and digits take the colours too
+            }
+            val key = makeKey(if (isLetter) shown(ch) else ch.toString(), 20f, leftFrac, rightFrac, keyColour = keyColour)
             key.setOnClickListener {
                 settings.feedback(it)
                 listener.onQwertyText(ch.toString(), isLetter)
@@ -140,35 +166,34 @@ class QwertyKeypadView(
             listener.onQwertyText(",", false)
         }
         val paste = theme.iconKey(context, KeyIcon.PASTE, false, GAP_X_DP, GAP_Y_DP, 8, "Paste")
-        paste.setOnClickListener {
-            settings.feedback(it)
-            listener.onQwertyPaste()
-        }
-        // Hold paste to copy the selected text.
-        paste.setOnLongClickListener {
-            settings.feedback(it, isLong = true)
-            listener.onQwertyCopy()
-            true
-        }
+        // Tap to paste. Hold and let go to copy the selection. Hold and slide to select from the cursor.
+        paste.setOnTouchListener(
+            PasteTouch(
+                settings,
+                onPaste = { listener.onQwertyPaste() },
+                onCopy = { listener.onQwertyCopy() },
+                onSelect = { steps, dir -> listener.onQwertyPasteSlide(steps, dir) },
+            ),
+        )
         // The symbols page also has the emoji key.
         val emoji = if (symbolsPage) makeKey(";)", 14f) else null
         emoji?.setOnClickListener {
             settings.feedback(it)
             listener.onQwertyEmoji()
         }
-        val space = makeKey(if (theme.isSlanted) "SPACE" else "space", 14f)
+        val space = makeKey(if (theme.shoutLabels) "SPACE" else "space", 14f)
         space.setOnClickListener {
             settings.feedback(it)
             listener.onQwertySpace()
         }
         // Slide along the space key to move the cursor.
-        space.setOnTouchListener(SpaceSlideTouch(settings) { listener.onQwertyCursorMove(it) })
+        space.setOnTouchListener(SpaceSlideTouch(settings) { steps, dir -> listener.onQwertyCursorMove(steps, dir) })
         val period = makeKey(".")
         period.setOnClickListener {
             settings.feedback(it)
             listener.onQwertyText(".", false)
         }
-        val del = makeDelKey()
+        val end = if (settings.swapQwertyKeys) makeEnterKey() else makeDelKey()
 
         row.addView(page, keyParams(1.4f))
         row.addView(pad, keyParams(1.2f))
@@ -177,12 +202,12 @@ class QwertyKeypadView(
         row.addView(comma, keyParams(1f))
         row.addView(space, keyParams(if (emoji != null) 2.4f else 3.4f))
         row.addView(period, keyParams(1f))
-        row.addView(del, keyParams(1.6f))
+        row.addView(end, keyParams(1.6f))
         addView(row, LinearLayout.LayoutParams(MATCH, WRAP))
     }
 
     private fun makeDelKey(): TextView {
-        val del = theme.iconKey(context, KeyIcon.BACKSPACE, true, GAP_X_DP, GAP_Y_DP, 8, "Backspace")
+        val del = theme.iconKey(context, KeyIcon.BACKSPACE, true, GAP_X_DP, GAP_Y_DP, 8, "Backspace", actionSlot = 1)
         // Tap or hold to delete; slide left to select text and let go to delete it.
         del.setOnTouchListener(
             BackspaceTouch(
@@ -190,13 +215,14 @@ class QwertyKeypadView(
                 onDelete = { listener.onQwertyBackspace() },
                 onSlide = { listener.onQwertyBackspaceSlide(it) },
                 onSlideEnd = { listener.onQwertyBackspaceSlideEnd(it) },
+                onFlick = { listener.onQwertyBackspaceFlick() },
             ),
         )
         return del
     }
 
     private fun makeSettingsKey(): TextView {
-        val gear = theme.iconKey(context, KeyIcon.SETTINGS, true, GAP_X_DP, GAP_Y_DP, 8, "Keyboard settings")
+        val gear = theme.iconKey(context, KeyIcon.SETTINGS, true, GAP_X_DP, GAP_Y_DP, 8, "Keyboard settings", actionSlot = 3)
         gear.setOnClickListener {
             settings.feedback(it)
             listener.onQwertySettings()
@@ -232,6 +258,14 @@ class QwertyKeypadView(
             this.weight = weight
         }
 
+    /** GBA letter caps use the same vivid pixel palette as the candidate display. */
+    private fun gbaKeyColour(ch: Char): Int = when (ch.lowercaseChar()) {
+        'a' -> GBA_PIXEL_COLOURS[0] // A: red
+        's' -> GBA_PIXEL_COLOURS[1] // S: yellow
+        'd' -> GBA_PIXEL_COLOURS[3] // D: blue
+        else -> GBA_PIXEL_COLOURS[(ch.lowercaseChar() - 'a').coerceAtLeast(0) % GBA_PIXEL_COLOURS.size]
+    }
+
     /**
      * [leftFrac]/[rightFrac] shift the drawn shape inwards for the wide end keys of indented rows;
      * [action] uses the theme's action-key colours (shift, DEL, ENTER).
@@ -242,15 +276,26 @@ class QwertyKeypadView(
         leftFrac: Float = 0f,
         rightFrac: Float = 0f,
         action: Boolean = false,
+        keyColour: Int? = null,
+        actionSlot: Int = 0,
     ): TextView {
         val tv = KeyTextView(context, leftFrac, rightFrac)
         tv.text = label
         tv.textSize = size
         tv.typeface = theme.typeface
         tv.gravity = Gravity.CENTER
-        tv.setTextColor(if (action) theme.actionText else theme.text)
-        tv.background = theme.keyBackground(density(), action, GAP_X_DP, GAP_Y_DP, 8, leftFrac, rightFrac)
-        theme.bindKeyGlow(tv)
+        tv.setTextColor(if (action) theme.actionLabel(actionSlot) else theme.keyText)
+        val pressedColour = keyColour?.let { colour ->
+            android.graphics.Color.rgb(
+                (android.graphics.Color.red(colour) * 0.78f).toInt(),
+                (android.graphics.Color.green(colour) * 0.78f).toInt(),
+                (android.graphics.Color.blue(colour) * 0.78f).toInt(),
+            )
+        }
+        tv.background = theme.keyBackground(
+            density(), action, GAP_X_DP, GAP_Y_DP, 8, leftFrac, rightFrac,
+            keyColor = keyColour, pressedKeyColor = pressedColour, actionSlot = actionSlot,
+        )
         return tv
     }
 }

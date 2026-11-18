@@ -25,6 +25,11 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
+/** When a keyboard view was last touched; lets the service tell its own cursor moves from taps in the text. */
+object KeyTouch {
+    @Volatile var at = 0L
+}
+
 /**
  * The keyboard service. Two layouts: the number pad and a plain QWERTY keyboard.
  *
@@ -98,7 +103,9 @@ class KeyboardService :
         super.onCreate()
         store = UserDataStore(this)
         settings = KeyboardSettings.load(this)
-        kbTheme = KeyboardTheme.resolve(this, settings.theme)
+        kbTheme = KeyboardTheme.resolve(this, settings.theme, settings.p5Accent, settings.custom)
+        userFull = settings.defaultQwerty
+        userMode = startModeOf(settings)
         clearToken = getSharedPreferences(KeyboardSettings.PREFS, MODE_PRIVATE)
             .getLong(KeyboardSettings.KEY_CLEAR_TOKEN, 0L)
         loadEngine()
@@ -122,6 +129,7 @@ class KeyboardService :
         store.load(e)
         engine = e
         session = PredictiveSession(e)
+        session.learning = settings.learnWords
         lastSaved = e.changeCount
     }
 
@@ -138,6 +146,7 @@ class KeyboardService :
         super.onStartInputView(info, restarting)
         resetState()
         reloadSettings()
+        session.learning = settings.learnWords
         emojiOpen = false
 
         val type = info.inputType
@@ -152,7 +161,7 @@ class KeyboardService :
         forceMultiTap = isPassword
         learningEnabled = !isPassword
         fullKeyboard = (userFull || isPassword) && !digitsOnly
-        caseMode = if (cursorWantsCaps(type)) CaseMode.CAP_NEXT else CaseMode.LOWER
+        caseMode = if (settings.autoCap && cursorWantsCaps(type)) CaseMode.CAP_NEXT else CaseMode.LOWER
 
         if (shownView != null) showView()
         padView?.showSymbols(false)
@@ -181,6 +190,15 @@ class KeyboardService :
             currentInputConnection?.finishComposingText()
             refreshUi()
         } else if (!busy) {
+            // A tap in the text: the cursor moved on its own, with no key touched just before. Cheap checks first,
+            // so ordinary typing never reaches the text lookups.
+            if (settings.tapReopen && newSelStart == newSelEnd && newSelStart != oldSelStart &&
+                candidatesStart < 0 && !fullKeyboard && !emojiOpen && mode == InputMode.PREDICTIVE &&
+                SystemClock.uptimeMillis() - KeyTouch.at > TAP_QUIET_MS && reopenWordAtCursor(newSelStart)
+            ) {
+                refreshUi()
+                return
+            }
             refreshUi() // the cursor moved or the text changed: the next-word suggestions may differ
         }
     }
@@ -207,8 +225,11 @@ class KeyboardService :
 
     private fun reloadSettings() {
         val s = KeyboardSettings.load(this)
-        val th = KeyboardTheme.resolve(this, s.theme)
+        val th = KeyboardTheme.resolve(this, s.theme, s.p5Accent, s.custom)
         if (s != settings || th !== kbTheme) {
+            // A changed default applies at once; otherwise a layout or mode chosen while typing is kept.
+            if (s.defaultQwerty != settings.defaultQwerty) userFull = s.defaultQwerty
+            if (s.startMode != settings.startMode) userMode = startModeOf(s)
             settings = s
             kbTheme = th
             padView = null
@@ -224,6 +245,9 @@ class KeyboardService :
             loadEngine()
         }
     }
+
+    private fun startModeOf(s: KeyboardSettings): InputMode =
+        if (s.startMode == KeyboardSettings.START_MULTI_TAP) InputMode.MULTI_TAP else InputMode.PREDICTIVE
 
     private fun openEmoji() {
         commitWord()
@@ -303,27 +327,47 @@ class KeyboardService :
 
     override fun onKeypadBackspace() = doBackspace()
 
-    override fun onKeypadBackspaceSlide(steps: Int) = slideSelect(steps)
+    override fun onKeypadBackspaceSlide(steps: Int) {
+        pulse()
+        slideSelect(steps)
+    }
 
     override fun onKeypadBackspaceSlideEnd(delete: Boolean) = endSlideSelect(delete)
 
+    override fun onKeypadBackspaceFlick() = deleteWordBack()
+
+    /**
+     * The 1 key was held on past the long press that typed a 1: take the 1 back and open the symbol page, the
+     * same one holding * opens. Does nothing if that 1 is not still the pending character.
+     */
+    override fun onKeypadOneHeld() {
+        if (digitsOnly || mtKey != '1') return
+        uiHandler.removeCallbacks(mtTimeout)
+        currentInputConnection?.setComposingText("", 1)
+        mtKey = null
+        mtIndex = 0
+        mtDroppedSpace = false
+        padView?.showSymbols(true)
+        refreshUi()
+    }
+
     override fun onKeypadEnter() = doEnter()
 
-    override fun onKeypadCursorMove(steps: Int) = moveCursor(steps)
+    override fun onKeypadCursorMove(steps: Int, startDirection: Int) {
+        pulse()
+        moveCursor(steps, startDirection)
+    }
 
     override fun onKeypadPaste() = pasteClipboard()
 
     override fun onKeypadCopy() = copySelection()
 
-    override fun onKeypadSettings() = openSettings()
-
-    /** Moving through the suggestions (RAZR pad) only highlights; the centre key picks. */
-    override fun onKeypadCandidateMove(index: Int) {
-        if (!session.isComposing) return
-        session.select(index)
-        showComposing()
-        refreshUi()
+    override fun onKeypadPasteSlide(steps: Int, startDirection: Int) {
+        pulse()
+        selectFromPasteKey(steps, startDirection)
     }
+
+    override fun onKeypadSettings() = openSettings()
 
     override fun onKeypadCandidateLong(index: Int) = removeSuggestion(index)
 
@@ -331,6 +375,10 @@ class KeyboardService :
     override fun onKeypadCandidate(index: Int) {
         spaceTapAt = 0L
         autoSpace = false
+        if (mode == InputMode.MULTI_TAP) {
+            acceptTypedWord() // the strip shows the word typed so far; tapping it teaches the keyboard
+            return
+        }
         if (!session.isComposing) {
             acceptNextWord(index)
             return
@@ -338,8 +386,7 @@ class KeyboardService :
         pulse()
         session.select(index)
         commitWord()
-        insertSpace()
-        markAutoSpace()
+        addSuggestionSpace()
         updateAutoCap()
         refreshUi()
     }
@@ -379,7 +426,7 @@ class KeyboardService :
         autoSpace = false
         pulse()
         fixContraction()
-        learnTrailingWord()
+        if (fullKeyboard) learnTrailingWord() // not when the space comes from the emoji page over the number pad
         insertSpace()
         updateAutoCap()
         refreshUi()
@@ -387,15 +434,28 @@ class KeyboardService :
 
     override fun onQwertyBackspace() = doBackspace()
 
-    override fun onQwertyBackspaceSlide(steps: Int) = slideSelect(steps)
+    override fun onQwertyBackspaceSlide(steps: Int) {
+        pulse()
+        slideSelect(steps)
+    }
 
     override fun onQwertyBackspaceSlideEnd(delete: Boolean) = endSlideSelect(delete)
 
-    override fun onQwertyCursorMove(steps: Int) = moveCursor(steps)
+    override fun onQwertyBackspaceFlick() = deleteWordBack()
+
+    override fun onQwertyCursorMove(steps: Int, startDirection: Int) {
+        pulse()
+        moveCursor(steps, startDirection)
+    }
 
     override fun onQwertyPaste() = pasteClipboard()
 
     override fun onQwertyCopy() = copySelection()
+
+    override fun onQwertyPasteSlide(steps: Int, startDirection: Int) {
+        pulse()
+        selectFromPasteKey(steps, startDirection)
+    }
 
     override fun onQwertySettings() = openSettings()
 
@@ -428,9 +488,14 @@ class KeyboardService :
 
     override fun onEmojiBackspace() = doBackspace()
 
-    override fun onEmojiBackspaceSlide(steps: Int) = slideSelect(steps)
+    override fun onEmojiBackspaceSlide(steps: Int) {
+        pulse()
+        slideSelect(steps)
+    }
 
     override fun onEmojiBackspaceSlideEnd(delete: Boolean) = endSlideSelect(delete)
+
+    override fun onEmojiBackspaceFlick() = deleteWordBack()
 
     override fun onEmojiEnter() = doEnter()
 
@@ -450,10 +515,8 @@ class KeyboardService :
 
     private fun onSpace() {
         commitWord()
-        if (mode == InputMode.MULTI_TAP) {
-            fixContraction()
-            learnTrailingWord()
-        }
+        // Multi-tap words are only learned when tapped in the strip (see acceptTypedWord), not by being typed.
+        if (mode == InputMode.MULTI_TAP) fixContraction()
         insertSpace()
         updateAutoCap()
     }
@@ -492,6 +555,7 @@ class KeyboardService :
 
     private fun doBackspace() {
         val ic = currentInputConnection ?: return
+        pulse()
         spaceTapAt = 0L
         autoSpace = false
         when {
@@ -514,14 +578,64 @@ class KeyboardService :
         refreshUi()
     }
 
+    /**
+     * A fast flick left from backspace: deletes the whole word before the cursor. A word being typed goes
+     * entirely; otherwise spaces just before the cursor are taken along with the word (or the run of punctuation)
+     * in front of them. With text selected, the selection is deleted instead.
+     */
+    private fun deleteWordBack() {
+        val ic = currentInputConnection ?: return
+        pulse()
+        spaceTapAt = 0L
+        autoSpace = false
+        slideSelected = 0
+        if (!ic.getSelectedText(0).isNullOrEmpty()) {
+            sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL)
+            updateAutoCap()
+            refreshUi()
+            return
+        }
+        if (mtKey != null) {
+            // a multi-tap character still being cycled goes first; the word it belonged to follows below
+            uiHandler.removeCallbacks(mtTimeout)
+            ic.setComposingText(if (mtDroppedSpace) " " else "", 1)
+            if (mtDroppedSpace) ic.finishComposingText()
+            mtDroppedSpace = false
+            mtKey = null
+            mtIndex = 0
+        }
+        if (session.isComposing) {
+            // the word being typed is the word before the cursor
+            session.cancel()
+            ic.setComposingText("", 1)
+        } else {
+            val before = ic.getTextBeforeCursor(80, 0)?.toString().orEmpty()
+            val spaces = before.takeLastWhile { it.isWhitespace() }.length
+            val rest = before.dropLast(spaces)
+            val wordLength = if (rest.isEmpty()) 0 else if (isWordChar(rest.last())) {
+                rest.takeLastWhile { isWordChar(it) }.length
+            } else {
+                rest.takeLastWhile { !isWordChar(it) && !it.isWhitespace() }.length
+            }
+            val total = spaces + wordLength
+            if (total == 0) {
+                sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL) // nothing before the cursor on this line to take
+            } else {
+                ic.deleteSurroundingText(total, 0)
+            }
+        }
+        updateAutoCap()
+        refreshUi()
+    }
+
+    private fun isWordChar(c: Char): Boolean = c.isLetterOrDigit() || c == '\'' || c == '_'
+
     private fun doEnter() {
         spaceTapAt = 0L
         autoSpace = false
         commitWord()
-        if (fullKeyboard || mode == InputMode.MULTI_TAP) {
-            fixContraction()
-            learnTrailingWord()
-        }
+        if (fullKeyboard || mode == InputMode.MULTI_TAP) fixContraction()
+        if (fullKeyboard) learnTrailingWord() // the full keyboard has no strip, so typed words are learned as they are finished
         val info = currentInputEditorInfo
         val ic = currentInputConnection
         if (info != null && ic != null) {
@@ -540,14 +654,19 @@ class KeyboardService :
         refreshUi()
     }
 
-    /** Slide along space: move the cursor [steps] characters (negative = left). */
-    private fun moveCursor(steps: Int) {
+    /**
+     * Slide along space: move the cursor [steps] characters (negative = left). With text selected
+     * it moves one end of the selection instead: a slide that started leftwards controls the
+     * left end (left grows the selection, right shrinks it), and one that started rightwards
+     * controls the right end (right grows it, left shrinks it).
+     */
+    private fun moveCursor(steps: Int, startDirection: Int) {
         if (steps == 0) return
         val ic = currentInputConnection ?: return
         autoSpace = false
         // With text selected, sliding grows the selection (left or right) instead of moving the cursor.
         if (!ic.getSelectedText(0).isNullOrEmpty()) {
-            if (!extendSelection(ic, steps)) {
+            if (!moveSelectionEdge(ic, steps, startDirection, allowEmpty = false)) {
                 sendShiftArrow(ic, if (steps < 0) KeyEvent.KEYCODE_DPAD_LEFT else KeyEvent.KEYCODE_DPAD_RIGHT, abs(steps))
             }
             return
@@ -561,21 +680,40 @@ class KeyboardService :
     }
 
     /**
-     * Grows the selection by [steps] characters: to the left when negative, to the right when
-     * positive. Returns false if the editor will not tell us where its text is.
+     * Moves one end of the selection by [steps] characters (negative = left, positive = right):
+     * the left end when [edge] is negative, the right end otherwise. The two ends never cross.
+     * With [allowEmpty] false the selection keeps at least one character, and nothing happens if
+     * there is no selection; with it true a bare cursor counts as an empty selection, so a
+     * selection can start from the cursor and shrink back to it. Returns false if the editor will
+     * not tell us where its text is.
      */
-    private fun extendSelection(ic: InputConnection, steps: Int): Boolean {
+    private fun moveSelectionEdge(ic: InputConnection, steps: Int, edge: Int, allowEmpty: Boolean): Boolean {
         val extracted = ic.getExtractedText(ExtractedTextRequest(), 0) ?: return false
         val length = extracted.text?.length ?: return false
         var start = min(extracted.selectionStart, extracted.selectionEnd)
         var end = max(extracted.selectionStart, extracted.selectionEnd)
-        if (start == end) return false
-        if (steps < 0) start = max(0, start + steps) else end = min(length, end + steps)
+        if (start == end && !allowEmpty) return false
+        val least = if (allowEmpty) 0 else 1
+        if (edge < 0) start = (start + steps).coerceIn(0, end - least) else end = (end + steps).coerceIn(start + least, length)
         ic.setSelection(extracted.startOffset + start, extracted.startOffset + end)
         return true
     }
 
-    /** Hold paste: copies the selected text. */
+    /**
+     * Hold paste and slide: starts a selection from the cursor (or moves an end of the current
+     * one). Sliding left from the start controls the left end, sliding right the right end.
+     */
+    private fun selectFromPasteKey(steps: Int, startDirection: Int) {
+        val ic = currentInputConnection ?: return
+        autoSpace = false
+        spaceTapAt = 0L
+        commitWord() // finish any word in progress: the selection starts at the cursor after it
+        if (!moveSelectionEdge(ic, steps, startDirection, allowEmpty = true)) {
+            sendShiftArrow(ic, if (steps < 0) KeyEvent.KEYCODE_DPAD_LEFT else KeyEvent.KEYCODE_DPAD_RIGHT, abs(steps))
+        }
+    }
+
+    /** Hold paste (and let go): copies the selected text. */
     private fun copySelection() {
         val ic = currentInputConnection ?: return
         val selected = ic.getSelectedText(0)?.toString().orEmpty()
@@ -594,6 +732,13 @@ class KeyboardService :
         commitWord()
         startActivity(Intent(this, SetupActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         requestHideSelf(0)
+    }
+
+    /** The space after a tapped suggestion, unless the setting for it is off. */
+    private fun addSuggestionSpace() {
+        if (!settings.spaceAfterSuggestion) return
+        insertSpace()
+        markAutoSpace()
     }
 
     /** Remembers that the space just typed was added automatically (after a tapped suggestion). */
@@ -695,13 +840,12 @@ class KeyboardService :
         val prev = previousWordBefore(ic)
         ic.commitText(displayWord(word), 1)
         if (caseMode == CaseMode.CAP_NEXT) caseMode = CaseMode.LOWER
-        if (learningEnabled) {
+        if (learningEnabled && settings.learnWords) {
             engine.learn(word)
             if (prev != null) engine.learnPair(prev, word)
             scheduleSave()
         }
-        insertSpace()
-        markAutoSpace()
+        addSuggestionSpace()
         updateAutoCap()
         refreshUi()
     }
@@ -712,7 +856,7 @@ class KeyboardService :
      */
     private fun removeSuggestion(index: Int) {
         if (session.isComposing) {
-            val word = session.candidateList.getOrNull(index)?.word ?: return
+            val word = session.stripWords.getOrNull(index) ?: return
             if (!engine.removeWord(word)) return
             session.restore(session.digitString) // look the keys up again, without the word
             showComposing()
@@ -752,6 +896,46 @@ class KeyboardService :
         val idx = session.candidateList.indexOfFirst { it.word.equals(word, ignoreCase = true) }
         if (idx >= 0) session.select(idx)
         showComposing()
+        return true
+    }
+
+    /**
+     * The user tapped into a word in the text box: the whole word around the cursor (start, middle or end) becomes the
+     * composing word again, as if they had typed it, so the suggestions return. Does nothing unless the word is a
+     * dictionary word, so names, numbers and odd text are left alone.
+     */
+    private fun reopenWordAtCursor(cursor: Int): Boolean {
+        val ic = currentInputConnection ?: return false
+        if (!ic.getSelectedText(0).isNullOrEmpty()) return false
+        val before = ic.getTextBeforeCursor(30, 0)?.toString() ?: return false
+        val after = ic.getTextAfterCursor(30, 0)?.toString() ?: return false
+        val head = before.takeLastWhile { it.isLetter() || it == '\'' }.trimStart('\'')
+        val tail = after.takeWhile { it.isLetter() || it == '\'' }.trimEnd('\'')
+        val word = head + tail
+        if (word.length < 2 || word.length > 28) return false
+        val keys = KeypadMap.encode(word) ?: return false
+        if (engine.lookup(keys).none { !it.isCompletion && it.word.equals(word, ignoreCase = true) }) return false
+
+        // Only plain cases (abc, Abc, ABC): a word like "iPhone" would change if it were typed back in.
+        val plainCase = word == word.lowercase() || word == word.lowercase().replaceFirstChar { it.uppercaseChar() } || word == word.uppercase()
+        if (!plainCase) return false
+
+        ic.beginBatchEdit()
+        try {
+            ic.setComposingRegion(cursor - head.length, cursor + tail.length)
+            caseMode = when {
+                word.all { it.isUpperCase() || it == '\'' } -> CaseMode.UPPER
+                word[0].isUpperCase() -> CaseMode.CAP_NEXT
+                else -> CaseMode.LOWER
+            }
+            session.previousWord = PREV_WORD.find(before.dropLast(head.length))?.groupValues?.get(1)?.lowercase()
+            session.restore(keys)
+            val idx = session.candidateList.indexOfFirst { it.word.equals(word, ignoreCase = true) }
+            if (idx >= 0) session.select(idx)
+            showComposing()
+        } finally {
+            ic.endBatchEdit()
+        }
         return true
     }
 
@@ -813,7 +997,7 @@ class KeyboardService :
     private fun insertSpace() {
         val ic = currentInputConnection ?: return
         val now = SystemClock.uptimeMillis()
-        if (learningEnabled && spaceTapAt != 0L && now - spaceTapAt <= DOUBLE_SPACE_MS) {
+        if (learningEnabled && settings.doubleSpace && spaceTapAt != 0L && now - spaceTapAt <= DOUBLE_SPACE_MS) {
             val before = ic.getTextBeforeCursor(2, 0)?.toString().orEmpty()
             if (before.length == 2 && before[1] == ' ' && (before[0].isLetterOrDigit() || before[0] in ")]\"'")) {
                 ic.deleteSurroundingText(1, 0)
@@ -831,7 +1015,7 @@ class KeyboardService :
      * and so on, when space or enter finishes the word. Capitalisation is kept.
      */
     private fun fixContraction() {
-        if (!learningEnabled) return // not in password fields
+        if (!learningEnabled || !settings.fixContractions) return // not in password fields
         val ic = currentInputConnection ?: return
         val before = ic.getTextBeforeCursor(30, 0)?.toString() ?: return
         val raw = before.takeLastWhile { it.isLetter() }
@@ -842,22 +1026,48 @@ class KeyboardService :
             raw[0].isUpperCase() -> fixed.replaceFirstChar { it.uppercaseChar() }
             else -> fixed
         }
-        if (fixed.startsWith("i'")) out = out.replaceFirstChar { it.uppercaseChar() }
+        if (settings.capitaliseI && fixed.startsWith("i'")) out = out.replaceFirstChar { it.uppercaseChar() }
         ic.deleteSurroundingText(raw.length, 0)
         ic.commitText(out, 1)
     }
 
-    /** Words typed letter by letter (multi-tap or QWERTY) are added to the user dictionary. */
-    private fun learnTrailingWord() {
-        if (!learningEnabled) return
+    /**
+     * Adds the word typed letter by letter before the cursor to the user dictionary, with the word that came before it.
+     * A single letter is only added when [deliberate] (tapped in the multi-tap strip), never just from typing it.
+     */
+    private fun learnTrailingWord(deliberate: Boolean = false) {
+        if (!learningEnabled || !settings.learnWords) return
         val before = currentInputConnection?.getTextBeforeCursor(60, 0)?.toString() ?: return
         val raw = before.takeLastWhile { it.isLetter() || it == '\'' }
         val word = raw.trim('\'').lowercase()
-        if (word.length < 2) return
+        if (word.length < (if (deliberate) 1 else 2)) return
         engine.addUserWord(word)
         val prev = PREV_WORD.find(before.dropLast(raw.length))?.groupValues?.get(1)?.lowercase()
         if (prev != null) engine.learnPair(prev, word)
         scheduleSave()
+    }
+
+    /**
+     * The word typed letter by letter just before the cursor, for the strip in multi-tap mode; null when there is
+     * none to show (no letters yet, learning switched off, or a password or number field).
+     */
+    private fun typedWord(): String? {
+        if (!learningEnabled || !settings.learnWords || digitsOnly) return null
+        val before = currentInputConnection?.getTextBeforeCursor(40, 0)?.toString() ?: return null
+        val word = before.takeLastWhile { it.isLetter() || it == '\'' }.trim('\'')
+        return word.ifEmpty { null }
+    }
+
+    /** Multi-tap: tapped the typed word in the strip. It is learned (with the word before it), and a space follows. */
+    private fun acceptTypedWord() {
+        commitMultiTap() // lock in a letter that is still being cycled
+        if (typedWord() == null) return
+        pulse()
+        fixContraction()
+        learnTrailingWord(deliberate = true)
+        addSuggestionSpace()
+        updateAutoCap()
+        refreshUi()
     }
 
     private fun findNextWords(): List<String> {
@@ -902,7 +1112,7 @@ class KeyboardService :
     }
 
     private fun displayWord(w: String): String {
-        val base = if (w == "i" || w.startsWith("i'")) w.replaceFirstChar { it.uppercaseChar() } else w
+        val base = if (settings.capitaliseI && (w == "i" || w.startsWith("i'"))) w.replaceFirstChar { it.uppercaseChar() } else w
         return caseAdjust(base)
     }
 
@@ -912,7 +1122,7 @@ class KeyboardService :
     }
 
     private fun updateAutoCap() {
-        if (caseMode != CaseMode.LOWER) return
+        if (!settings.autoCap || caseMode != CaseMode.LOWER) return
         val type = currentInputEditorInfo?.inputType ?: return
         if (cursorWantsCaps(type)) caseMode = CaseMode.CAP_NEXT
     }
@@ -938,18 +1148,20 @@ class KeyboardService :
                     (caseMode == CaseMode.CAP_NEXT && !(mode == InputMode.PREDICTIVE && session.isComposing)),
             )
             if (mode == InputMode.MULTI_TAP) {
+                // The word typed so far sits in the strip; tap it to teach the keyboard the word.
                 nextWords = emptyList()
-                k.setCandidates(emptyList(), -1)
+                val typed = typedWord()
+                if (typed != null) k.setCandidates(listOf(typed), 0) else k.setCandidates(emptyList(), -1)
             } else if (!session.isComposing) {
                 // Nothing being typed: offer the words that usually come next.
                 nextWords = findNextWords()
                 k.setCandidates(nextWords.map { displayWord(it) }, -1)
             } else {
                 nextWords = emptyList()
-                val words = session.candidateList.map { displayWord(it.word) }
+                val words = session.stripWords.map { displayWord(it) }
                 k.setCandidates(
                     if (words.isEmpty()) listOf(displayWord(session.displayText)) else words,
-                    session.selectedIndex,
+                    session.stripSelected,
                 )
             }
             k.setModeLabel("$caseLabel \u00B7 " + if (mode == InputMode.PREDICTIVE) "predict" else "multi")
@@ -958,6 +1170,7 @@ class KeyboardService :
     }
 
     private companion object {
+        private const val TAP_QUIET_MS = 350L // a cursor move this soon after a key touch is our own typing, not a tap
         val PREV_WORD = Regex("([A-Za-z']+) $")
         const val SAVE_DELAY_MS = 4000L
         const val DOUBLE_SPACE_MS = 500L
@@ -965,7 +1178,7 @@ class KeyboardService :
         /** How long after a tapped suggestion's automatic space punctuation may still take it back. */
         const val AUTO_SPACE_MS = 10_000L
 
-        /** Punctuation that belongs right against the word before it. */
-        const val AUTO_SPACE_PUNCTUATION = ".,!?;:"
+        /** Punctuation that belongs right against the word before it: stops, and closing brackets and the percent sign. */
+        const val AUTO_SPACE_PUNCTUATION = ".,!?;:)]}>%"
     }
 }

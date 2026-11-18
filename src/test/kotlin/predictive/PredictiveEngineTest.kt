@@ -95,6 +95,33 @@ class PredictiveEngineTest {
     }
 
     @Test
+    fun backspaceShowsTheWordOneLetterShorter() {
+        val s = PredictiveSession(engine())
+        "4663".forEach { s.pressDigit(it) }
+        assertEquals("good", s.displayText)
+        s.backspace() // 466: no word that short, only completions, so "goo" is held
+        assertEquals("goo", s.displayText)
+        assertEquals("goo", s.stripWords.first()) // the strip leads with the held start of the word
+        s.backspace()
+        assertEquals("go", s.displayText)
+        s.backspace()
+        assertEquals("g", s.displayText)
+        assertTrue(s.backspace())
+        assertFalse(s.isComposing)
+    }
+
+    @Test
+    fun backspaceNeverKeepsALongCompletion() {
+        val s = PredictiveSession(engine())
+        // "4663" + "7" = "46637": only the completions "goods" and "homes" match.
+        "46637".forEach { s.pressDigit(it) }
+        assertEquals("goods", s.displayText)
+        s.backspace()
+        assertEquals("good", s.displayText) // an exact word of the shorter length
+        assertTrue(s.candidateList.first().let { !it.isCompletion })
+    }
+
+    @Test
     fun previousWordPromotesFollowers() {
         val e = engine()
         assertEquals("good", e.lookup("4663").first().word)
@@ -147,5 +174,51 @@ class PredictiveEngineTest {
         for ((w, s) in Contractions.WORDS) e.add(w, s)
         assertTrue(e.lookup("43").any { it.word == "i'd" })
         assertTrue(e.lookup("9373").any { it.word == "we're" })
+    }
+
+    @Test
+    fun nextWordsAreRankedByHowOftenTheyFollowed() {
+        val e = engine()
+        e.learnPair("the", "home")
+        e.learnPair("the", "good")
+        e.learnPair("the", "good")
+        assertEquals(listOf("good", "home"), e.nextWords("the"))
+        assertEquals(listOf("good", "home"), e.nextWords("The"))
+        assertTrue(e.nextWords("home").isEmpty())
+        assertTrue(e.nextWords(null).isEmpty())
+    }
+
+    @Test
+    fun removedWordsDisappearAndStayGone() {
+        val a = engine()
+        a.learnPair("the", "home")
+        assertTrue(a.removeWord("home"))
+        assertFalse(a.lookup("4663").any { it.word == "home" })
+        assertFalse(a.lookup("466").any { it.word == "home" }) // as a completion too
+        assertTrue(a.nextWords("the").isEmpty())
+        assertFalse(a.removeWord("home"))
+
+        val b = engine()
+        b.importUserData(a.exportUserData().lineSequence())
+        assertFalse(b.lookup("4663").any { it.word == "home" })
+        assertTrue(b.lookup("4663").any { it.word == "good" })
+    }
+
+    @Test
+    fun typingARemovedWordBringsItBack() {
+        val e = engine()
+        e.removeWord("home")
+        e.addUserWord("home")
+        assertTrue(e.lookup("4663").any { it.word == "home" })
+    }
+
+    @Test
+    fun forgettingAPairKeepsTheWord() {
+        val e = engine()
+        e.learnPair("the", "home")
+        assertTrue(e.forgetPair("the", "home"))
+        assertTrue(e.nextWords("the").isEmpty())
+        assertTrue(e.lookup("4663").any { it.word == "home" })
+        assertFalse(e.forgetPair("the", "home"))
     }
 }

@@ -3,9 +3,11 @@ package com.m8.keyboard
 
 import android.content.Context
 import android.graphics.Color
+import android.graphics.drawable.Drawable
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.StateListDrawable
 import android.view.Gravity
+import android.view.MotionEvent
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.HorizontalScrollView
@@ -43,12 +45,13 @@ class EmojiKeyboardView(
         fun onEmojiBackspace()
         fun onEmojiBackspaceSlide(steps: Int)
         fun onEmojiBackspaceSlideEnd(delete: Boolean)
+        fun onEmojiBackspaceFlick()
         fun onEmojiEnter()
     }
 
     private class Row(val scroll: HorizontalScrollView, val section: EmojiSection, var built: Boolean = false)
 
-    private val pulseBackground = PulseBackground(theme.backgroundDrawable(this), theme.accent, settings.pulseStrength)
+    private val layers = ThemeLayers(this, theme, settings)
 
     private val rowPx = dp(settings.keyHeightDp + 2 * GAP_Y_DP)
     private val headerPx = dp(24)
@@ -60,7 +63,8 @@ class EmojiKeyboardView(
 
     init {
         orientation = VERTICAL
-        background = pulseBackground
+        background = layers.background
+        layers.foreground?.let { foreground = it }
         addView(topBar(), LinearLayout.LayoutParams(MATCH, rowPx))
 
         val content = LinearLayout(context)
@@ -83,7 +87,19 @@ class EmojiKeyboardView(
     }
 
     /** Flashes the background in the accent colour (a character was typed). */
-    fun pulse() = pulseBackground.pulse()
+    /** Starts the tap animation (bubbles, embers and so on) wherever a finger touches down. */
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        KeyTouch.at = android.os.SystemClock.uptimeMillis()
+        val action = ev.actionMasked
+        if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
+            val x = ev.getX(ev.actionIndex)
+            val y = ev.getY(ev.actionIndex)
+            layers.touchDown(x, y)
+        }
+        return super.dispatchTouchEvent(ev)
+    }
+
+    fun pulse() = layers.pulse()
 
     /**
      * Fills in the rows on screen, and the section after them. Rows further down are built when
@@ -142,7 +158,7 @@ class EmojiKeyboardView(
             settings.feedback(it)
             listener.onEmojiBack()
         }
-        val space = makeKey(if (theme.isSlanted) "SPACE" else "space", 14f)
+        val space = makeKey(if (theme.shoutLabels) "SPACE" else "space", 14f)
         space.setOnClickListener {
             settings.feedback(it)
             listener.onEmojiSpace()
@@ -152,20 +168,27 @@ class EmojiKeyboardView(
             settings.feedback(it)
             listener.onEmojiEnter()
         }
-        val del = theme.iconKey(context, KeyIcon.BACKSPACE, true, GAP_X_DP, GAP_Y_DP, 10, "Backspace")
+        val del = theme.iconKey(context, KeyIcon.BACKSPACE, true, GAP_X_DP, GAP_Y_DP, 10, "Backspace", actionSlot = 1)
         del.setOnTouchListener(
             BackspaceTouch(
                 settings,
                 onDelete = { listener.onEmojiBackspace() },
                 onSlide = { listener.onEmojiBackspaceSlide(it) },
                 onSlideEnd = { listener.onEmojiBackspaceSlideEnd(it) },
+                onFlick = { listener.onEmojiBackspaceFlick() },
             ),
         )
 
         row.addView(back, LinearLayout.LayoutParams(dp(54), rowPx))
         row.addView(space, LinearLayout.LayoutParams(0, rowPx).apply { weight = 1f })
-        row.addView(enter, LinearLayout.LayoutParams(dp(62), rowPx))
-        row.addView(del, LinearLayout.LayoutParams(dp(56), rowPx))
+        // The swap setting puts backspace before enter; each key keeps its own width.
+        if (settings.swapEmojiKeys) {
+            row.addView(del, LinearLayout.LayoutParams(dp(56), rowPx))
+            row.addView(enter, LinearLayout.LayoutParams(dp(62), rowPx))
+        } else {
+            row.addView(enter, LinearLayout.LayoutParams(dp(62), rowPx))
+            row.addView(del, LinearLayout.LayoutParams(dp(56), rowPx))
+        }
         return row
     }
 
@@ -180,9 +203,8 @@ class EmojiKeyboardView(
         tv.textSize = size
         tv.typeface = theme.typeface
         tv.gravity = Gravity.CENTER
-        tv.setTextColor(theme.text)
+        tv.setTextColor(theme.keyText)
         tv.background = theme.keyBackground(resources.displayMetrics.density, false, GAP_X_DP, GAP_Y_DP, 10)
-        theme.bindKeyGlow(tv)
         return tv
     }
 

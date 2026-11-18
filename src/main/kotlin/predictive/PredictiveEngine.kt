@@ -37,6 +37,7 @@ class PredictiveEngine(
     private val root = Node()
     private val byWord = HashMap<String, Entry>()
     private val bigrams = HashMap<String, HashMap<String, Int>>()
+    private val removed = HashSet<String>() // words the user removed from the suggestions
     private var pairCount = 0
     private var built = false
 
@@ -49,7 +50,7 @@ class PredictiveEngine(
 
     /** Adds a word. Call [build] after a bulk load (or use [load]). */
     fun add(word: String, baseScore: Long = 1L) {
-        if (byWord.containsKey(word)) return
+        if (byWord.containsKey(word) || word in removed) return
         val digits = KeypadMap.encode(word) ?: return
         var node = root
         for (d in digits) {
@@ -134,8 +135,50 @@ class PredictiveEngine(
         changeCount++
     }
 
+    /**
+     * Words that have followed [previousWord] before, most often first (ties: higher word score).
+     * Empty when nothing has been learned for that word yet.
+     */
+    fun nextWords(previousWord: String?, max: Int = 6): List<String> {
+        val m = bigrams[previousWord?.lowercase() ?: return emptyList()] ?: return emptyList()
+        return m.entries
+            .filter { byWord.containsKey(it.key) }
+            .sortedWith(
+                compareByDescending<Map.Entry<String, Int>> { it.value }
+                    .thenByDescending { score(byWord.getValue(it.key)) }
+                    .thenBy { it.key },
+            )
+            .take(max)
+            .map { it.key }
+    }
+
+    /**
+     * Takes a word out of the suggestions for good (it is remembered in the saved data, so it
+     * stays gone after a restart). Its word pairs go with it. Typing the word letter by letter
+     * ([addUserWord]) brings it back. Returns false if the engine did not have the word.
+     */
+    fun removeWord(word: String): Boolean {
+        if (!dropWord(word)) return false
+        removed.add(word)
+        forgetPairsOf(word)
+        changeCount++
+        return true
+    }
+
+    /** Forgets that [word] follows [prev], so it stops being offered as a next word. */
+    fun forgetPair(prev: String, word: String): Boolean {
+        val p = prev.lowercase()
+        val m = bigrams[p] ?: return false
+        if (m.remove(word) == null) return false
+        pairCount--
+        if (m.isEmpty()) bigrams.remove(p)
+        changeCount++
+        return true
+    }
+
     /** Adds a user-spelled word (e.g. from multi-tap mode) and boosts it. */
     fun addUserWord(word: String, baseScore: Long = USER_WORD_BASE_SCORE) {
+        if (removed.remove(word)) changeCount++ // typed on purpose: it is welcome again
         val isNew = !byWord.containsKey(word)
         add(word, baseScore)
         if (isNew) byWord[word]?.userAdded = true
@@ -146,6 +189,7 @@ class PredictiveEngine(
 
     /** Text form of everything learned: boosted words, user-added words and word pairs. */
     fun exportUserData(): String = buildString {
+        for (w in removed) append("X\t").append(w).append("\t0\t0\n")
         for (e in byWord.values) {
             if (e.userCount > 0 || e.userAdded) {
                 append("W\t").append(e.word).append('\t').append(e.userCount)
@@ -163,10 +207,14 @@ class PredictiveEngine(
     fun importUserData(lines: Sequence<String>) {
         for (line in lines) {
             val p = line.split('\t')
-            if (p.size < 4) continue
-            when (p[0]) {
-                "W" -> restoreWord(p[1], p[2].toIntOrNull() ?: 0, p[3] == "1")
-                "B" -> restorePair(p[1], p[2], p[3].toIntOrNull() ?: 0)
+            if (p.size < 2) continue
+            when {
+                p[0] == "X" -> {
+                    dropWord(p[1])
+                    removed.add(p[1])
+                }
+                p.size >= 4 && p[0] == "W" -> restoreWord(p[1], p[2].toIntOrNull() ?: 0, p[3] == "1")
+                p.size >= 4 && p[0] == "B" -> restorePair(p[1], p[2], p[3].toIntOrNull() ?: 0)
             }
         }
     }
@@ -185,13 +233,35 @@ class PredictiveEngine(
     }
 
     private fun restorePair(prev: String, word: String, count: Int) {
-        if (count <= 0 || !byWord.containsKey(word) || pairCount >= MAX_PAIRS) return
+        if (count <= 0 || !byWord.containsKey(word) || prev in removed || pairCount >= MAX_PAIRS) return
         val m = bigrams.getOrPut(prev) { HashMap() }
         if (!m.containsKey(word)) pairCount++
         m[word] = count
     }
 
     // --- internals ---
+
+    /** Takes [word] out of the trie and the word table. Returns false if it was not there. */
+    private fun dropWord(word: String): Boolean {
+        val entry = byWord.remove(word) ?: return false
+        val digits = KeypadMap.encode(word) ?: return true
+        var node: Node? = root
+        for (d in digits) node = node?.children?.get(d - '2')
+        node?.exact?.remove(entry)
+        if (built) refreshPath(digits)
+        return true
+    }
+
+    /** Removes every word pair that has [word] on either side. */
+    private fun forgetPairsOf(word: String) {
+        bigrams.remove(word)?.let { pairCount -= it.size }
+        val iter = bigrams.entries.iterator()
+        while (iter.hasNext()) {
+            val m = iter.next().value
+            if (m.remove(word) != null) pairCount--
+            if (m.isEmpty()) iter.remove()
+        }
+    }
 
     private fun bigramBonus(prev: String?, word: String): Long {
         if (prev == null) return 0L
