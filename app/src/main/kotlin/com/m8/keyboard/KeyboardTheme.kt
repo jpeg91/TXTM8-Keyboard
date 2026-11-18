@@ -8,8 +8,11 @@ import android.graphics.Typeface
 import android.os.Build
 
 /**
- * Colours (and, for the P5 theme, shapes and type) for the keyboard views.
- * "Action" keys (DEL, ENTER, shift) can be drawn differently from ordinary keys.
+ * Everything the keyboard views and settings screens need to draw a theme: colours, key style, backdrop,
+ * animations and type. "Action" keys (DEL, ENTER, shift) can be drawn differently from ordinary keys.
+ *
+ * A theme is made of five parts (colours, keys, background, animation, font) so the Custom mix theme can take each
+ * from a different preset. Read docs/THEMES.md before adding a theme or changing a field.
  */
 class KeyboardTheme(
     val background: Int,

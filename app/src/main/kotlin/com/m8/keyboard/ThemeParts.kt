@@ -4,6 +4,7 @@ package com.m8.keyboard
 /*
  * The parts a theme is built from, apart from its colours and its key style ([KeyStyle]) and animations
  * ([AmbientKind], [TapEffectKind]): each one is chosen on its own, so a theme can combine any of them.
+ * See docs/THEMES.md for how to add a theme or a new value here.
  */
 
 /** What is drawn behind the keys (a gradient from [KeyboardTheme.backgroundBottom] takes over when a theme has one). */
