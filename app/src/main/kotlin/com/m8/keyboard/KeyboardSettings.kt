@@ -16,6 +16,7 @@ data class KeyboardSettings(
     val haptic: Boolean = true,
     val sound: Boolean = false,
     val reopenWord: Boolean = true,
+    val tapReopen: Boolean = true,
     val pulse: Boolean = true,
     val pulseIntensity: Int = 50, // 0..100
     val starDensity: Int = 50, // 0..100: how many twinkling stars appear (the twinkling-star themes)
@@ -58,6 +59,7 @@ data class KeyboardSettings(
         const val KEY_HAPTIC = "haptic"
         const val KEY_SOUND = "sound"
         const val KEY_REOPEN = "reopen_word"
+    const val KEY_TAP_REOPEN = "tap_reopen_word"
         const val KEY_PULSE = "pulse"
         const val KEY_PULSE_LEVEL = "pulse_level"
         const val KEY_STAR_DENSITY = "star_density"
@@ -190,6 +192,7 @@ data class KeyboardSettings(
                 haptic = p.getBoolean(KEY_HAPTIC, true),
                 sound = p.getBoolean(KEY_SOUND, false),
                 reopenWord = p.getBoolean(KEY_REOPEN, true),
+                tapReopen = p.getBoolean(KEY_TAP_REOPEN, true),
                 pulse = p.getBoolean(KEY_PULSE, true),
                 pulseIntensity = p.getInt(KEY_PULSE_LEVEL, 50),
                 starDensity = p.getInt(KEY_STAR_DENSITY, 50).coerceIn(0, 100),

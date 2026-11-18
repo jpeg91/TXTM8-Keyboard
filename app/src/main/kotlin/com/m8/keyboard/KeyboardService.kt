@@ -25,6 +25,11 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
+/** When a keyboard view was last touched; lets the service tell its own cursor moves from taps in the text. */
+object KeyTouch {
+    @Volatile var at = 0L
+}
+
 /**
  * The keyboard service. Two layouts: the number pad and a plain QWERTY keyboard.
  *
@@ -185,6 +190,15 @@ class KeyboardService :
             currentInputConnection?.finishComposingText()
             refreshUi()
         } else if (!busy) {
+            // A tap in the text: the cursor moved on its own, with no key touched just before. Cheap checks first,
+            // so ordinary typing never reaches the text lookups.
+            if (settings.tapReopen && newSelStart == newSelEnd && newSelStart != oldSelStart &&
+                candidatesStart < 0 && !fullKeyboard && !emojiOpen && mode == InputMode.PREDICTIVE &&
+                SystemClock.uptimeMillis() - KeyTouch.at > TAP_QUIET_MS && reopenWordAtCursor(newSelStart)
+            ) {
+                refreshUi()
+                return
+            }
             refreshUi() // the cursor moved or the text changed: the next-word suggestions may differ
         }
     }
@@ -885,6 +899,46 @@ class KeyboardService :
         return true
     }
 
+    /**
+     * The user tapped into a word in the text box: the whole word around the cursor (start, middle or end) becomes the
+     * composing word again, as if they had typed it, so the suggestions return. Does nothing unless the word is a
+     * dictionary word, so names, numbers and odd text are left alone.
+     */
+    private fun reopenWordAtCursor(cursor: Int): Boolean {
+        val ic = currentInputConnection ?: return false
+        if (!ic.getSelectedText(0).isNullOrEmpty()) return false
+        val before = ic.getTextBeforeCursor(30, 0)?.toString() ?: return false
+        val after = ic.getTextAfterCursor(30, 0)?.toString() ?: return false
+        val head = before.takeLastWhile { it.isLetter() || it == '\'' }.trimStart('\'')
+        val tail = after.takeWhile { it.isLetter() || it == '\'' }.trimEnd('\'')
+        val word = head + tail
+        if (word.length < 2 || word.length > 28) return false
+        val keys = KeypadMap.encode(word) ?: return false
+        if (engine.lookup(keys).none { !it.isCompletion && it.word.equals(word, ignoreCase = true) }) return false
+
+        // Only plain cases (abc, Abc, ABC): a word like "iPhone" would change if it were typed back in.
+        val plainCase = word == word.lowercase() || word == word.lowercase().replaceFirstChar { it.uppercaseChar() } || word == word.uppercase()
+        if (!plainCase) return false
+
+        ic.beginBatchEdit()
+        try {
+            ic.setComposingRegion(cursor - head.length, cursor + tail.length)
+            caseMode = when {
+                word.all { it.isUpperCase() || it == '\'' } -> CaseMode.UPPER
+                word[0].isUpperCase() -> CaseMode.CAP_NEXT
+                else -> CaseMode.LOWER
+            }
+            session.previousWord = PREV_WORD.find(before.dropLast(head.length))?.groupValues?.get(1)?.lowercase()
+            session.restore(keys)
+            val idx = session.candidateList.indexOfFirst { it.word.equals(word, ignoreCase = true) }
+            if (idx >= 0) session.select(idx)
+            showComposing()
+        } finally {
+            ic.endBatchEdit()
+        }
+        return true
+    }
+
     // ---------------------------------------------------------------- composing / committing
 
     private fun showComposing() {
@@ -1116,6 +1170,7 @@ class KeyboardService :
     }
 
     private companion object {
+        private const val TAP_QUIET_MS = 350L // a cursor move this soon after a key touch is our own typing, not a tap
         val PREV_WORD = Regex("([A-Za-z']+) $")
         const val SAVE_DELAY_MS = 4000L
         const val DOUBLE_SPACE_MS = 500L

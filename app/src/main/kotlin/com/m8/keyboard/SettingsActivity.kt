@@ -100,6 +100,11 @@ class SettingsActivity : ThemedScreen() {
             note = "Backspace straight after a word brings its suggestions back, so you can pick another.",
         )
         typingCard.addView(divider())
+        addToggle(
+            typingCard, "Tapping a word re-opens it", KeyboardSettings.KEY_TAP_REOPEN, true,
+            note = "Tap a word you already typed and its suggestions come back, so you can pick another.",
+        )
+        typingCard.addView(divider())
         addChoice(
             typingCard, "Start typing in", KeyboardSettings.KEY_START_MODE,
             listOf("Predictive", "Multi-tap"), listOf(KeyboardSettings.START_PREDICTIVE, KeyboardSettings.START_MULTI_TAP),

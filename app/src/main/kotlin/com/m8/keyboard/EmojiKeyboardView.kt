@@ -89,6 +89,7 @@ class EmojiKeyboardView(
     /** Flashes the background in the accent colour (a character was typed). */
     /** Starts the tap animation (bubbles, embers and so on) wherever a finger touches down. */
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        KeyTouch.at = android.os.SystemClock.uptimeMillis()
         val action = ev.actionMasked
         if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
             val x = ev.getX(ev.actionIndex)
