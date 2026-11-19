@@ -12,7 +12,7 @@ There are more than 60 themes to choose from, including Nokia phones, game conso
 
 Everything runs locally. There is no internet permission, and anything the keyboard learns stays on your phone.
 
-**[Source code on GitHub](https://github.com/jpeg91/TXTM8-Keyboard)**
+**[Download the Latest Release](https://github.com/jpeg91/TXTM8-Keyboard/releases/latest)**
 
 ## What it does
 
