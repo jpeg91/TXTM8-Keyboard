@@ -88,7 +88,7 @@ Each of these can be switched off in Settings.
 
 ### Themes and settings
 
-There are more than 60 themes to choose from, in sections:
+There are more than 60 inspired themes to choose from, in sections:
 
 - **Essentials:** Follow system, Dark and Light, plus **P5**, black and white with a choice of twelve accent colours, and **Custom mix**.
 - **Phones and gadgets:** Nokia 3210, 3310, 3510i and 7210, Sony Ericsson T610, Razr V3, Kawaii Flip Phone, Amber Backlight, Pager, Palm Pilot and Walkman.
@@ -100,9 +100,9 @@ There are more than 60 themes to choose from, in sections:
 - **Twinkling stars:** Glitter Graphics, Night Sky, Winter, Aurora, Synthwave and Gold on Black. Pixel-edged keys with stars that flash at the corners.
 - **Tap animations:** Bubbles, Embers, Sakura and Neon Ripples. Things appear wherever you tap, not just on the key.
 
-Many of the others have their own animation behind the keys or under your finger.
+Many of them have their own custom animations behind the keys or under your finger taps.
 
-**Custom mix** lets you build your own theme. Take the colours, key style, background, animation and font from any theme, each one separately.
+**Custom mix** lets you build your own theme. Take the colours, key style, background, animation and font from any theme, each one separately. There are a total of 74 colour combination palettes, 37 button styles, 397 possible background gradients, 34 animation packages, and 15 fonts to choose from, for a total of **7,491,390 total possible combinations**. 
 
 Key size can be set to small, medium or large. The typing pulse, where the background flashes as you type, works on every theme and has an adjustable strength. The star themes have a star-density setting, and the tap-animation themes have an effect-amount setting.
 
