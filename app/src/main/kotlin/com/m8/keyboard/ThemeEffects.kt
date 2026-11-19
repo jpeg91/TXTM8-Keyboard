@@ -133,6 +133,30 @@ enum class KeyStyle {
 
     /** A brick block (or, on action keys, a ? block with corner rivets) with a black outline, like Super Mario Bros. */
     BLOCK,
+
+    /** A scuffed black plate crossed by scratches, with rust creeping up from its bottom edge, like The Downward Spiral. */
+    SCRATCHED,
+
+    /** An embroidered patch: a twill face under a raised merrow edge with a line of running stitches, like Homework. */
+    STITCH,
+
+    /** A liquid-mercury chrome key with a dark horizon, a shine and a strip of LED light, like Discovery. */
+    CHROME,
+
+    /** A betting slip with a half-round notch in each side, a stripe along the top and a dotted perforation, like Parklife. */
+    TICKET,
+
+    /** A slab of cheese with a darker rind and shaded holes that differ from key to key, like Sailing the Seas of Cheese. */
+    HOLES,
+
+    /** A comic speech bubble with a heavy outline, a pointed tail and halftone shading, like the Gorillaz cartoons. */
+    SPEECH,
+
+    /** A tall key with a pointed gothic arch for its top and a fine line of tracery inside it, like Fallen. */
+    GOTHIC,
+
+    /** A dark pane cracked from an impact point by kinking hairlines, with a coloured bar along the bottom, like Kerrang!. */
+    SHATTER,
 }
 
 /**
@@ -200,6 +224,30 @@ enum class AmbientKind {
 
     /** Green Hill Zone: clouds over round hills and a scrolling strip of grass-topped checkered earth. */
     GREEN_HILL,
+
+    /** Two arms of a spiral that turn and breathe, with bands of photocopier noise: The Downward Spiral. */
+    SPIRAL,
+
+    /** Thin particle tracks that curve, curl tighter and fade, like a bubble-chamber photograph. */
+    TRACKS,
+
+    /** A huge gold cross in a pulsing halo, with long rays of light turning behind it. */
+    CROSS,
+
+    /** A turning peppermint disc of twisted red and white wedges. */
+    PEPPERMINT,
+
+    /** A big blocky M that changes colour every second or so, with a scrawled "TV" redrawn a little differently every few frames. */
+    MTV_LOGO,
+
+    /** A still halftone screen: staggered dots that grow from nothing at one corner to nearly touching at the other. */
+    HALFTONE,
+
+    /** A still parquet floor of four-plank squares, each turned across its neighbour. */
+    PARQUET,
+
+    /** A mown strip of turf with a white rail, and four greyhounds in coloured jackets racing across it. */
+    GREYHOUNDS,
 }
 
 // ------------------------------------------------------------------ colour helpers
@@ -638,6 +686,14 @@ class AmbientBackground(
         AmbientKind.SUNSET -> 100L
         AmbientKind.OVERWORLD -> 90L
         AmbientKind.GREEN_HILL -> 80L
+        AmbientKind.SPIRAL -> 80L
+        AmbientKind.TRACKS -> 60L
+        AmbientKind.CROSS -> 70L
+        AmbientKind.PEPPERMINT -> 60L
+        AmbientKind.MTV_LOGO -> 100L
+        AmbientKind.HALFTONE -> 1000L
+        AmbientKind.PARQUET -> 1000L
+        AmbientKind.GREYHOUNDS -> 50L
     }
 
     init {
@@ -717,6 +773,20 @@ class AmbientBackground(
             AmbientKind.SUNSET -> GameAmbient.sunset(canvas, paint, path, w, h, frame, density, colours)
             AmbientKind.OVERWORLD -> GameAmbient.overworld(canvas, paint, w, h, frame, density, colours)
             AmbientKind.GREEN_HILL -> GameAmbient.greenHill(canvas, paint, path, w, h, frame, density, colours)
+            AmbientKind.SPIRAL -> MusicAmbient.spiral(canvas, paint, path, w, h, frame, density, colours)
+            AmbientKind.TRACKS -> MusicAmbient.tracks(canvas, paint, path, w, h, frame, density, colours)
+            AmbientKind.CROSS -> MusicAmbient.cross(canvas, paint, path, w, h, frame, density, colours)
+            AmbientKind.PEPPERMINT -> MusicAmbient.peppermint(canvas, paint, path, w, h, frame, density, colours)
+            AmbientKind.MTV_LOGO -> MusicAmbient.mtvLogo(canvas, paint, path, w, h, frame, density, colours)
+            AmbientKind.HALFTONE -> {
+                animating = false // still, like the texture: drawn when needed and then at rest
+                MusicAmbient.halftone(canvas, paint, w, h, density, colours)
+            }
+            AmbientKind.PARQUET -> {
+                animating = false
+                MusicAmbient.parquet(canvas, paint, w, h, density, colours)
+            }
+            AmbientKind.GREYHOUNDS -> MusicAmbient.greyhounds(canvas, paint, path, w, h, frame, density, colours)
         }
         canvas.restore()
         paint.shader = null

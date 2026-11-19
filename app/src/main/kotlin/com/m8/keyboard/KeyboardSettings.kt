@@ -173,6 +173,24 @@ data class KeyboardSettings(
         const val THEME_GTA_VICE_CITY = 73
         const val THEME_GTA_SAN_ANDREAS = 74
         const val THEME_PIP_BOY = 75
+        const val THEME_NINE_INCH_NAILS = 76
+        const val THEME_THE_PRODIGY = 77
+        const val THEME_MASSIVE_ATTACK = 78
+        const val THEME_PRIMUS = 79
+        const val THEME_BLUR = 80
+        const val THEME_OASIS = 81
+        const val THEME_DAFT_PUNK_HOMEWORK = 82
+        const val THEME_DAFT_PUNK_DISCOVERY = 83
+        const val THEME_DAFT_PUNK_HUMAN_AFTER_ALL = 84
+        const val THEME_JUSTICE = 85
+        const val THEME_GORILLAZ = 86
+        const val THEME_THE_WHITE_STRIPES = 87
+        const val THEME_THE_STROKES = 88
+        const val THEME_EVANESCENCE = 89
+        const val THEME_APHEX_TWIN = 90
+        const val THEME_MTV = 91
+        const val THEME_MTV2 = 92
+        const val THEME_KERRANG = 93
 
         /** Index in [P5_ACCENTS] of the original red (the default) and of the purple. */
         const val P5_ACCENT_RED = 0

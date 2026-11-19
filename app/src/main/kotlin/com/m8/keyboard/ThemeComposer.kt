@@ -28,10 +28,12 @@ object ThemeComposer {
         KeyStyle.BRACKET, KeyStyle.RETICLE, KeyStyle.SCANLINE, KeyStyle.FRAME, KeyStyle.GLITCH, KeyStyle.NEON,
         KeyStyle.BACKLIT, KeyStyle.BUBBLE, KeyStyle.UNDERGLOW, KeyStyle.PETAL, KeyStyle.DISH, KeyStyle.PLATE,
         KeyStyle.ETCHED, KeyStyle.MOULDED, KeyStyle.RIVETED, KeyStyle.WINDOW, KeyStyle.PHOSPHOR, KeyStyle.DECO,
-        KeyStyle.TERRAIN, KeyStyle.CHECKER, KeyStyle.BLOCK,
+        KeyStyle.TERRAIN, KeyStyle.CHECKER, KeyStyle.BLOCK, KeyStyle.SCRATCHED, KeyStyle.STITCH, KeyStyle.TICKET,
+        KeyStyle.HOLES, KeyStyle.SPEECH, KeyStyle.GOTHIC, KeyStyle.SHATTER,
     )
     private val SHADOWED = setOf(
         KeyStyle.LCD, KeyStyle.MEMPHIS, KeyStyle.NOKIA, KeyStyle.PIXEL, KeyStyle.SLANTED, KeyStyle.TERRAIN, KeyStyle.CHECKER,
+        KeyStyle.SCRATCHED,
     )
 
     @Synchronized

@@ -169,6 +169,29 @@ class SetupActivity : ThemedScreen() {
                 ),
             ),
             ThemeGroup(
+                "Music & TV",
+                listOf(
+                    "Nine Inch Nails" to KeyboardSettings.THEME_NINE_INCH_NAILS,
+                    "The Prodigy" to KeyboardSettings.THEME_THE_PRODIGY,
+                    "Massive Attack" to KeyboardSettings.THEME_MASSIVE_ATTACK,
+                    "Primus" to KeyboardSettings.THEME_PRIMUS,
+                    "Blur" to KeyboardSettings.THEME_BLUR,
+                    "Oasis" to KeyboardSettings.THEME_OASIS,
+                    "Daft Punk: Homework" to KeyboardSettings.THEME_DAFT_PUNK_HOMEWORK,
+                    "Daft Punk: Discovery" to KeyboardSettings.THEME_DAFT_PUNK_DISCOVERY,
+                    "Daft Punk: Human After All" to KeyboardSettings.THEME_DAFT_PUNK_HUMAN_AFTER_ALL,
+                    "Justice" to KeyboardSettings.THEME_JUSTICE,
+                    "Gorillaz" to KeyboardSettings.THEME_GORILLAZ,
+                    "The White Stripes" to KeyboardSettings.THEME_THE_WHITE_STRIPES,
+                    "The Strokes" to KeyboardSettings.THEME_THE_STROKES,
+                    "Evanescence" to KeyboardSettings.THEME_EVANESCENCE,
+                    "Aphex Twin: SAW II" to KeyboardSettings.THEME_APHEX_TWIN,
+                    "MTV" to KeyboardSettings.THEME_MTV,
+                    "MTV2" to KeyboardSettings.THEME_MTV2,
+                    "Kerrang!" to KeyboardSettings.THEME_KERRANG,
+                ),
+            ),
+            ThemeGroup(
                 "Film & TV",
                 listOf(
                     "Saved by the Bell" to KeyboardSettings.THEME_SATURDAY,
@@ -562,6 +585,14 @@ class SetupActivity : ThemedScreen() {
                     KeyStyle.TERRAIN -> notes.add("terrain")
                     KeyStyle.CHECKER -> notes.add("checkered")
                     KeyStyle.BLOCK -> notes.add("blocks")
+                    KeyStyle.SCRATCHED -> notes.add("scratched")
+                    KeyStyle.STITCH -> notes.add("embroidered")
+                    KeyStyle.CHROME -> notes.add("chrome")
+                    KeyStyle.TICKET -> notes.add("betting slip")
+                    KeyStyle.HOLES -> notes.add("cheese")
+                    KeyStyle.SPEECH -> notes.add("speech bubble")
+                    KeyStyle.GOTHIC -> notes.add("gothic arch")
+                    KeyStyle.SHATTER -> notes.add("shattered glass")
                     KeyStyle.DEFAULT -> if (theme.squareKeys) notes.add("square")
                 }
             }

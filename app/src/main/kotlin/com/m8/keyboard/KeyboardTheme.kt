@@ -142,6 +142,7 @@ class KeyboardTheme(
         private val SQUARE_STYLES = setOf(
             KeyStyle.BRACKET, KeyStyle.RETICLE, KeyStyle.SCANLINE, KeyStyle.FRAME, KeyStyle.GLITCH, KeyStyle.ETCHED,
             KeyStyle.RIVETED, KeyStyle.PHOSPHOR, KeyStyle.DECO, KeyStyle.STENCIL, KeyStyle.CHECKER, KeyStyle.BLOCK,
+            KeyStyle.SCRATCHED, KeyStyle.TICKET, KeyStyle.GOTHIC, KeyStyle.SHATTER,
         )
 
         val DARK = KeyboardTheme(
@@ -1957,6 +1958,513 @@ class KeyboardTheme(
             typeface = Typeface.create("monospace", Typeface.BOLD),
         )
 
+        /**
+         * Nine Inch Nails, The Downward Spiral (1994): the industrial, photocopied world of Russell Mills' artwork. Keys are
+         * scuffed near-black plates scored with sepia scratches, with rust creeping up from the bottom edge and a pressed
+         * key flaring Halo red. A spiral turns slowly and breathes behind them, bands of photocopier noise jump across the
+         * screen, and every tap leaves a ghost of pixels like a bad copy. Typewriter lettering; Enter is Halo red.
+         * Palette from the theme-ideas sheet; the look is drawn from the artwork and identity itself.
+         */
+        val NINE_INCH_NAILS = KeyboardTheme(
+            background = 0xFF12100E.toInt(),
+            backgroundBottom = 0xFF3D2E26.toInt(),
+            strip = 0xFF1D1815.toInt(),
+            key = 0xFF1D1815.toInt(),
+            keyPressed = 0xFFB01C24.toInt(),
+            text = 0xFFD4C5B2.toInt(),
+            accent = 0xFFB01C24.toInt(),
+            accentText = 0xFFD4C5B2.toInt(),
+            subText = 0xFF8A755C.toInt(),
+            border = 0xFF8A755C.toInt(),
+            shadow = 0xFF7A3B2E.toInt(),
+            stripText = 0xFFD4C5B2.toInt(),
+            actionKeyColours = intArrayOf(0xFFB01C24.toInt(), 0xFF7A3B2E.toInt(), 0xFF8A755C.toInt(), 0xFF3D2E26.toInt()),
+            actionTextColours = intArrayOf(0xFFD4C5B2.toInt(), 0xFFD4C5B2.toInt(), 0xFF12100E.toInt(), 0xFFD4C5B2.toInt()),
+            keyStyle = KeyStyle.SCRATCHED,
+            ambient = AmbientKind.SPIRAL,
+            ambientColours = intArrayOf(0x668A755C.toInt(), 0x667A3B2E.toInt(), 0x1AD4C5B2.toInt()),
+            tapEffect = TapEffectKind.GHOST,
+            effectColours = intArrayOf(0xFFD4C5B2.toInt(), 0xFFB01C24.toInt(), 0xFF8A755C.toInt()),
+            cursorColour = 0xFFB01C24.toInt(),
+            typeface = Typeface.create("monospace", Typeface.BOLD),
+        )
+
+        /**
+         * The Prodigy, The Fat of the Land (1997): rave-flyer acid on black. Keys are slanted, hard-edged and outlined in
+         * acid chartreuse with a coral shadow, lettered in hazard yellow and flashing coral when pressed. Rows of chevrons
+         * stream across the background at different speeds like a strobing flyer, and every tap sprays a burst of acid
+         * paint. Enter is chartreuse, Delete coral.
+         * Palette from the theme-ideas sheet; the look is drawn from the artwork and identity itself.
+         */
+        val THE_PRODIGY = KeyboardTheme(
+            background = 0xFF0B0B0B.toInt(),
+            strip = 0xFF171717.toInt(),
+            key = 0xFF171717.toInt(),
+            keyPressed = 0xFFE64825.toInt(),
+            text = 0xFFFFE600.toInt(),
+            accent = 0xFFB8E614.toInt(),
+            accentText = 0xFF0B0B0B.toInt(),
+            subText = 0xFFDCD0B8.toInt(),
+            border = 0xFFB8E614.toInt(),
+            shadow = 0xFFE64825.toInt(),
+            stripText = 0xFFFFE600.toInt(),
+            actionKeyColours = intArrayOf(0xFFB8E614.toInt(), 0xFFE64825.toInt(), 0xFFFFE600.toInt(), 0xFF226B70.toInt()),
+            actionTextColours = intArrayOf(0xFF0B0B0B.toInt(), 0xFF0B0B0B.toInt(), 0xFF0B0B0B.toInt(), 0xFFDCD0B8.toInt()),
+            keyStyle = KeyStyle.SLANTED,
+            shoutLabels = true,
+            ambient = AmbientKind.CHEVRONS,
+            ambientColours = intArrayOf(0x44B8E614.toInt(), 0x3CE64825.toInt(), 0x38FFE600.toInt()),
+            tapEffect = TapEffectKind.SPRAY,
+            effectColours = intArrayOf(0xFFB8E614.toInt(), 0xFFE64825.toInt(), 0xFFFFE600.toInt(), 0xFFDCD0B8.toInt()),
+            typeface = Typeface.create("sans-serif-black", Typeface.NORMAL),
+        )
+
+        /**
+         * Massive Attack, Blue Lines and Mezzanine (1991, 1998): nocturnal Bristol. Keys are etched carapace-steel plates
+         * with a brushed sheen and a pale steel edge on a near-black field; a pressed key goes Blue Lines cobalt. Thin
+         * cobalt, crimson and steel lines ripple slowly behind them like a trip-hop pulse, and every tap sends a ring
+         * outward. Enter is Blue Lines crimson, Delete cobalt.
+         * Palette from the theme-ideas sheet; the look is drawn from the artwork and identity itself.
+         */
+        val MASSIVE_ATTACK = KeyboardTheme(
+            background = 0xFF0A0C0E.toInt(),
+            backgroundBottom = 0xFF14181D.toInt(),
+            strip = 0xFF14181D.toInt(),
+            key = 0xFF1B1F24.toInt(),
+            keyPressed = 0xFF1A5296.toInt(),
+            text = 0xFFEFEEEA.toInt(),
+            accent = 0xFFD11F2E.toInt(),
+            accentText = 0xFFEFEEEA.toInt(),
+            subText = 0xFF6C757D.toInt(),
+            border = 0xFF6C757D.toInt(),
+            actionKeyColours = intArrayOf(0xFFD11F2E.toInt(), 0xFF1A5296.toInt(), 0xFF6C757D.toInt(), 0xFF32373D.toInt()),
+            actionTextColours = intArrayOf(0xFFEFEEEA.toInt(), 0xFFEFEEEA.toInt(), 0xFF0A0C0E.toInt(), 0xFFEFEEEA.toInt()),
+            keyStyle = KeyStyle.ETCHED,
+            ambient = AmbientKind.WAVES,
+            ambientColours = intArrayOf(0x701A5296.toInt(), 0x60D11F2E.toInt(), 0x506C757D.toInt()),
+            tapEffect = TapEffectKind.RIPPLES,
+            effectColours = intArrayOf(0xFF1A5296.toInt(), 0xFFD11F2E.toInt(), 0xFFEFEEEA.toInt()),
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL),
+        )
+
+        /**
+         * Primus, Sailing the Seas of Cheese (1991): deliberately weird. Every key is a slab of gold cheese with a tin-can
+         * ochre rind and its own scooped, shaded holes (different on each key), lettered in mud brown on a speckled mud
+         * background. Enter is tin-can red, and every tap blows bubbles of molten cheese. Bold italic serif lettering.
+         * Palette from the theme-ideas sheet; the look is drawn from the artwork and identity itself.
+         */
+        val PRIMUS = KeyboardTheme(
+            background = 0xFF3B2B1F.toInt(),
+            strip = 0xFF595C33.toInt(),
+            key = 0xFFE6B833.toInt(),
+            keyPressed = 0xFFF2D06A.toInt(),
+            text = 0xFF3B2B1F.toInt(),
+            accent = 0xFF9E2929.toInt(),
+            accentText = 0xFFEFE2C2.toInt(),
+            subText = 0xFF595C33.toInt(),
+            border = 0xFFC48A31.toInt(),
+            stripText = 0xFFEFE2C2.toInt(),
+            actionKeyColours = intArrayOf(0xFF9E2929.toInt(), 0xFF595C33.toInt(), 0xFFC48A31.toInt(), 0xFFEFE2C2.toInt()),
+            actionTextColours = intArrayOf(0xFFEFE2C2.toInt(), 0xFFEFE2C2.toInt(), 0xFF3B2B1F.toInt(), 0xFF3B2B1F.toInt()),
+            keyStyle = KeyStyle.HOLES,
+            ambient = AmbientKind.TEXTURE,
+            ambientColours = intArrayOf(0xFF3B2B1F.toInt(), 0xFF4B3A28.toInt(), 0xFF2D2016.toInt()),
+            tapEffect = TapEffectKind.BUBBLES,
+            effectColours = intArrayOf(0xFFE6B833.toInt(), 0xFFC48A31.toInt(), 0xFFEFE2C2.toInt()),
+            typeface = Typeface.create("serif", Typeface.BOLD_ITALIC),
+        )
+
+        /**
+         * Blur, Parklife (1994): Walthamstow Stadium on a bright day. Keys are cream betting slips with a half-round notch
+         * either side, a crimson stripe and a dotted perforation, lettered in navy; a pressed key turns bumper gold. Four
+         * greyhounds in coloured jackets race across mown turf behind the keys under a Walthamstow-blue sky, and every
+         * tap throws confetti. Enter is jacket crimson.
+         * Palette from the theme-ideas sheet; the look is drawn from the artwork and identity itself.
+         */
+        val BLUR = KeyboardTheme(
+            background = 0xFF4CA2D8.toInt(),
+            strip = 0xFF1A2B40.toInt(),
+            key = 0xE6F7F0E1.toInt(),
+            keyPressed = 0xF2F4C41D.toInt(),
+            text = 0xFF1A2B40.toInt(),
+            accent = 0xFFD12328.toInt(),
+            accentText = 0xFFF7F0E1.toInt(),
+            subText = 0xFF2F7C4E.toInt(),
+            border = 0xFFD12328.toInt(),
+            stripText = 0xFFF7F0E1.toInt(),
+            actionKeyColours = intArrayOf(0xFFD12328.toInt(), 0xFFF4C41D.toInt(), 0xFF2F7C4E.toInt(), 0xFF1A2B40.toInt()),
+            actionTextColours = intArrayOf(0xFFF7F0E1.toInt(), 0xFF1A2B40.toInt(), 0xFFF7F0E1.toInt(), 0xFFF7F0E1.toInt()),
+            keyStyle = KeyStyle.TICKET,
+            shoutLabels = true,
+            ambient = AmbientKind.GREYHOUNDS,
+            ambientColours = intArrayOf(0xFF2F7C4E.toInt(), 0xFF378A57.toInt(), 0xFFF7F0E1.toInt(), 0xFF1A2B40.toInt(), 0xFFD12328.toInt(), 0xFFF4C41D.toInt(), 0xFFF7F0E1.toInt(), 0xFF2F7C4E.toInt()),
+            tapEffect = TapEffectKind.CONFETTI,
+            effectColours = intArrayOf(0xFFD12328.toInt(), 0xFFF4C41D.toInt(), 0xFF2F7C4E.toInt(), 0xFFF7F0E1.toInt(), 0xFF1A2B40.toInt()),
+            typeface = Typeface.create("sans-serif-black", Typeface.NORMAL),
+        )
+
+        /**
+         * Oasis, Definitely Maybe and (What's the Story) Morning Glory? (1994, 1995): a Burnage bedroom floor. Navy slab keys
+         * in ivory lettering stand on a parquet of honey-coloured planks, each plank its own shade; a pressed key goes
+         * Berwick tarmac. Enter is Definitely Maybe red, with a red cursor. Laid-back and plain, as it should be.
+         * Palette from the theme-ideas sheet; the look is drawn from the artwork and identity itself.
+         */
+        val OASIS = KeyboardTheme(
+            background = 0xFF8F5E2E.toInt(),
+            strip = 0xFF1A3350.toInt(),
+            key = 0xFF1A3350.toInt(),
+            keyPressed = 0xFF45494E.toInt(),
+            text = 0xFFEAE2D2.toInt(),
+            accent = 0xFFC8222A.toInt(),
+            accentText = 0xFFEAE2D2.toInt(),
+            subText = 0xFFB6C3CB.toInt(),
+            stripText = 0xFFEAE2D2.toInt(),
+            actionKeyColours = intArrayOf(0xFFC8222A.toInt(), 0xFFB37B40.toInt(), 0xFFB6C3CB.toInt(), 0xFF45494E.toInt()),
+            actionTextColours = intArrayOf(0xFFEAE2D2.toInt(), 0xFF1A3350.toInt(), 0xFF1A3350.toInt(), 0xFFEAE2D2.toInt()),
+            keyStyle = KeyStyle.SLAB,
+            ambient = AmbientKind.PARQUET,
+            ambientColours = intArrayOf(0xFFB37B40.toInt(), 0xFF9A6A38.toInt(), 0xFF5C3A1A.toInt()),
+            cursorColour = 0xFFC8222A.toInt(),
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL),
+        )
+
+        /**
+         * Daft Punk, Homework (1997): the embroidered tour jacket. Keys are slate twill patches with a raised gold merrow
+         * edge and a line of running stitches, lettered in label white; a pressed key goes embroidered crimson. A row of
+         * crimson sound bars lies flat behind them until you press a key, then rings like a kick drum. Enter is crimson,
+         * Delete gold.
+         * Palette from the theme-ideas sheet; the look is drawn from the artwork and identity itself.
+         */
+        val DAFT_PUNK_HOMEWORK = KeyboardTheme(
+            background = 0xFF0D0D0F.toInt(),
+            strip = 0xFF292B2E.toInt(),
+            key = 0xFF292B2E.toInt(),
+            keyPressed = 0xFFD91E26.toInt(),
+            text = 0xFFF4F4F2.toInt(),
+            accent = 0xFFD91E26.toInt(),
+            accentText = 0xFFF4F4F2.toInt(),
+            subText = 0xFF989DA3.toInt(),
+            border = 0xFFE6B532.toInt(),
+            stripText = 0xFFF4F4F2.toInt(),
+            actionKeyColours = intArrayOf(0xFFD91E26.toInt(), 0xFFE6B532.toInt(), 0xFF989DA3.toInt(), 0xFF292B2E.toInt()),
+            actionTextColours = intArrayOf(0xFFF4F4F2.toInt(), 0xFF0D0D0F.toInt(), 0xFF0D0D0F.toInt(), 0xFFF4F4F2.toInt()),
+            keyStyle = KeyStyle.STITCH,
+            shoutLabels = true,
+            ambient = AmbientKind.SOUND,
+            ambientColours = intArrayOf(0xCCD91E26.toInt()),
+            typeface = Typeface.create("sans-serif-black", Typeface.NORMAL),
+        )
+
+        /**
+         * Daft Punk, Discovery (2001): the chrome helmets. Keys are liquid-mercury plates with a dark horizon, a shine and a
+         * magenta LED strip along the bottom that wraps the whole key when pressed, over a visor-black field. A spectrum
+         * of magenta, cyan and gold leaps behind them when you type, and every tap throws LED sparkles. Enter is LED
+         * magenta, Delete LED cyan.
+         * Palette from the theme-ideas sheet; the look is drawn from the artwork and identity itself.
+         */
+        val DAFT_PUNK_DISCOVERY = KeyboardTheme(
+            background = 0xFF101217.toInt(),
+            backgroundBottom = 0xFF1B2030.toInt(),
+            strip = 0xFFCCD4DC.toInt(),
+            key = 0xFFCCD4DC.toInt(),
+            keyPressed = 0xFFF8F9FA.toInt(),
+            text = 0xFF101217.toInt(),
+            accent = 0xFFE62E8B.toInt(),
+            accentText = 0xFFF8F9FA.toInt(),
+            subText = 0xFF4F5766.toInt(),
+            stripText = 0xFF101217.toInt(),
+            actionKeyColours = intArrayOf(0xFFE62E8B.toInt(), 0xFF00AEEF.toInt(), 0xFFFFD100.toInt(), 0xFFF8F9FA.toInt()),
+            actionTextColours = intArrayOf(0xFFF8F9FA.toInt(), 0xFF101217.toInt(), 0xFF101217.toInt(), 0xFF101217.toInt()),
+            keyStyle = KeyStyle.CHROME,
+            ambient = AmbientKind.EQUALISER,
+            ambientColours = intArrayOf(0xCCE62E8B.toInt(), 0xCC00AEEF.toInt(), 0xCCFFD100.toInt()),
+            tapEffect = TapEffectKind.SPARKLE,
+            effectColours = intArrayOf(0xFFE62E8B.toInt(), 0xFF00AEEF.toInt(), 0xFFFFD100.toInt(), 0xFFF8F9FA.toInt()),
+            typeface = Typeface.create("sans-serif-medium", Typeface.BOLD),
+        )
+
+        /**
+         * Daft Punk, Human After All (2005): a dead CRT and a red visor. Square scanlined keys in raster charcoal on a
+         * void-black screen, lettered in broadcast white with a static-silver edge; a pressed key flashes visor red. A
+         * CRT rolls scanlines and flicker behind them with a blinking red indicator. Monospace, cold and stark; Enter is
+         * visor red.
+         * Palette from the theme-ideas sheet; the look is drawn from the artwork and identity itself.
+         */
+        val DAFT_PUNK_HUMAN_AFTER_ALL = KeyboardTheme(
+            background = 0xFF070709.toInt(),
+            strip = 0xFF1C1E22.toInt(),
+            key = 0xFF1C1E22.toInt(),
+            keyPressed = 0xFFDD202A.toInt(),
+            text = 0xFFF2F3F5.toInt(),
+            accent = 0xFFDD202A.toInt(),
+            accentText = 0xFFF2F3F5.toInt(),
+            subText = 0xFF74787E.toInt(),
+            border = 0xFF74787E.toInt(),
+            stripText = 0xFFF2F3F5.toInt(),
+            actionKeyColours = intArrayOf(0xFFDD202A.toInt(), 0xFFC2C6CA.toInt(), 0xFF1C1E22.toInt(), 0xFF74787E.toInt()),
+            actionTextColours = intArrayOf(0xFFF2F3F5.toInt(), 0xFF070709.toInt(), 0xFFF2F3F5.toInt(), 0xFF070709.toInt()),
+            keyStyle = KeyStyle.SCANLINE,
+            shoutLabels = true,
+            squareKeys = true,
+            ambient = AmbientKind.CRT,
+            ambientColours = intArrayOf(0x22C2C6CA.toInt(), 0x33F2F3F5.toInt(), 0xFFDD202A.toInt()),
+            cursorColour = 0xFFDD202A.toInt(),
+            typeface = Typeface.create("monospace", Typeface.BOLD),
+        )
+
+        /**
+         * Justice, Cross (2007): the monolith. Brushed graphite plates with a burnished-brass edge and warm-gold lettering on
+         * black; a pressed key burns brass. A huge gold cross stands behind the keys in a halo that slowly pulses, with
+         * long rays of light turning behind it, and every tap blooms a gold orb. Heavy serif lettering; Enter is Cross
+         * gold.
+         * Palette from the theme-ideas sheet; the look is drawn from the artwork and identity itself.
+         */
+        val JUSTICE = KeyboardTheme(
+            background = 0xFF0A0A0B.toInt(),
+            strip = 0xFF242426.toInt(),
+            key = 0xC8242426.toInt(),
+            keyPressed = 0xE6B88422.toInt(),
+            text = 0xFFF5D478.toInt(),
+            accent = 0xFFE5B23A.toInt(),
+            accentText = 0xFF0A0A0B.toInt(),
+            subText = 0xFFB88422.toInt(),
+            border = 0xFFB88422.toInt(),
+            stripText = 0xFFF5D478.toInt(),
+            actionKeyColours = intArrayOf(0xFFE5B23A.toInt(), 0xFFB88422.toInt(), 0xFFFAF6EB.toInt(), 0xFF242426.toInt()),
+            actionTextColours = intArrayOf(0xFF0A0A0B.toInt(), 0xFF0A0A0B.toInt(), 0xFF0A0A0B.toInt(), 0xFFF5D478.toInt()),
+            keyStyle = KeyStyle.ETCHED,
+            ambient = AmbientKind.CROSS,
+            ambientColours = intArrayOf(0xFFE5B23A.toInt(), 0x80F5D478.toInt(), 0x2AF5D478.toInt()),
+            tapEffect = TapEffectKind.ORB,
+            effectColours = intArrayOf(0xFFF5D478.toInt(), 0xFFFAF6EB.toInt(), 0xFFE5B23A.toInt()),
+            typeface = Typeface.create("serif", Typeface.BOLD),
+        )
+
+        /**
+         * Gorillaz, Gorillaz and Demon Days (2001, 2005): the cartoon band. Every key is a newsprint speech bubble with a heavy
+         * ink outline, a tail at the lower left and halftone shading, on Geep camo olive speckle; a pressed key fills 2D
+         * sky blue. Enter is Demon Days crimson and Delete Murdoc teal, and every tap pops a few bubbles. Comic lettering.
+         * Palette from the theme-ideas sheet; the look is drawn from the artwork and identity itself.
+         */
+        val GORILLAZ = KeyboardTheme(
+            background = 0xFF5D6C3A.toInt(),
+            strip = 0xFF111316.toInt(),
+            key = 0xFFEEE6D3.toInt(),
+            keyPressed = 0xFF579EC8.toInt(),
+            text = 0xFF111316.toInt(),
+            accent = 0xFFB8242A.toInt(),
+            accentText = 0xFFEEE6D3.toInt(),
+            subText = 0xFF2A5A6B.toInt(),
+            border = 0xFF111316.toInt(),
+            stripText = 0xFFEEE6D3.toInt(),
+            actionKeyColours = intArrayOf(0xFFB8242A.toInt(), 0xFF2A5A6B.toInt(), 0xFF579EC8.toInt(), 0xFF111316.toInt()),
+            actionTextColours = intArrayOf(0xFFEEE6D3.toInt(), 0xFFEEE6D3.toInt(), 0xFF111316.toInt(), 0xFFEEE6D3.toInt()),
+            keyStyle = KeyStyle.SPEECH,
+            ambient = AmbientKind.TEXTURE,
+            ambientColours = intArrayOf(0xFF5D6C3A.toInt(), 0xFF6B7B45.toInt(), 0xFF4A5830.toInt()),
+            tapEffect = TapEffectKind.BUBBLES,
+            effectColours = intArrayOf(0xFF579EC8.toInt(), 0xFFEEE6D3.toInt(), 0xFFB8242A.toInt()),
+            typeface = Typeface.create("casual", Typeface.BOLD),
+        )
+
+        /**
+         * The White Stripes, Elephant (2003): red, white and black, nothing else. Squared white keys with a black outline and
+         * heavy lettering, translucent so the peppermint behind them shows through; a pressed key is peppermint red. The
+         * peppermint candy turns slowly behind the keyboard. Enter is red, Delete black, and the cursor is red.
+         * Palette from the theme-ideas sheet; the look is drawn from the artwork and identity itself.
+         */
+        val THE_WHITE_STRIPES = KeyboardTheme(
+            background = 0xFF101010.toInt(),
+            strip = 0xFF101010.toInt(),
+            key = 0xD0F8F7F4.toInt(),
+            keyPressed = 0xE0D61A21.toInt(),
+            text = 0xFF101010.toInt(),
+            accent = 0xFFD61A21.toInt(),
+            accentText = 0xFFF8F7F4.toInt(),
+            subText = 0xFF7C1115.toInt(),
+            border = 0xFF101010.toInt(),
+            stripText = 0xFFF8F7F4.toInt(),
+            actionKeyColours = intArrayOf(0xFFD61A21.toInt(), 0xFF101010.toInt(), 0xFF7C1115.toInt(), 0xFF2B2B2D.toInt()),
+            actionTextColours = intArrayOf(0xFFF8F7F4.toInt(), 0xFFF8F7F4.toInt(), 0xFFF8F7F4.toInt(), 0xFFF8F7F4.toInt()),
+            keyStyle = KeyStyle.DEFAULT,
+            squareKeys = true,
+            shoutLabels = true,
+            ambient = AmbientKind.PEPPERMINT,
+            ambientColours = intArrayOf(0xFFD61A21.toInt(), 0xFFF8F7F4.toInt(), 0xFF101010.toInt()),
+            cursorColour = 0xFFD61A21.toInt(),
+            typeface = Typeface.create("sans-serif-condensed", Typeface.BOLD),
+        )
+
+        /**
+         * The Strokes, Is This It (2001): the bubble-chamber sleeve. Dark leather slab keys with a slate edge and cream
+         * lettering; a pressed key goes CERN cobalt. Thin gold, cobalt and cream particle tracks curl and fade behind the
+         * keys as they would in the photograph, and every tap blows a few chamber bubbles. Enter is Bubble Chamber gold.
+         * Palette from the theme-ideas sheet; the look is drawn from the artwork and identity itself.
+         */
+        val THE_STROKES = KeyboardTheme(
+            background = 0xFF161618.toInt(),
+            strip = 0xFF23252A.toInt(),
+            key = 0xD023252A.toInt(),
+            keyPressed = 0xE61A4C9E.toInt(),
+            text = 0xFFEFE7D7.toInt(),
+            accent = 0xFFF5B800.toInt(),
+            accentText = 0xFF161618.toInt(),
+            subText = 0xFFC69B7B.toInt(),
+            border = 0xFF4C545F.toInt(),
+            stripText = 0xFFEFE7D7.toInt(),
+            actionKeyColours = intArrayOf(0xFFF5B800.toInt(), 0xFF1A4C9E.toInt(), 0xFFC69B7B.toInt(), 0xFF4C545F.toInt()),
+            actionTextColours = intArrayOf(0xFF161618.toInt(), 0xFFEFE7D7.toInt(), 0xFF161618.toInt(), 0xFFEFE7D7.toInt()),
+            keyStyle = KeyStyle.SLAB,
+            ambient = AmbientKind.TRACKS,
+            ambientColours = intArrayOf(0xCCF5B800.toInt(), 0xCC1A4C9E.toInt(), 0x99EFE7D7.toInt()),
+            tapEffect = TapEffectKind.BUBBLES,
+            effectColours = intArrayOf(0xFFEFE7D7.toInt(), 0xFFF5B800.toInt(), 0xFF1A4C9E.toInt()),
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL),
+        )
+
+        /**
+         * Evanescence, Fallen (2003): a cathedral at night. Tall gothic-arch keys with a line of tracery inside, in
+         * Fallen slate on midnight, outlined in porcelain cyan and lettered in pale ivory; a pressed key glows. Mist-blue
+         * ribbons sway behind them, faint stars twinkle, and every tap lets fall a few pale petals. Enter is mist blue.
+         * Palette from the theme-ideas sheet; the look is drawn from the artwork and identity itself.
+         */
+        val EVANESCENCE = KeyboardTheme(
+            background = 0xFF0C1724.toInt(),
+            backgroundBottom = 0xFF06090E.toInt(),
+            strip = 0xFF06090E.toInt(),
+            key = 0xFF253748.toInt(),
+            keyPressed = 0xFF587C9A.toInt(),
+            text = 0xFFEFF3F6.toInt(),
+            accent = 0xFFB5CCDA.toInt(),
+            accentText = 0xFF06090E.toInt(),
+            subText = 0xFFB5CCDA.toInt(),
+            border = 0xFF587C9A.toInt(),
+            stripText = 0xFFEFF3F6.toInt(),
+            actionKeyColours = intArrayOf(0xFFB5CCDA.toInt(), 0xFF587C9A.toInt(), 0xFF253748.toInt(), 0xFF06090E.toInt()),
+            actionTextColours = intArrayOf(0xFF06090E.toInt(), 0xFFEFF3F6.toInt(), 0xFFEFF3F6.toInt(), 0xFFB5CCDA.toInt()),
+            keyStyle = KeyStyle.GOTHIC,
+            stars = true,
+            starColours = intArrayOf(0xFFEFF3F6.toInt(), 0xFFB5CCDA.toInt(), 0xFF587C9A.toInt()),
+            ambient = AmbientKind.RIBBONS,
+            ambientColours = intArrayOf(0x30587C9A.toInt(), 0x26B5CCDA.toInt(), 0x20253748.toInt()),
+            tapEffect = TapEffectKind.PETALS,
+            effectColours = intArrayOf(0xFFEFF3F6.toInt(), 0xFFB5CCDA.toInt(), 0xFF587C9A.toInt()),
+            typeface = Typeface.create("serif", Typeface.NORMAL),
+        )
+
+        /**
+         * Aphex Twin, Selected Ambient Works Volume II (1994): restrained and unsettling. Plain peat-brown keys in aged
+         * parchment lettering on a grainy bark-black field with lichen sub-labels; a pressed key goes moss slate. Nothing
+         * moves but a slow ghost of pixels where you tap. Light lettering; Enter is lichen.
+         * Palette from the theme-ideas sheet; the look is drawn from the artwork and identity itself.
+         */
+        val APHEX_TWIN = KeyboardTheme(
+            background = 0xFF211F1C.toInt(),
+            strip = 0xFF2D2A25.toInt(),
+            key = 0xFF494239.toInt(),
+            keyPressed = 0xFF6C6E65.toInt(),
+            text = 0xFFDECED6.toInt(),
+            accent = 0xFFC3B8A2.toInt(),
+            accentText = 0xFF211F1C.toInt(),
+            subText = 0xFFC3B8A2.toInt(),
+            stripText = 0xFFDECED6.toInt(),
+            actionKeyColours = intArrayOf(0xFFC3B8A2.toInt(), 0xFF8D6D51.toInt(), 0xFF6C6E65.toInt(), 0xFF494239.toInt()),
+            actionTextColours = intArrayOf(0xFF211F1C.toInt(), 0xFFDECED6.toInt(), 0xFFDECED6.toInt(), 0xFFDECED6.toInt()),
+            ambient = AmbientKind.TEXTURE,
+            ambientColours = intArrayOf(0xFF211F1C.toInt(), 0xFF2D2A25.toInt(), 0xFF171512.toInt()),
+            tapEffect = TapEffectKind.GHOST,
+            effectColours = intArrayOf(0xFFC3B8A2.toInt(), 0xFF8D6D51.toInt()),
+            typeface = Typeface.create("sans-serif-light", Typeface.NORMAL),
+        )
+
+        /**
+         * MTV (1981 onwards): the logo as a playground. White keys with a hard black outline and an offset magenta shadow
+         * under a broadcast-yellow strip; a pressed key flips yellow. A giant tilted M changes colour every second or so
+         * behind the keys, with a scrawled TV redrawn a little differently every few frames, and every tap bursts into
+         * confetti. Enter is hot magenta, Delete electric cyan.
+         * Palette from the theme-ideas sheet; the look is drawn from the artwork and identity itself.
+         */
+        val MTV = KeyboardTheme(
+            background = 0xFF101010.toInt(),
+            strip = 0xFFFFE600.toInt(),
+            key = 0xFFF8F8F6.toInt(),
+            keyPressed = 0xFFFFE600.toInt(),
+            text = 0xFF101010.toInt(),
+            accent = 0xFFE6007E.toInt(),
+            accentText = 0xFFF8F8F6.toInt(),
+            subText = 0xFFE6007E.toInt(),
+            border = 0xFF101010.toInt(),
+            shadow = 0xFFE6007E.toInt(),
+            stripText = 0xFF101010.toInt(),
+            actionKeyColours = intArrayOf(0xFFE6007E.toInt(), 0xFF00AEEF.toInt(), 0xFFFFE600.toInt(), 0xFFED1C24.toInt()),
+            actionTextColours = intArrayOf(0xFFF8F8F6.toInt(), 0xFF101010.toInt(), 0xFF101010.toInt(), 0xFFF8F8F6.toInt()),
+            keyStyle = KeyStyle.MEMPHIS,
+            shoutLabels = true,
+            ambient = AmbientKind.MTV_LOGO,
+            ambientColours = intArrayOf(0xFFFFE600.toInt(), 0xFFE6007E.toInt(), 0xFF00AEEF.toInt(), 0xFFED1C24.toInt()),
+            tapEffect = TapEffectKind.CONFETTI,
+            effectColours = intArrayOf(0xFFFFE600.toInt(), 0xFFE6007E.toInt(), 0xFF00AEEF.toInt(), 0xFFED1C24.toInt(), 0xFFF8F8F6.toInt()),
+            typeface = Typeface.create("sans-serif-black", Typeface.NORMAL),
+        )
+
+        /**
+         * MTV2 (late 1990s): the underground channel. Graphite keys whose outline has split into chartreuse, cyan and amber
+         * ghosts, lettered in crisp white; a pressed key goes signal cyan. Lines of scrolling text run past behind them in
+         * the same three colours and every tap leaves a ghost of pixels like bad reception. Monospace; Enter is volt
+         * chartreuse, Delete alert amber.
+         * Palette from the theme-ideas sheet; the look is drawn from the artwork and identity itself.
+         */
+        val MTV2 = KeyboardTheme(
+            background = 0xFF0A0B0D.toInt(),
+            strip = 0xFF282B30.toInt(),
+            key = 0xFF282B30.toInt(),
+            keyPressed = 0xFF0099CC.toInt(),
+            text = 0xFFF3F3F1.toInt(),
+            accent = 0xFF0099CC.toInt(),
+            accentText = 0xFFF3F3F1.toInt(),
+            subText = 0xFFF59E0B.toInt(),
+            border = 0xFFA8E61D.toInt(),
+            stripText = 0xFFF3F3F1.toInt(),
+            actionKeyColours = intArrayOf(0xFFA8E61D.toInt(), 0xFFF59E0B.toInt(), 0xFF0099CC.toInt(), 0xFF282B30.toInt()),
+            actionTextColours = intArrayOf(0xFF0A0B0D.toInt(), 0xFF0A0B0D.toInt(), 0xFFF3F3F1.toInt(), 0xFFF3F3F1.toInt()),
+            keyStyle = KeyStyle.GLITCH,
+            shoutLabels = true,
+            ambient = AmbientKind.SCROLL,
+            ambientColours = intArrayOf(0x55A8E61D.toInt(), 0x4A0099CC.toInt(), 0x40F59E0B.toInt()),
+            tapEffect = TapEffectKind.GHOST,
+            effectColours = intArrayOf(0xFFA8E61D.toInt(), 0xFF0099CC.toInt()),
+            typeface = Typeface.create("monospace", Typeface.BOLD),
+        )
+
+        /**
+         * Kerrang! (1981 onwards): the magazine. Dark newsprint keys cracked from an impact point (somewhere different on every
+         * key) with a masthead-crimson bar along the bottom, lettered in shatter white under a crimson masthead strip; a
+         * pressed key turns crimson and the cracks bite harder. A halftone screen of crimson dots builds up from the top
+         * left, and every tap blows glass and debris. Enter is crimson.
+         * Palette from the theme-ideas sheet; the look is drawn from the artwork and identity itself.
+         */
+        val KERRANG = KeyboardTheme(
+            background = 0xFF111111.toInt(),
+            strip = 0xFFD91E2A.toInt(),
+            key = 0xFF2B2B2D.toInt(),
+            keyPressed = 0xFFD91E2A.toInt(),
+            text = 0xFFF5F4F0.toInt(),
+            accent = 0xFFD91E2A.toInt(),
+            accentText = 0xFFF5F4F0.toInt(),
+            subText = 0xFF8A8A88.toInt(),
+            border = 0xFFF5F4F0.toInt(),
+            stripText = 0xFFF5F4F0.toInt(),
+            actionKeyColours = intArrayOf(0xFFD91E2A.toInt(), 0xFFF5F4F0.toInt(), 0xFF8A8A88.toInt(), 0xFFD8D4CA.toInt()),
+            actionTextColours = intArrayOf(0xFFF5F4F0.toInt(), 0xFF111111.toInt(), 0xFF111111.toInt(), 0xFF111111.toInt()),
+            keyStyle = KeyStyle.SHATTER,
+            shoutLabels = true,
+            ambient = AmbientKind.HALFTONE,
+            ambientColours = intArrayOf(0x80D91E2A.toInt()),
+            tapEffect = TapEffectKind.BLAST,
+            effectColours = intArrayOf(0xFFF5F4F0.toInt(), 0xFFD91E2A.toInt(), 0xFF8A8A88.toInt(), 0xFFD8D4CA.toInt(), 0xFF2B2B2D.toInt()),
+            typeface = Typeface.create("sans-serif-black", Typeface.NORMAL),
+        )
+
         private fun heavyItalic(): Typeface =
             if (Build.VERSION.SDK_INT >= 28) {
                 Typeface.create(Typeface.SANS_SERIF, 900, true)
@@ -2040,6 +2548,24 @@ class KeyboardTheme(
                 KeyboardSettings.THEME_GTA_VICE_CITY -> GTA_VICE_CITY
                 KeyboardSettings.THEME_GTA_SAN_ANDREAS -> GTA_SAN_ANDREAS
                 KeyboardSettings.THEME_PIP_BOY -> PIP_BOY
+                KeyboardSettings.THEME_NINE_INCH_NAILS -> NINE_INCH_NAILS
+                KeyboardSettings.THEME_THE_PRODIGY -> THE_PRODIGY
+                KeyboardSettings.THEME_MASSIVE_ATTACK -> MASSIVE_ATTACK
+                KeyboardSettings.THEME_PRIMUS -> PRIMUS
+                KeyboardSettings.THEME_BLUR -> BLUR
+                KeyboardSettings.THEME_OASIS -> OASIS
+                KeyboardSettings.THEME_DAFT_PUNK_HOMEWORK -> DAFT_PUNK_HOMEWORK
+                KeyboardSettings.THEME_DAFT_PUNK_DISCOVERY -> DAFT_PUNK_DISCOVERY
+                KeyboardSettings.THEME_DAFT_PUNK_HUMAN_AFTER_ALL -> DAFT_PUNK_HUMAN_AFTER_ALL
+                KeyboardSettings.THEME_JUSTICE -> JUSTICE
+                KeyboardSettings.THEME_GORILLAZ -> GORILLAZ
+                KeyboardSettings.THEME_THE_WHITE_STRIPES -> THE_WHITE_STRIPES
+                KeyboardSettings.THEME_THE_STROKES -> THE_STROKES
+                KeyboardSettings.THEME_EVANESCENCE -> EVANESCENCE
+                KeyboardSettings.THEME_APHEX_TWIN -> APHEX_TWIN
+                KeyboardSettings.THEME_MTV -> MTV
+                KeyboardSettings.THEME_MTV2 -> MTV2
+                KeyboardSettings.THEME_KERRANG -> KERRANG
                 KeyboardSettings.THEME_DARK -> DARK
                 KeyboardSettings.THEME_LIGHT -> LIGHT
                 KeyboardSettings.THEME_CUSTOM -> {

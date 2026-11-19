@@ -1715,6 +1715,30 @@ fun KeyboardTheme.keyBackground(
             KeyStyle.BLOCK -> return framed(
                 BlockKeyDrawable(color, border, action, isPressed, gapXDp * density, gapYDp * density, density),
             )
+            KeyStyle.SCRATCHED -> return framed(
+                ScratchedKeyDrawable(color, border, shadow, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.STITCH -> return framed(
+                StitchKeyDrawable(color, border, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.CHROME -> return framed(
+                ChromeKeyDrawable(color, accent, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.TICKET -> return framed(
+                TicketKeyDrawable(color, border, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.HOLES -> return framed(
+                HolesKeyDrawable(color, border, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.SPEECH -> return framed(
+                SpeechKeyDrawable(color, border, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.GOTHIC -> return framed(
+                GothicKeyDrawable(color, border, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.SHATTER -> return framed(
+                ShatterKeyDrawable(color, border, accent, isPressed, gapXDp * density, gapYDp * density, density),
+            )
             KeyStyle.DEFAULT -> Unit
         }
         val shape = GradientDrawable().apply {
