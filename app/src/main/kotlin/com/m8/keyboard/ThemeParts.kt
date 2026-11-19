@@ -29,6 +29,9 @@ enum class StripStyle {
 
     /** A pixelated handheld screen (the Game Boy Advance). */
     PIXEL_SCREEN,
+
+    /** A blue gradient window with a silver line along its top and bottom, like a Final Fantasy VII menu (uses [KeyboardTheme.keyPressed] as its bright end). */
+    WINDOW,
 }
 
 /** The text view the candidate words are shown in. */

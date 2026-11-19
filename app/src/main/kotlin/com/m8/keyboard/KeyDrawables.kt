@@ -691,6 +691,24 @@ enum class TapEffectKind {
 
     /** A targeting reticle: four corner brackets close in on the tap, then a crosshair and a dot. */
     TARGET,
+
+    /** The white pointing-glove cursor of a Final Fantasy VII menu, which slides in to touch the tap and fades. */
+    POINTER,
+
+    /** Turning green plumbobs (a Sims diamond) that float up and bob. */
+    PLUMBOB,
+
+    /** A burst of spray-paint dots with a drip or two running down. */
+    SPRAY,
+
+    /** A ragged Worms-style explosion that throws out lumps of earth. */
+    BLAST,
+
+    /** Gold rings that scatter in an arc, spin and blink out, like the ones Sonic drops when he is hit. */
+    RINGS,
+
+    /** A Mario coin that pops up from the tap, spinning, and falls back. */
+    COINS,
 }
 
 /**
@@ -753,6 +771,12 @@ class TapEffectDrawable(
             TapEffectKind.HEARTS -> 4f
             TapEffectKind.HEXAGONS -> 3f
             TapEffectKind.TARGET -> 1f
+            TapEffectKind.POINTER -> 1f
+            TapEffectKind.PLUMBOB -> 2f
+            TapEffectKind.SPRAY -> 20f
+            TapEffectKind.BLAST -> 8f
+            TapEffectKind.RINGS -> 5f
+            TapEffectKind.COINS -> 1f
         }
         var count = expected.toInt() + if (random.nextFloat() < expected - expected.toInt()) 1 else 0
         if (count < 1) count = 1
@@ -855,6 +879,75 @@ class TapEffectDrawable(
                         bornAt = now, life = 650L,
                         colour = colour, phase = 0f, spin = 0f,
                     )
+                    TapEffectKind.POINTER -> Particle(
+                        x = x, y = y, vx = 0f, vy = 0f,
+                        size = d,
+                        bornAt = now, life = 800L,
+                        colour = colour, phase = 0f, spin = 0f,
+                    )
+                    TapEffectKind.PLUMBOB -> Particle(
+                        x = x + rnd(-10f, 10f) * d, y = y,
+                        vx = rnd(-14f, 14f) * d, vy = -rnd(40f, 75f) * d,
+                        size = rnd(7f, 10f) * d,
+                        bornAt = now + rnd(0f, 200f).toLong(), life = rnd(1100f, 1600f).toLong(),
+                        colour = colour, phase = rnd(0f, 6.28f), spin = 0f,
+                    )
+                    TapEffectKind.SPRAY -> {
+                        if (i % 6 == 5) {
+                            // A drip: [vy] is how fast it runs down; [spin] marks it as a drip.
+                            Particle(
+                                x = x + rnd(-10f, 10f) * d, y = y + rnd(-2f, 4f) * d,
+                                vx = 0f, vy = rnd(18f, 34f) * d,
+                                size = d,
+                                bornAt = now + rnd(0f, 60f).toLong(), life = rnd(700f, 1000f).toLong(),
+                                colour = colour, phase = 0f, spin = 1f,
+                            )
+                        } else {
+                            // A fleck: [vx] and [vy] are where it ends up, relative to the tap.
+                            val angle = rnd(0f, 6.28f)
+                            val dist = rnd(4f, 32f) * d
+                            Particle(
+                                x = x, y = y,
+                                vx = kotlin.math.cos(angle) * dist, vy = kotlin.math.sin(angle) * dist,
+                                size = rnd(1f, 2.4f) * d,
+                                bornAt = now + rnd(0f, 60f).toLong(), life = rnd(550f, 900f).toLong(),
+                                colour = colour, phase = 0f, spin = 0f,
+                            )
+                        }
+                    }
+                    TapEffectKind.BLAST -> {
+                        if (i == 0) {
+                            // The explosion itself ([phase] 1 marks it); the rest are lumps of earth.
+                            Particle(
+                                x = x, y = y, vx = 0f, vy = 0f,
+                                size = rnd(30f, 38f) * d,
+                                bornAt = now, life = 520L,
+                                colour = colour, phase = 1f, spin = 0f,
+                            )
+                        } else {
+                            Particle(
+                                x = x, y = y,
+                                vx = rnd(-130f, 130f) * d, vy = -rnd(90f, 210f) * d,
+                                size = rnd(1.6f, 3.2f) * d,
+                                bornAt = now, life = rnd(650f, 1000f).toLong(),
+                                colour = if (colours.size > 2) colours[2 + random.nextInt(colours.size - 2)] else colour,
+                                phase = 0f, spin = rnd(-400f, 400f),
+                            )
+                        }
+                    }
+                    TapEffectKind.RINGS -> Particle(
+                        x = x + rnd(-6f, 6f) * d, y = y,
+                        vx = rnd(-95f, 95f) * d, vy = -rnd(150f, 260f) * d,
+                        size = d,
+                        bornAt = now + rnd(0f, 80f).toLong(), life = rnd(1000f, 1300f).toLong(),
+                        colour = colour, phase = rnd(0f, 6.28f), spin = 0f,
+                    )
+                    TapEffectKind.COINS -> Particle(
+                        x = x, y = y, vx = 0f, vy = 0f,
+                        size = d,
+                        bornAt = now + i * 140L, life = 640L,
+                        colour = colour, phase = 0f, spin = 0f,
+                    )
                 },
             )
         }
@@ -892,6 +985,33 @@ class TapEffectDrawable(
                 TapEffectKind.HEARTS -> drawHeart(canvas, p, sec, fade)
                 TapEffectKind.HEXAGONS -> drawHexagon(canvas, p, t)
                 TapEffectKind.TARGET -> drawTarget(canvas, p, t)
+                TapEffectKind.POINTER -> GameTap.pointer(canvas, paint, oval, p.x, p.y, t, density, colours)
+                TapEffectKind.PLUMBOB ->
+                    GameTap.plumbob(canvas, paint, path, p.x + p.vx * sec, p.y + p.vy * sec, p.size, sec, p.phase, fade, p.colour)
+                TapEffectKind.SPRAY ->
+                    if (p.spin > 0.5f) {
+                        GameTap.sprayDrip(canvas, paint, p.x, p.y, p.vy, sec, t, p.colour, density)
+                    } else {
+                        GameTap.sprayDot(canvas, paint, p.x, p.y, p.vx, p.vy, p.size, t, p.colour)
+                    }
+                TapEffectKind.BLAST ->
+                    if (p.phase > 0.5f) {
+                        GameTap.blast(canvas, paint, path, p.x, p.y, p.size, t, colours)
+                    } else {
+                        val gravity = 520f * density
+                        GameTap.debris(
+                            canvas, paint, p.x + p.vx * sec, p.y + p.vy * sec + 0.5f * gravity * sec * sec,
+                            p.size, p.spin, sec, t, p.colour,
+                        )
+                    }
+                TapEffectKind.RINGS -> {
+                    val gravity = 620f * density
+                    GameTap.ring(
+                        canvas, paint, oval, p.x + p.vx * sec, p.y + p.vy * sec + 0.5f * gravity * sec * sec,
+                        sec, t, p.phase, density, colours,
+                    )
+                }
+                TapEffectKind.COINS -> GameTap.coin(canvas, paint, oval, p.x, p.y, sec, t, density, colours)
             }
         }
         if (particles.isNotEmpty()) invalidateSelf() // ask for the next frame
@@ -1284,6 +1404,7 @@ fun KeyboardTheme.stripDrawable(density: Float): Drawable = when (stripStyle) {
     StripStyle.FLAT -> ColorDrawable(strip)
     StripStyle.PATTERN -> GlitterPatternDrawable(strip, density, stripMode = true)
     StripStyle.PIXEL_SCREEN -> PixelScreenDrawable(strip, density)
+    StripStyle.WINDOW -> WindowStripDrawable(strip, keyPressed, border, density)
 }
 
 /** The blinking key cursor for themes that have one (MS-DOS), or null. */
@@ -1557,6 +1678,42 @@ fun KeyboardTheme.keyBackground(
             )
             KeyStyle.MOULDED -> return framed(
                 MouldedKeyDrawable(color, border, corner, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.RIVETED -> return framed(
+                RivetedKeyDrawable(color, border, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.WINDOW -> return framed(
+                WindowKeyDrawable(
+                    color, if (isPressed) lighten(color, 0.4f) else pressed, border, isPressed, corner,
+                    gapXDp * density, gapYDp * density, density,
+                ),
+            )
+            KeyStyle.PHOSPHOR -> return framed(
+                PhosphorKeyDrawable(color, border, deep, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.DECO -> return framed(
+                DecoKeyDrawable(color, border, accent, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.STENCIL -> return framed(
+                StencilKeyDrawable(
+                    color, if (action) keyText else accent, isPressed,
+                    gapXDp * density, gapYDp * density, density,
+                ),
+            )
+            KeyStyle.PANEL -> return framed(
+                PanelKeyDrawable(color, accent, isPressed, corner, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.TERRAIN -> return framed(
+                TerrainKeyDrawable(
+                    color, shadow, border, isPressed, corner,
+                    gapXDp * density, gapYDp * density, density,
+                ),
+            )
+            KeyStyle.CHECKER -> return framed(
+                CheckerKeyDrawable(color, border, shadow, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.BLOCK -> return framed(
+                BlockKeyDrawable(color, border, action, isPressed, gapXDp * density, gapYDp * density, density),
             )
             KeyStyle.DEFAULT -> Unit
         }

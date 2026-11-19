@@ -27,9 +27,12 @@ object ThemeComposer {
         KeyStyle.LCD, KeyStyle.MEMPHIS, KeyStyle.CHAMFER, KeyStyle.SLANTED,
         KeyStyle.BRACKET, KeyStyle.RETICLE, KeyStyle.SCANLINE, KeyStyle.FRAME, KeyStyle.GLITCH, KeyStyle.NEON,
         KeyStyle.BACKLIT, KeyStyle.BUBBLE, KeyStyle.UNDERGLOW, KeyStyle.PETAL, KeyStyle.DISH, KeyStyle.PLATE,
-        KeyStyle.ETCHED, KeyStyle.MOULDED,
+        KeyStyle.ETCHED, KeyStyle.MOULDED, KeyStyle.RIVETED, KeyStyle.WINDOW, KeyStyle.PHOSPHOR, KeyStyle.DECO,
+        KeyStyle.TERRAIN, KeyStyle.CHECKER, KeyStyle.BLOCK,
     )
-    private val SHADOWED = setOf(KeyStyle.LCD, KeyStyle.MEMPHIS, KeyStyle.NOKIA, KeyStyle.PIXEL, KeyStyle.SLANTED)
+    private val SHADOWED = setOf(
+        KeyStyle.LCD, KeyStyle.MEMPHIS, KeyStyle.NOKIA, KeyStyle.PIXEL, KeyStyle.SLANTED, KeyStyle.TERRAIN, KeyStyle.CHECKER,
+    )
 
     @Synchronized
     fun compose(

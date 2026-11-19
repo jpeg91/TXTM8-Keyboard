@@ -141,6 +141,7 @@ class KeyboardTheme(
         /** The key styles whose keys have square corners, so their candidate highlight does too. */
         private val SQUARE_STYLES = setOf(
             KeyStyle.BRACKET, KeyStyle.RETICLE, KeyStyle.SCANLINE, KeyStyle.FRAME, KeyStyle.GLITCH, KeyStyle.ETCHED,
+            KeyStyle.RIVETED, KeyStyle.PHOSPHOR, KeyStyle.DECO, KeyStyle.STENCIL, KeyStyle.CHECKER, KeyStyle.BLOCK,
         )
 
         val DARK = KeyboardTheme(
@@ -1689,6 +1690,273 @@ class KeyboardTheme(
             typeface = Typeface.create("monospace", Typeface.BOLD),
         )
 
+        /**
+         * Super Mario Bros. (NES, 1985): the overworld sky as a flat background and a black HUD strip with white
+         * lettering. Ordinary keys are brick blocks with the lit and shaded edges and bonded mortar of the original; the
+         * action keys are ? blocks with a rivet in each corner (Enter in cap red, Delete and Settings in question-block
+         * gold, the mode key in warp-pipe green). Pixel clouds drift across the sky behind the keys, with hills and bushes
+         * along the bottom, and every tap pops a spinning coin out of the keyboard.
+         * Palette from the theme-ideas sheet; the look is drawn from the game itself.
+         */
+        val SUPER_MARIO_BROS = KeyboardTheme(
+            background = 0xFF5C94FC.toInt(),
+            strip = 0xFF000000.toInt(),
+            key = 0xFFC84C0C.toInt(),
+            keyPressed = 0xFFA03C08.toInt(),
+            text = 0xFFFCFCFC.toInt(),
+            accent = 0xFFD82800.toInt(),
+            accentText = 0xFFFCFCFC.toInt(),
+            actionKey = 0xFFFC9838.toInt(),
+            actionKeyPressed = 0xFFFCC078.toInt(),
+            actionText = 0xFF000000.toInt(),
+            subText = 0xFFFCD8A8.toInt(),
+            border = 0xFF000000.toInt(),
+            actionKeyColours = intArrayOf(0xFFD82800.toInt(), 0xFFFC9838.toInt(), 0xFF00A800.toInt(), 0xFFFC9838.toInt()),
+            actionTextColours = intArrayOf(0xFFFCFCFC.toInt(), 0xFF000000.toInt(), 0xFFFCFCFC.toInt(), 0xFF000000.toInt()),
+            keyStyle = KeyStyle.BLOCK,
+            shoutLabels = true,
+            ambient = AmbientKind.OVERWORLD,
+            ambientColours = intArrayOf(0xFFFCFCFC.toInt(), 0xFF9CC4FC.toInt(), 0xFF00A800.toInt(), 0xFF005800.toInt()),
+            tapEffect = TapEffectKind.COINS,
+            effectColours = intArrayOf(0xFFFC9838.toInt(), 0xFF000000.toInt()),
+            typeface = Typeface.create("monospace", Typeface.BOLD),
+        )
+
+        /**
+         * Sonic the Hedgehog (1991), Green Hill Zone: a bright sky, keys with a border of the zone's two-tone
+         * checkered earth round a deep cobalt face, and gold Chaos Ring lettering for the small letters. Clouds drift over
+         * round green hills and a strip of grass-topped checkers scrolls along the bottom as if Sonic were running; every
+         * tap scatters spinning gold rings that blink out like the ones you drop when you are hit.
+         * Palette from the theme-ideas sheet; the look is drawn from the game itself.
+         */
+        val SONIC_THE_HEDGEHOG = KeyboardTheme(
+            background = 0xFF2474F0.toInt(),
+            strip = 0xCC1848C8.toInt(),
+            key = 0xFF1848C8.toInt(),
+            keyPressed = 0xFF2474F0.toInt(),
+            text = 0xFFFFFFFF.toInt(),
+            accent = 0xFFF8D800.toInt(),
+            accentText = 0xFF101010.toInt(),
+            actionKey = 0xFFF8D800.toInt(),
+            actionKeyPressed = 0xFFFFF27A.toInt(),
+            actionText = 0xFF101010.toInt(),
+            subText = 0xFFF8D800.toInt(),
+            border = 0xFFA84800.toInt(),
+            shadow = 0xFFE89830.toInt(),
+            actionKeyColours = intArrayOf(0xFFF8D800.toInt(), 0xFFA84800.toInt(), 0xFF24A824.toInt(), 0xFFE89830.toInt()),
+            actionTextColours = intArrayOf(0xFF101010.toInt(), 0xFFFFFFFF.toInt(), 0xFFFFFFFF.toInt(), 0xFF101010.toInt()),
+            keyStyle = KeyStyle.CHECKER,
+            shoutLabels = true,
+            ambient = AmbientKind.GREEN_HILL,
+            ambientColours = intArrayOf(0xB8FFFFFF.toInt(), 0xFFA84800.toInt(), 0xFFE89830.toInt(), 0xFF24A824.toInt()),
+            tapEffect = TapEffectKind.RINGS,
+            effectColours = intArrayOf(0xFFF8D800.toInt(), 0xFFFFF27A.toInt()),
+            typeface = heavyItalic(),
+        )
+
+        /**
+         * DOOM (1993): the status bar. Keys are riveted steel plates with a bevelled grey frame round a recessed dark
+         * panel; the lettering is HUD gold and the small letters status-bar grey. A pressed key lights blood red like the
+         * face of the Doomguy, Enter is a Cacodemon-red plate and Delete Hellfire orange. Flames from the console fire
+         * effect lick up from the bottom of the screen behind the keys, and every tap throws embers.
+         * Palette from the theme-ideas sheet; the look is drawn from the game itself.
+         */
+        val DOOM = KeyboardTheme(
+            background = 0xFF0B0B0B.toInt(),
+            backgroundBottom = 0xFF240606.toInt(),
+            strip = 0xFF4B4B4B.toInt(),
+            key = 0xFF2E2E2E.toInt(),
+            keyPressed = 0xFF8B0000.toInt(),
+            text = 0xFFE2B84A.toInt(),
+            accent = 0xFFD75F00.toInt(),
+            accentText = 0xFF0B0B0B.toInt(),
+            subText = 0xFF979797.toInt(),
+            border = 0xFF979797.toInt(),
+            keyLabel = 0xFFE2B84A.toInt(),
+            keySubLabel = 0xFF979797.toInt(),
+            stripText = 0xFFF0D585.toInt(),
+            actionKeyColours = intArrayOf(0xFF8B0000.toInt(), 0xFFD75F00.toInt(), 0xFF4B4B4B.toInt(), 0xFF4B4B4B.toInt()),
+            actionTextColours = intArrayOf(0xFFFFE08A.toInt(), 0xFF0B0B0B.toInt(), 0xFFE2B84A.toInt(), 0xFFE2B84A.toInt()),
+            keyStyle = KeyStyle.RIVETED,
+            shoutLabels = true,
+            ambient = AmbientKind.FIRE,
+            ambientColours = intArrayOf(0xFF3A0000.toInt(), 0xFF8B0000.toInt(), 0xFFD75F00.toInt(), 0xFFC79B2B.toInt()),
+            tapEffect = TapEffectKind.EMBERS,
+            effectColours = intArrayOf(0xFFC79B2B.toInt(), 0xFFD75F00.toInt(), 0xFF8B0000.toInt()),
+            typeface = Typeface.create("sans-serif-black", Typeface.NORMAL),
+        )
+
+        /**
+         * Final Fantasy VII (1997): the menu. Every key and the candidate strip is one of the game's blue windows,
+         * fading from bright blue at the top left to deep navy at the bottom right, with the silver rim and fine inner line
+         * of the originals and white menu lettering. A pressed key brightens like the highlighted entry, Enter is Mako
+         * green, and a pointing glove slides in to touch wherever you tap, as the menu cursor does. Faint Lifestream
+         * lines flow behind the keys.
+         * Palette from the theme-ideas sheet; the look is drawn from the game itself.
+         */
+        val FINAL_FANTASY_VII = KeyboardTheme(
+            background = 0xFF000078.toInt(),
+            backgroundBottom = 0xFF000038.toInt(),
+            strip = 0xFF000078.toInt(),
+            key = 0xFF000078.toInt(),
+            keyPressed = 0xFF0048B8.toInt(),
+            text = 0xFFF0F4F8.toInt(),
+            accent = 0xFF4CE6A8.toInt(),
+            accentText = 0xFF000038.toInt(),
+            subText = 0xFFB8C4D0.toInt(),
+            border = 0xFFB8C4D0.toInt(),
+            actionKeyColours = intArrayOf(0xFF4CE6A8.toInt(), 0xFFB8C4D0.toInt(), 0xFF0048B8.toInt(), 0xFFB8C4D0.toInt()),
+            actionTextColours = intArrayOf(0xFF000038.toInt(), 0xFF000038.toInt(), 0xFFF0F4F8.toInt(), 0xFF000038.toInt()),
+            keyStyle = KeyStyle.WINDOW,
+            stripStyle = StripStyle.WINDOW,
+            ambient = AmbientKind.WAVES,
+            ambientColours = intArrayOf(0x384CE6A8.toInt(), 0x284CE6A8.toInt(), 0x1E4CE6A8.toInt()),
+            tapEffect = TapEffectKind.POINTER,
+            effectColours = intArrayOf(0xFFF0F4F8.toInt(), 0xFF000038.toInt(), 0xFFB8C4D0.toInt()),
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL),
+        )
+
+        /**
+         * Worms Armageddon (1999): the landscape. The background is dark soil, and every key is a chunk of terrain: a
+         * bumpy cap of grass over flecked topsoil with a dark outline, sinking a little when pressed. Enter is Bazooka blast
+         * orange, Delete Worm pink, the mode key Holy Hand Grenade gold and Settings grass green. Each tap sets off a
+         * ragged orange explosion that throws lumps of earth.
+         * Palette from the theme-ideas sheet; the look is drawn from the game itself.
+         */
+        val WORMS_ARMAGEDDON = KeyboardTheme(
+            background = 0xFF3A2410.toInt(),
+            backgroundBottom = 0xFF241609.toInt(),
+            strip = 0xFF2B1A0C.toInt(),
+            key = 0xFF8C5828.toInt(),
+            keyPressed = 0xFFC49A45.toInt(),
+            text = 0xFFFFF2D6.toInt(),
+            accent = 0xFFF29CA3.toInt(),
+            accentText = 0xFF2B1A0C.toInt(),
+            subText = 0xFFFFE08A.toInt(),
+            border = 0xFF3A2410.toInt(),
+            shadow = 0xFF4E9A26.toInt(),
+            actionKeyColours = intArrayOf(0xFFE64819.toInt(), 0xFFF29CA3.toInt(), 0xFFF5C724.toInt(), 0xFF4E9A26.toInt()),
+            actionTextColours = intArrayOf(0xFFFFFFFF.toInt(), 0xFF2B1A0C.toInt(), 0xFF2B1A0C.toInt(), 0xFFFFFFFF.toInt()),
+            keyStyle = KeyStyle.TERRAIN,
+            ambient = AmbientKind.TEXTURE,
+            ambientColours = intArrayOf(0xFF3A2410.toInt(), 0xFF47301A.toInt(), 0xFF2B1A0B.toInt()),
+            tapEffect = TapEffectKind.BLAST,
+            effectColours = intArrayOf(0xFFE64819.toInt(), 0xFFF5C724.toInt(), 0xFF8C5828.toInt(), 0xFF4E9A26.toInt(), 0xFFC49A45.toInt()),
+            typeface = Typeface.create("sans-serif-black", Typeface.NORMAL),
+        )
+
+        /**
+         * The Sims (2000): the control panel. A blue gradient background and glassy blue panel buttons with a light rim
+         * and a dark line inside it; the candidate strip is a white thought-bubble panel, and a pressed key lights its
+         * outline plumbob green. Enter is Plumbob green, Delete Simoleon gold. Every tap raises a turning green plumbob.
+         * Palette from the theme-ideas sheet; the look is drawn from the game itself.
+         */
+        val THE_SIMS = KeyboardTheme(
+            background = 0xFF1B3B6F.toInt(),
+            backgroundBottom = 0xFF2E6DB4.toInt(),
+            strip = 0xFFEEF3F8.toInt(),
+            key = 0xFF2E6DB4.toInt(),
+            keyPressed = 0xFF4A8BD6.toInt(),
+            text = 0xFFEEF3F8.toInt(),
+            accent = 0xFF4CBB17.toInt(),
+            accentText = 0xFF10260A.toInt(),
+            subText = 0xFFC4DAF0.toInt(),
+            stripText = 0xFF1B3B6F.toInt(),
+            actionKeyColours = intArrayOf(0xFF4CBB17.toInt(), 0xFFF5B82E.toInt(), 0xFF1B3B6F.toInt(), 0xFF1B3B6F.toInt()),
+            actionTextColours = intArrayOf(0xFF10260A.toInt(), 0xFF2A1C00.toInt(), 0xFFEEF3F8.toInt(), 0xFFEEF3F8.toInt()),
+            keyStyle = KeyStyle.PANEL,
+            tapEffect = TapEffectKind.PLUMBOB,
+            effectColours = intArrayOf(0xFF4CBB17.toInt(), 0xFF9BE53D.toInt()),
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL),
+        )
+
+        /**
+         * Grand Theft Auto: Vice City (2002): 1980s Miami at dusk. Translucent Art Deco keys with stepped corners and two
+         * neon outlines (cyan, then pink) over a purple night sky, with a striped neon sun sinking into the sea, its
+         * reflection shimmering below the horizon and a palm tree swaying at each side. Enter is neon pink, Delete sunset
+         * orange. Every tap throws neon sparkles.
+         * Palette from the theme-ideas sheet; the look is drawn from the game itself.
+         */
+        val GTA_VICE_CITY = KeyboardTheme(
+            background = 0xFF1D1135.toInt(),
+            backgroundBottom = 0xFF5C2A78.toInt(),
+            strip = 0x991D1135.toInt(),
+            key = 0xB31D1135.toInt(),
+            keyPressed = 0xE05C2A78.toInt(),
+            text = 0xFFFBE4C8.toInt(),
+            accent = 0xFFF25CA2.toInt(),
+            accentText = 0xFF1D1135.toInt(),
+            subText = 0xFF33D1D6.toInt(),
+            border = 0xFF33D1D6.toInt(),
+            actionKeyColours = intArrayOf(0xFFF25CA2.toInt(), 0xFFF7943D.toInt(), 0xFF33D1D6.toInt(), 0xFF5C2A78.toInt()),
+            actionTextColours = intArrayOf(0xFF1D1135.toInt(), 0xFF1D1135.toInt(), 0xFF1D1135.toInt(), 0xFFFBE4C8.toInt()),
+            keyStyle = KeyStyle.DECO,
+            ambient = AmbientKind.SUNSET,
+            ambientColours = intArrayOf(0xFFF7943D.toInt(), 0xFFF25CA2.toInt(), 0xFF33D1D6.toInt(), 0xFF120922.toInt()),
+            tapEffect = TapEffectKind.SPARKLE,
+            effectColours = intArrayOf(0xFFF25CA2.toInt(), 0xFF33D1D6.toInt(), 0xFFF7943D.toInt(), 0xFFFBE4C8.toInt()),
+            typeface = Typeface.create("sans-serif-black", Typeface.NORMAL),
+        )
+
+        /**
+         * Grand Theft Auto: San Andreas (2004): Los Santos streets. Concrete-dark tiles over speckled asphalt, each key
+         * sprayed along its lower edge in Grove Street green with a mist of overspray that differs from key to key; a pressed
+         * key is sprayed solid. Action keys carry the gang colours (Grove green, Ballas purple, clay) and every tap
+         * spray-paints a burst of dots in those colours with a drip or two running down.
+         * Palette from the theme-ideas sheet; the look is drawn from the game itself.
+         */
+        val GTA_SAN_ANDREAS = KeyboardTheme(
+            background = 0xFF1D1E1C.toInt(),
+            strip = 0xFF2A2B28.toInt(),
+            key = 0xFF2B2C29.toInt(),
+            keyPressed = 0xFF2E5A36.toInt(),
+            text = 0xFFECE5D4.toInt(),
+            accent = 0xFF2E5A36.toInt(),
+            accentText = 0xFFECE5D4.toInt(),
+            subText = 0xFFB5A27A.toInt(),
+            stripText = 0xFFECE5D4.toInt(),
+            actionKeyColours = intArrayOf(0xFF2E5A36.toInt(), 0xFFA8563B.toInt(), 0xFF5C3A6B.toInt(), 0xFFB5A27A.toInt()),
+            actionTextColours = intArrayOf(0xFFECE5D4.toInt(), 0xFFECE5D4.toInt(), 0xFFECE5D4.toInt(), 0xFF1D1E1C.toInt()),
+            keyStyle = KeyStyle.STENCIL,
+            shoutLabels = true,
+            ambient = AmbientKind.TEXTURE,
+            ambientColours = intArrayOf(0xFF1D1E1C.toInt(), 0xFF2A2B27.toInt(), 0xFF131412.toInt()),
+            tapEffect = TapEffectKind.SPRAY,
+            effectColours = intArrayOf(0xFF4C8F5B.toInt(), 0xFF8A5FA0.toInt(), 0xFFECE5D4.toInt(), 0xFFD27A58.toInt()),
+            typeface = Typeface.create("sans-serif-condensed", Typeface.BOLD),
+        )
+
+        /**
+         * The Pip-Boy 3000 (Fallout 3 and New Vegas): a monochrome green phosphor screen. Keys are dark green boxes with
+         * clipped corners, fine scanlines and an outline that glows; a pressed key floods dim green and its outline blooms.
+         * Enter is lit solid like a selected entry and Delete is the New Vegas amber. Scanlines, a rolling bar, a flicker and
+         * a dark vignette play over the glass, a block cursor blinks on the last key, and taps ping like a radar.
+         * Palette from the theme-ideas sheet; the look is drawn from the game itself.
+         */
+        val PIP_BOY = KeyboardTheme(
+            background = 0xFF050F08.toInt(),
+            backgroundBottom = 0xFF0A1C10.toInt(),
+            strip = 0xFF0D2615.toInt(),
+            key = 0xFF0D2615.toInt(),
+            keyPressed = 0xFF1A662E.toInt(),
+            text = 0xFF1AFF80.toInt(),
+            accent = 0xFF1AFF80.toInt(),
+            accentText = 0xFF050F08.toInt(),
+            subText = 0xFF17B15A.toInt(),
+            border = 0xFF18B35A.toInt(),
+            deep = 0xFF80FFB8.toInt(),
+            actionKeyColours = intArrayOf(0xFF1AFF80.toInt(), 0xFFFFB642.toInt(), 0xFF1A662E.toInt(), 0xFF1A662E.toInt()),
+            actionTextColours = intArrayOf(0xFF050F08.toInt(), 0xFF050F08.toInt(), 0xFF80FFB8.toInt(), 0xFF80FFB8.toInt()),
+            keyStyle = KeyStyle.PHOSPHOR,
+            shoutLabels = true,
+            ambient = AmbientKind.PIPBOY,
+            ambientColours = intArrayOf(0x40000000.toInt(), 0x2E1AFF80.toInt(), 0xDD000000.toInt(), 0x141AFF80.toInt()),
+            tapEffect = TapEffectKind.RIPPLES,
+            effectColours = intArrayOf(0xFF1AFF80.toInt(), 0xFF80FFB8.toInt()),
+            cursorColour = 0xFF1AFF80.toInt(),
+            typeface = Typeface.create("monospace", Typeface.BOLD),
+        )
+
         private fun heavyItalic(): Typeface =
             if (Build.VERSION.SDK_INT >= 28) {
                 Typeface.create(Typeface.SANS_SERIF, 900, true)
@@ -1763,6 +2031,15 @@ class KeyboardTheme(
                 KeyboardSettings.THEME_WIPEOUT_2097 -> WIPEOUT_2097
                 KeyboardSettings.THEME_WIPEOUT_HD -> WIPEOUT_HD
                 KeyboardSettings.THEME_PAGER -> PAGER
+                KeyboardSettings.THEME_SUPER_MARIO_BROS -> SUPER_MARIO_BROS
+                KeyboardSettings.THEME_SONIC_THE_HEDGEHOG -> SONIC_THE_HEDGEHOG
+                KeyboardSettings.THEME_DOOM -> DOOM
+                KeyboardSettings.THEME_FINAL_FANTASY_VII -> FINAL_FANTASY_VII
+                KeyboardSettings.THEME_WORMS_ARMAGEDDON -> WORMS_ARMAGEDDON
+                KeyboardSettings.THEME_THE_SIMS -> THE_SIMS
+                KeyboardSettings.THEME_GTA_VICE_CITY -> GTA_VICE_CITY
+                KeyboardSettings.THEME_GTA_SAN_ANDREAS -> GTA_SAN_ANDREAS
+                KeyboardSettings.THEME_PIP_BOY -> PIP_BOY
                 KeyboardSettings.THEME_DARK -> DARK
                 KeyboardSettings.THEME_LIGHT -> LIGHT
                 KeyboardSettings.THEME_CUSTOM -> {

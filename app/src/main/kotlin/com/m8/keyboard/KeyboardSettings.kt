@@ -164,6 +164,15 @@ data class KeyboardSettings(
         const val THEME_PAGER = 65
         /** The mix-and-match theme: each part of the look comes from the theme chosen for it (see [CustomParts]). */
         const val THEME_CUSTOM = 66
+        const val THEME_SUPER_MARIO_BROS = 67
+        const val THEME_SONIC_THE_HEDGEHOG = 68
+        const val THEME_DOOM = 69
+        const val THEME_FINAL_FANTASY_VII = 70
+        const val THEME_WORMS_ARMAGEDDON = 71
+        const val THEME_THE_SIMS = 72
+        const val THEME_GTA_VICE_CITY = 73
+        const val THEME_GTA_SAN_ANDREAS = 74
+        const val THEME_PIP_BOY = 75
 
         /** Index in [P5_ACCENTS] of the original red (the default) and of the purple. */
         const val P5_ACCENT_RED = 0

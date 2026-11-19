@@ -153,6 +153,15 @@ class SetupActivity : ThemedScreen() {
             ThemeGroup(
                 "Video games",
                 listOf(
+                    "Super Mario Bros." to KeyboardSettings.THEME_SUPER_MARIO_BROS,
+                    "Sonic the Hedgehog" to KeyboardSettings.THEME_SONIC_THE_HEDGEHOG,
+                    "DOOM" to KeyboardSettings.THEME_DOOM,
+                    "Final Fantasy VII" to KeyboardSettings.THEME_FINAL_FANTASY_VII,
+                    "Worms Armageddon" to KeyboardSettings.THEME_WORMS_ARMAGEDDON,
+                    "The Sims" to KeyboardSettings.THEME_THE_SIMS,
+                    "GTA Vice City" to KeyboardSettings.THEME_GTA_VICE_CITY,
+                    "GTA San Andreas" to KeyboardSettings.THEME_GTA_SAN_ANDREAS,
+                    "Pip-Boy" to KeyboardSettings.THEME_PIP_BOY,
                     "WipEout 2097" to KeyboardSettings.THEME_WIPEOUT_2097,
                     "WipEout HD" to KeyboardSettings.THEME_WIPEOUT_HD,
                     "MonsterGear" to KeyboardSettings.THEME_MONSTERGEAR,
@@ -544,6 +553,15 @@ class SetupActivity : ThemedScreen() {
                     KeyStyle.PLATE -> notes.add("bezel")
                     KeyStyle.ETCHED -> notes.add("etched")
                     KeyStyle.MOULDED -> notes.add("moulded")
+                    KeyStyle.RIVETED -> notes.add("riveted plate")
+                    KeyStyle.WINDOW -> notes.add("menu window")
+                    KeyStyle.PHOSPHOR -> notes.add("phosphor")
+                    KeyStyle.DECO -> notes.add("Art Deco")
+                    KeyStyle.STENCIL -> notes.add("spray paint")
+                    KeyStyle.PANEL -> notes.add("control panel")
+                    KeyStyle.TERRAIN -> notes.add("terrain")
+                    KeyStyle.CHECKER -> notes.add("checkered")
+                    KeyStyle.BLOCK -> notes.add("blocks")
                     KeyStyle.DEFAULT -> if (theme.squareKeys) notes.add("square")
                 }
             }
@@ -552,6 +570,7 @@ class SetupActivity : ThemedScreen() {
                 if (theme.backdrop == Backdrop.HEARTS) notes.add("hearts")
                 if (theme.backdrop == Backdrop.STRIPES) notes.add("stripes")
                 if (theme.stripStyle == StripStyle.PIXEL_SCREEN) notes.add("pixel screen")
+                if (theme.stripStyle == StripStyle.WINDOW) notes.add("menu window")
             }
             MixPart.ANIMATION -> {
                 if (theme.stars) notes.add("stars")

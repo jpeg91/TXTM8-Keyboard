@@ -106,6 +106,33 @@ enum class KeyStyle {
 
     /** A moulded plastic key with a shaded face and a lit-and-shadowed bevel. */
     MOULDED,
+
+    /** A riveted steel plate with a bevelled frame round a recessed panel, like the DOOM status bar. */
+    RIVETED,
+
+    /** A blue gradient window with a silver rim and a fine inner line, like a Final Fantasy VII menu. */
+    WINDOW,
+
+    /** A dark phosphor box with clipped corners, scanlines and a glowing outline, like a Pip-Boy screen. */
+    PHOSPHOR,
+
+    /** An Art Deco plate with stepped corners and two neon outlines. */
+    DECO,
+
+    /** A concrete-dark tile with a spray-painted band, overspray and drips; sprayed solid when pressed. */
+    STENCIL,
+
+    /** A glassy blue control-panel button with a light rim and a dark inner line, like The Sims. */
+    PANEL,
+
+    /** A chunk of cartoon terrain: flecked soil under a bumpy cap of grass, like Worms. */
+    TERRAIN,
+
+    /** A flat face ringed by a one-cell border of two-tone checkerboard, like Green Hill Zone. */
+    CHECKER,
+
+    /** A brick block (or, on action keys, a ? block with corner rivets) with a black outline, like Super Mario Bros. */
+    BLOCK,
 }
 
 /**
@@ -158,6 +185,21 @@ enum class AmbientKind {
 
     /** A still, tiled, speckled texture. */
     TEXTURE,
+
+    /** The classic DOOM fire: flames licking up from the bottom of the screen. */
+    FIRE,
+
+    /** A Pip-Boy screen: scanlines, a rolling band, flicker and a dark vignette. */
+    PIPBOY,
+
+    /** A striped neon sun sinking into the sea, its reflection shimmering, with palm trees swaying at the sides. */
+    SUNSET,
+
+    /** The Super Mario Bros. overworld in NES pixels: clouds drifting over hills and bushes. */
+    OVERWORLD,
+
+    /** Green Hill Zone: clouds over round hills and a scrolling strip of grass-topped checkered earth. */
+    GREEN_HILL,
 }
 
 // ------------------------------------------------------------------ colour helpers
@@ -562,6 +604,10 @@ class AmbientBackground(
     private var scanShader: Shader? = null
     private var textureShader: Shader? = null
 
+    // The DOOM fire keeps its grid of heat cells between frames; the Pip-Boy screen caches its vignette.
+    private val fire: DoomFire? = if (kind == AmbientKind.FIRE) DoomFire(density, colours) else null
+    private val pipBoy: PipBoyScreen? = if (kind == AmbientKind.PIPBOY) PipBoyScreen(density, colours) else null
+
     // Lines of text for the scrolling kind, made once.
     private val scrollLines: Array<String> = if (kind == AmbientKind.SCROLL) Array(SCROLL_LINES) { scrollText(it) } else emptyArray()
 
@@ -587,6 +633,11 @@ class AmbientBackground(
         AmbientKind.CRT -> 90L
         AmbientKind.CHEVRONS -> 70L
         AmbientKind.TEXTURE -> 1000L
+        AmbientKind.FIRE -> 70L
+        AmbientKind.PIPBOY -> 80L
+        AmbientKind.SUNSET -> 100L
+        AmbientKind.OVERWORLD -> 90L
+        AmbientKind.GREEN_HILL -> 80L
     }
 
     init {
@@ -661,6 +712,11 @@ class AmbientBackground(
             AmbientKind.CRT -> drawCrt(canvas, w, h, frame)
             AmbientKind.CHEVRONS -> drawChevrons(canvas, w, h, frame)
             AmbientKind.TEXTURE -> drawTexture(canvas, w, h)
+            AmbientKind.FIRE -> fire?.draw(canvas, w, h, frame)
+            AmbientKind.PIPBOY -> pipBoy?.draw(canvas, w, h, frame)
+            AmbientKind.SUNSET -> GameAmbient.sunset(canvas, paint, path, w, h, frame, density, colours)
+            AmbientKind.OVERWORLD -> GameAmbient.overworld(canvas, paint, w, h, frame, density, colours)
+            AmbientKind.GREEN_HILL -> GameAmbient.greenHill(canvas, paint, path, w, h, frame, density, colours)
         }
         canvas.restore()
         paint.shader = null
