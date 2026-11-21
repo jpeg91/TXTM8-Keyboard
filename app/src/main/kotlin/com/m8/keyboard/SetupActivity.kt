@@ -176,7 +176,6 @@ class SetupActivity : ThemedScreen() {
                     "Massive Attack" to KeyboardSettings.THEME_MASSIVE_ATTACK,
                     "Primus" to KeyboardSettings.THEME_PRIMUS,
                     "Blur" to KeyboardSettings.THEME_BLUR,
-                    "Oasis" to KeyboardSettings.THEME_OASIS,
                     "Daft Punk: Homework" to KeyboardSettings.THEME_DAFT_PUNK_HOMEWORK,
                     "Daft Punk: Discovery" to KeyboardSettings.THEME_DAFT_PUNK_DISCOVERY,
                     "Daft Punk: Human After All" to KeyboardSettings.THEME_DAFT_PUNK_HUMAN_AFTER_ALL,
@@ -589,10 +588,10 @@ class SetupActivity : ThemedScreen() {
                     KeyStyle.STITCH -> notes.add("embroidered")
                     KeyStyle.CHROME -> notes.add("chrome")
                     KeyStyle.TICKET -> notes.add("betting slip")
-                    KeyStyle.HOLES -> notes.add("cheese")
                     KeyStyle.SPEECH -> notes.add("speech bubble")
                     KeyStyle.GOTHIC -> notes.add("gothic arch")
-                    KeyStyle.SHATTER -> notes.add("shattered glass")
+                    KeyStyle.CLAY -> notes.add("clay")
+                    KeyStyle.MENU -> notes.add("game menu")
                     KeyStyle.DEFAULT -> if (theme.squareKeys) notes.add("square")
                 }
             }

@@ -29,7 +29,7 @@ object ThemeComposer {
         KeyStyle.BACKLIT, KeyStyle.BUBBLE, KeyStyle.UNDERGLOW, KeyStyle.PETAL, KeyStyle.DISH, KeyStyle.PLATE,
         KeyStyle.ETCHED, KeyStyle.MOULDED, KeyStyle.RIVETED, KeyStyle.WINDOW, KeyStyle.PHOSPHOR, KeyStyle.DECO,
         KeyStyle.TERRAIN, KeyStyle.CHECKER, KeyStyle.BLOCK, KeyStyle.SCRATCHED, KeyStyle.STITCH, KeyStyle.TICKET,
-        KeyStyle.HOLES, KeyStyle.SPEECH, KeyStyle.GOTHIC, KeyStyle.SHATTER,
+        KeyStyle.SPEECH, KeyStyle.GOTHIC, KeyStyle.CLAY, KeyStyle.MENU,
     )
     private val SHADOWED = setOf(
         KeyStyle.LCD, KeyStyle.MEMPHIS, KeyStyle.NOKIA, KeyStyle.PIXEL, KeyStyle.SLANTED, KeyStyle.TERRAIN, KeyStyle.CHECKER,
@@ -115,6 +115,9 @@ object ThemeComposer {
             keyCycle = c.keyCycle,
             ambient = animation?.ambient,
             ambientColours = animation?.ambientColours,
+            overlay = animation?.overlay,
+            overlayColours = animation?.overlayColours,
+            pulseColour = c.pulseColour,
             cursorColour = animation?.cursorColour ?: 0,
             keyLabel = c.keyLabel,
             keySubLabel = c.keySubLabel,

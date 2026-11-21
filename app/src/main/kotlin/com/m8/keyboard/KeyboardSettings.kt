@@ -178,7 +178,8 @@ data class KeyboardSettings(
         const val THEME_MASSIVE_ATTACK = 78
         const val THEME_PRIMUS = 79
         const val THEME_BLUR = 80
-        const val THEME_OASIS = 81
+        /** Was the Oasis theme, which has been removed: anyone who had it gets the P5 theme. */
+        const val THEME_RETIRED_OASIS = 81
         const val THEME_DAFT_PUNK_HOMEWORK = 82
         const val THEME_DAFT_PUNK_DISCOVERY = 83
         const val THEME_DAFT_PUNK_HUMAN_AFTER_ALL = 84
@@ -198,11 +199,11 @@ data class KeyboardSettings(
 
         /**
          * Moves anyone on a theme that no longer exists to its replacement: the purple theme
-         * becomes P5 with the purple accent, and the removed RAZR theme becomes P5.
+         * becomes P5 with the purple accent, and the removed RAZR and Oasis themes become P5.
          */
         fun migrateThemes(p: SharedPreferences) {
             val stored = p.getInt(KEY_THEME, THEME_P5)
-            if (stored != THEME_RETIRED_PURPLE && stored != THEME_RETIRED_RAZR) return
+            if (stored != THEME_RETIRED_PURPLE && stored != THEME_RETIRED_RAZR && stored != THEME_RETIRED_OASIS) return
             val edit = p.edit().putInt(KEY_THEME, THEME_P5)
             if (stored == THEME_RETIRED_PURPLE) edit.putInt(KEY_P5_ACCENT, P5_ACCENT_PURPLE)
             edit.apply()

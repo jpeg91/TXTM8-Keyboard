@@ -709,6 +709,15 @@ enum class TapEffectKind {
 
     /** A Mario coin that pops up from the tap, spinning, and falls back. */
     COINS,
+
+    /** A comic-book "POW" burst that pops out at the tap, with speed lines, and fades. */
+    STARBURST,
+
+    /** A few particle tracks, as in a bubble-chamber photograph, that leave the tap, curl tighter and fade. */
+    TRACK,
+
+    /** Lumps of modelling clay flung from the tap that move in jerky stop-motion steps. */
+    CLAY,
 }
 
 /**
@@ -773,14 +782,19 @@ class TapEffectDrawable(
             TapEffectKind.TARGET -> 1f
             TapEffectKind.POINTER -> 1f
             TapEffectKind.PLUMBOB -> 2f
-            TapEffectKind.SPRAY -> 20f
+            TapEffectKind.SPRAY -> 42f
             TapEffectKind.BLAST -> 8f
             TapEffectKind.RINGS -> 5f
             TapEffectKind.COINS -> 1f
+            TapEffectKind.STARBURST -> 1f
+            TapEffectKind.TRACK -> 3f
+            TapEffectKind.CLAY -> 6f
         }
         var count = expected.toInt() + if (random.nextFloat() < expected - expected.toInt()) 1 else 0
         if (count < 1) count = 1
         val d = density
+        // A burst of spray paint is all one colour, chosen afresh for each tap.
+        val sprayColour = colours[random.nextInt(colours.size)]
         repeat(count) { i ->
             val colour = colours[random.nextInt(colours.size)]
             particles.add(
@@ -893,25 +907,35 @@ class TapEffectDrawable(
                         colour = colour, phase = rnd(0f, 6.28f), spin = 0f,
                     )
                     TapEffectKind.SPRAY -> {
-                        if (i % 6 == 5) {
+                        if (i == 0) {
+                            // The wet centre of the burst ([phase] 1 marks it).
+                            Particle(
+                                x = x, y = y, vx = 0f, vy = 0f,
+                                size = rnd(8f, 11f) * d,
+                                bornAt = now, life = 750L,
+                                colour = sprayColour, phase = 1f, spin = 0f,
+                            )
+                        } else if (i % 9 == 8) {
                             // A drip: [vy] is how fast it runs down; [spin] marks it as a drip.
                             Particle(
-                                x = x + rnd(-10f, 10f) * d, y = y + rnd(-2f, 4f) * d,
-                                vx = 0f, vy = rnd(18f, 34f) * d,
+                                x = x + rnd(-9f, 9f) * d, y = y + rnd(-2f, 4f) * d,
+                                vx = 0f, vy = rnd(18f, 36f) * d,
                                 size = d,
-                                bornAt = now + rnd(0f, 60f).toLong(), life = rnd(700f, 1000f).toLong(),
-                                colour = colour, phase = 0f, spin = 1f,
+                                bornAt = now + rnd(0f, 80f).toLong(), life = rnd(750f, 1100f).toLong(),
+                                colour = sprayColour, phase = 0f, spin = 1f,
                             )
                         } else {
-                            // A fleck: [vx] and [vy] are where it ends up, relative to the tap.
+                            // A fleck: [vx] and [vy] are where it ends up, relative to the tap. Most land close to the
+                            // middle and a few fly far, like a real mist.
                             val angle = rnd(0f, 6.28f)
-                            val dist = rnd(4f, 32f) * d
+                            val spread = rnd(0f, 1f)
+                            val dist = (2f + 36f * spread * spread) * d
                             Particle(
                                 x = x, y = y,
                                 vx = kotlin.math.cos(angle) * dist, vy = kotlin.math.sin(angle) * dist,
-                                size = rnd(1f, 2.4f) * d,
-                                bornAt = now + rnd(0f, 60f).toLong(), life = rnd(550f, 900f).toLong(),
-                                colour = colour, phase = 0f, spin = 0f,
+                                size = rnd(0.7f, 2.1f) * d,
+                                bornAt = now + rnd(0f, 70f).toLong(), life = rnd(550f, 950f).toLong(),
+                                colour = sprayColour, phase = 0f, spin = 0f,
                             )
                         }
                     }
@@ -947,6 +971,26 @@ class TapEffectDrawable(
                         size = d,
                         bornAt = now + i * 140L, life = 640L,
                         colour = colour, phase = 0f, spin = 0f,
+                    )
+                    TapEffectKind.STARBURST -> Particle(
+                        x = x, y = y - 6f * d, vx = 0f, vy = 0f,
+                        size = rnd(26f, 32f) * d,
+                        bornAt = now, life = 800L,
+                        colour = colour, phase = rnd(0f, 6.28f), spin = 0f,
+                    )
+                    TapEffectKind.TRACK -> Particle(
+                        x = x, y = y, vx = 0f, vy = 0f,
+                        size = d,
+                        bornAt = now + rnd(0f, 60f).toLong(), life = rnd(1100f, 1500f).toLong(),
+                        colour = colour, phase = rnd(0f, 6.28f),
+                        spin = rnd(0.02f, 0.05f) * (if (random.nextBoolean()) 1f else -1f),
+                    )
+                    TapEffectKind.CLAY -> Particle(
+                        x = x + rnd(-6f, 6f) * d, y = y,
+                        vx = rnd(-120f, 120f) * d, vy = -rnd(90f, 200f) * d,
+                        size = rnd(3f, 6f) * d,
+                        bornAt = now, life = rnd(800f, 1200f).toLong(),
+                        colour = colour, phase = rnd(0f, 6.28f), spin = 0f,
                     )
                 },
             )
@@ -989,7 +1033,9 @@ class TapEffectDrawable(
                 TapEffectKind.PLUMBOB ->
                     GameTap.plumbob(canvas, paint, path, p.x + p.vx * sec, p.y + p.vy * sec, p.size, sec, p.phase, fade, p.colour)
                 TapEffectKind.SPRAY ->
-                    if (p.spin > 0.5f) {
+                    if (p.phase > 0.5f) {
+                        GameTap.spraySplat(canvas, paint, p.x, p.y, p.size, t, p.colour, density)
+                    } else if (p.spin > 0.5f) {
                         GameTap.sprayDrip(canvas, paint, p.x, p.y, p.vy, sec, t, p.colour, density)
                     } else {
                         GameTap.sprayDot(canvas, paint, p.x, p.y, p.vx, p.vy, p.size, t, p.colour)
@@ -1012,6 +1058,18 @@ class TapEffectDrawable(
                     )
                 }
                 TapEffectKind.COINS -> GameTap.coin(canvas, paint, oval, p.x, p.y, sec, t, density, colours)
+                TapEffectKind.STARBURST -> MusicTap.starburst(canvas, paint, path, p.x, p.y, p.size, p.phase, t, density, p.colour)
+                TapEffectKind.TRACK -> MusicTap.track(canvas, paint, path, p.x, p.y, p.phase, p.spin, t, density, p.colour)
+                TapEffectKind.CLAY -> {
+                    // Moves only eight times a second, like a stop-motion figure.
+                    val step = (sec * 8f).toInt()
+                    val frozen = step / 8f
+                    val gravity = 500f * density
+                    MusicTap.lump(
+                        canvas, paint, oval, p.x + p.vx * frozen, p.y + p.vy * frozen + 0.5f * gravity * frozen * frozen,
+                        p.size, step, (fade * 255f).toInt().coerceIn(0, 255), p.colour,
+                    )
+                }
             }
         }
         if (particles.isNotEmpty()) invalidateSelf() // ask for the next frame
@@ -1382,6 +1440,16 @@ fun KeyboardTheme.backgroundDrawable(view: View, animated: Boolean = false, effe
     }
 }
 
+/**
+ * The theme's [KeyboardTheme.overlay] animation, to be drawn over the keys, or null when it has none (or the "Effect
+ * amount" slider it shares with the tap animation is at 0).
+ */
+fun KeyboardTheme.overlayDrawable(view: View, effectAmount: Int): Drawable? {
+    val kind = overlay ?: return null
+    if (ambientFollowsEffectAmount && effectAmount <= 0) return null
+    return AmbientBackground(ColorDrawable(0), kind, overlayColours ?: IntArray(0), view.resources.displayMetrics.density)
+}
+
 private fun KeyboardTheme.flatBackgroundDrawable(view: View): Drawable =
     if (backgroundBottom != 0) {
         GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(background, backgroundBottom))
@@ -1727,17 +1795,17 @@ fun KeyboardTheme.keyBackground(
             KeyStyle.TICKET -> return framed(
                 TicketKeyDrawable(color, border, isPressed, gapXDp * density, gapYDp * density, density),
             )
-            KeyStyle.HOLES -> return framed(
-                HolesKeyDrawable(color, border, isPressed, gapXDp * density, gapYDp * density, density),
-            )
             KeyStyle.SPEECH -> return framed(
                 SpeechKeyDrawable(color, border, isPressed, gapXDp * density, gapYDp * density, density),
             )
             KeyStyle.GOTHIC -> return framed(
                 GothicKeyDrawable(color, border, isPressed, gapXDp * density, gapYDp * density, density),
             )
-            KeyStyle.SHATTER -> return framed(
-                ShatterKeyDrawable(color, border, accent, isPressed, gapXDp * density, gapYDp * density, density),
+            KeyStyle.CLAY -> return framed(
+                ClayKeyDrawable(color, border, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.MENU -> return framed(
+                MenuKeyDrawable(color, border, isPressed, gapXDp * density, gapYDp * density, density),
             )
             KeyStyle.DEFAULT -> Unit
         }

@@ -146,17 +146,17 @@ enum class KeyStyle {
     /** A betting slip with a half-round notch in each side, a stripe along the top and a dotted perforation, like Parklife. */
     TICKET,
 
-    /** A slab of cheese with a darker rind and shaded holes that differ from key to key, like Sailing the Seas of Cheese. */
-    HOLES,
-
     /** A comic speech bubble with a heavy outline, a pointed tail and halftone shading, like the Gorillaz cartoons. */
     SPEECH,
 
     /** A tall key with a pointed gothic arch for its top and a fine line of tracery inside it, like Fallen. */
     GOTHIC,
 
-    /** A dark pane cracked from an impact point by kinking hairlines, with a coloured bar along the bottom, like Kerrang!. */
-    SHATTER,
+    /** A lump of modelling clay with a hand-pressed outline, a highlight and a thumbprint, like the Primus videos. */
+    CLAY,
+
+    /** A flat dark menu row with a fine rule above and a heavier one below, like the pause menu of San Andreas. */
+    MENU,
 }
 
 /**
@@ -237,17 +237,26 @@ enum class AmbientKind {
     /** A turning peppermint disc of twisted red and white wedges. */
     PEPPERMINT,
 
-    /** A big blocky M that changes colour every second or so, with a scrawled "TV" redrawn a little differently every few frames. */
-    MTV_LOGO,
+    /** A flood of colour that changes every second or so, held and then blended into the next, like the channel idents. */
+    COLOUR_CYCLE,
+
+    /** A moonlit cathedral: a pointed arch round a rose window whose moon pulses, with light shafts, and mist along the floor. */
+    CATHEDRAL,
+
+    /** Pale feathers drifting down, turning as they fall. Meant to be drawn over the keys ([KeyboardTheme.overlay]). */
+    FEATHERS,
+
+    /** A strip of mown turf with a white rail along its top. Still; the dogs that race over it are [DOGS]. */
+    TURF,
+
+    /** Four greyhounds in coloured jackets racing across the lower half. Meant to be drawn over the keys ([KeyboardTheme.overlay]). */
+    DOGS,
+
+    /** Stop-motion clay: lumpy blobs drifting about that are re-modelled a little every few frames. */
+    CLAYMATION,
 
     /** A still halftone screen: staggered dots that grow from nothing at one corner to nearly touching at the other. */
     HALFTONE,
-
-    /** A still parquet floor of four-plank squares, each turned across its neighbour. */
-    PARQUET,
-
-    /** A mown strip of turf with a white rail, and four greyhounds in coloured jackets racing across it. */
-    GREYHOUNDS,
 }
 
 // ------------------------------------------------------------------ colour helpers
@@ -683,17 +692,20 @@ class AmbientBackground(
         AmbientKind.TEXTURE -> 1000L
         AmbientKind.FIRE -> 70L
         AmbientKind.PIPBOY -> 80L
-        AmbientKind.SUNSET -> 100L
+        AmbientKind.SUNSET -> 60L
         AmbientKind.OVERWORLD -> 90L
         AmbientKind.GREEN_HILL -> 80L
         AmbientKind.SPIRAL -> 80L
         AmbientKind.TRACKS -> 60L
         AmbientKind.CROSS -> 70L
         AmbientKind.PEPPERMINT -> 60L
-        AmbientKind.MTV_LOGO -> 100L
+        AmbientKind.COLOUR_CYCLE -> 100L
+        AmbientKind.CATHEDRAL -> 70L
+        AmbientKind.FEATHERS -> 60L
+        AmbientKind.TURF -> 1000L
+        AmbientKind.DOGS -> 50L
+        AmbientKind.CLAYMATION -> 80L
         AmbientKind.HALFTONE -> 1000L
-        AmbientKind.PARQUET -> 1000L
-        AmbientKind.GREYHOUNDS -> 50L
     }
 
     init {
@@ -777,16 +789,19 @@ class AmbientBackground(
             AmbientKind.TRACKS -> MusicAmbient.tracks(canvas, paint, path, w, h, frame, density, colours)
             AmbientKind.CROSS -> MusicAmbient.cross(canvas, paint, path, w, h, frame, density, colours)
             AmbientKind.PEPPERMINT -> MusicAmbient.peppermint(canvas, paint, path, w, h, frame, density, colours)
-            AmbientKind.MTV_LOGO -> MusicAmbient.mtvLogo(canvas, paint, path, w, h, frame, density, colours)
+            AmbientKind.COLOUR_CYCLE -> MusicAmbient.colourCycle(canvas, paint, w, h, frame, colours)
+            AmbientKind.CATHEDRAL -> MusicAmbient.cathedral(canvas, paint, path, w, h, frame, density, colours)
+            AmbientKind.FEATHERS -> MusicAmbient.feathers(canvas, paint, w, h, frame, density, colours)
+            AmbientKind.DOGS -> MusicAmbient.dogs(canvas, paint, path, w, h, frame, density, colours)
+            AmbientKind.CLAYMATION -> MusicAmbient.claymation(canvas, paint, path, w, h, frame, density, colours)
+            AmbientKind.TURF -> {
+                animating = false
+                MusicAmbient.turf(canvas, paint, w, h, density, colours)
+            }
             AmbientKind.HALFTONE -> {
                 animating = false // still, like the texture: drawn when needed and then at rest
                 MusicAmbient.halftone(canvas, paint, w, h, density, colours)
             }
-            AmbientKind.PARQUET -> {
-                animating = false
-                MusicAmbient.parquet(canvas, paint, w, h, density, colours)
-            }
-            AmbientKind.GREYHOUNDS -> MusicAmbient.greyhounds(canvas, paint, path, w, h, frame, density, colours)
         }
         canvas.restore()
         paint.shader = null

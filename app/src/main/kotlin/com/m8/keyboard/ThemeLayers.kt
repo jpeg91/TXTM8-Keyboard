@@ -13,7 +13,8 @@ import android.view.ViewGroup
  *
  * Each animation has a slot of its own, and any combination of them can be on at once:
  *  - behind the keys: the background (with the [AmbientKind] animation on it) and the typing pulse
- *  - over the keys: the twinkling stars, the tap animation and the blinking cursor
+ *  - over the keys: the overlay animation (a background the keys would hide), the twinkling stars, the tap animation
+ *    and the blinking cursor
  *
  * The typing pulse is a slot of its own too, so it works with every theme, including ones with stars or a tap animation.
  */
@@ -22,17 +23,18 @@ class ThemeLayers(host: ViewGroup, theme: KeyboardTheme, settings: KeyboardSetti
     private val tracker = KeyTracker(host)
     private val tapEffect: TapEffectDrawable? = theme.tapEffectDrawable(host, settings)
     private val cursor: KeyCursorDrawable? = theme.cursorDrawable(tracker, density)
+    private val overlay: Drawable? = theme.overlayDrawable(host, settings.effectAmount)
     private val stars: GlitterTwinkleDrawable? = if (theme.stars) theme.twinkleDrawable(host, settings) else null
 
     /** The view's background: the theme's backdrop, with the typing pulse on top. */
     val background: Drawable = PulseBackground(
         theme.backgroundDrawable(host, animated = true, effectAmount = settings.effectAmount),
-        theme.accent,
+        if (theme.pulseColour != 0) theme.pulseColour else theme.accent,
         settings.pulseStrength,
     )
 
     /** The view's foreground: every slot the theme uses, or null when it uses none. */
-    val foreground: Drawable? = listOfNotNull<Drawable>(stars, tapEffect, cursor).let { layers ->
+    val foreground: Drawable? = listOfNotNull<Drawable>(overlay, stars, tapEffect, cursor).let { layers ->
         when (layers.size) {
             0 -> null
             1 -> layers[0]

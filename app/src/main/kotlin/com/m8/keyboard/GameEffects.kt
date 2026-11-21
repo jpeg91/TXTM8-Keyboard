@@ -189,42 +189,52 @@ internal object GameAmbient {
         val palm = colourAt(colours, 3, 0xFF120922.toInt())
         paint.style = Paint.Style.FILL
 
-        // The sun, sliced into stripes that thin out towards the horizon.
+        // Stars that twinkle in the upper sky.
+        for (k in 0 until 16) {
+            val sx = w * (hash3(k, 1, 5) % 1000 / 1000f)
+            val sy = horizon * 0.8f * (hash3(k, 2, 5) % 1000 / 1000f)
+            val tw = 0.5f + 0.5f * sin(frame * 0.18f + k * 1.9f)
+            paint.color = withAlpha(0xFFFBE4C8.toInt(), (30 + 150 * tw).toInt())
+            canvas.drawCircle(sx, sy, (0.8f + tw) * d, paint)
+        }
+
+        // The sun bobs gently, and the slits across it scroll steadily downwards, widening as they go.
         val r = min(w * 0.26f, h * 0.30f)
         val cx = w / 2f
-        val cy = horizon - r * 0.55f
+        val cy = horizon - r * 0.55f + sin(frame * 0.07f) * r * 0.05f
         paint.shader = LinearGradient(0f, cy - r, 0f, horizon, sunTop, sunBottom, Shader.TileMode.CLAMP)
-        var y0 = cy - r
-        var y1 = cy + r * 0.05f
-        canvas.save()
-        canvas.clipRect(0f, y0, w, min(y1, horizon))
-        canvas.drawCircle(cx, cy, r, paint)
-        canvas.restore()
-        for (k in 0 until 6) {
-            val gap = (1.2f + k * 1.1f) * d
-            y0 = y1 + gap
-            y1 = y0 + (r * 0.30f - k * 0.04f * r)
-            if (y0 >= horizon) break
-            canvas.save()
-            canvas.clipRect(0f, y0, w, min(y1, horizon))
-            canvas.drawCircle(cx, cy, r, paint)
-            canvas.restore()
+        val period = r * 0.32f
+        val scroll = (frame * 0.9f * d) % period
+        var y = cy - r - period + scroll
+        while (y < horizon) {
+            val t = ((y - (cy - r)) / (2f * r)).coerceIn(0f, 1f)
+            val gap = (0.6f + 7f * t) * d
+            val top = max(y, cy - r)
+            val bottom = min(y + period - gap, horizon)
+            if (bottom > top) {
+                canvas.save()
+                canvas.clipRect(0f, top, w, bottom)
+                canvas.drawCircle(cx, cy, r, paint)
+                canvas.restore()
+            }
+            y += period
         }
         paint.shader = null
 
-        // The glow along the horizon, and the horizon line.
-        paint.shader = LinearGradient(0f, horizon - 22f * d, 0f, horizon, withAlpha(glow, 0), withAlpha(glow, 0x50), Shader.TileMode.CLAMP)
-        canvas.drawRect(0f, horizon - 22f * d, w, horizon, paint)
+        // The glow along the horizon, which breathes, and the horizon line.
+        val breath = 0x48 + (0x30 * sin(frame * 0.1f)).toInt()
+        paint.shader = LinearGradient(0f, horizon - 26f * d, 0f, horizon, withAlpha(glow, 0), withAlpha(glow, breath), Shader.TileMode.CLAMP)
+        canvas.drawRect(0f, horizon - 26f * d, w, horizon, paint)
         paint.shader = null
         paint.color = withAlpha(glow, 0xB0)
         canvas.drawRect(0f, horizon, w, horizon + max(1f, 1.5f * d), paint)
 
-        // The reflection: bars that widen and narrow, each a little different every few frames.
+        // The reflection: bars that widen and narrow, each shimmering at its own pace.
         var by = horizon + 5f * d
         var k = 0
         while (by < h) {
-            val wobble = hash3(frame / 5, k, 11) % 100 / 100f
-            val half = r * (0.9f - k * 0.045f).coerceAtLeast(0.25f) * (0.55f + 0.45f * wobble)
+            val wobble = 0.5f + 0.5f * sin(frame * (0.16f + k * 0.02f) + k * 1.3f)
+            val half = r * (0.9f - k * 0.045f).coerceAtLeast(0.25f) * (0.5f + 0.5f * wobble)
             paint.color = withAlpha(lerpArgb(sunBottom, sunTop, wobble), max(0x18, 0x7A - k * 9))
             canvas.drawRect(cx - half, by, cx + half, by + (2f + k * 0.35f) * d, paint)
             by += (6f + k * 1.8f) * d
@@ -232,7 +242,7 @@ internal object GameAmbient {
         }
 
         // The palms.
-        val sway = sin(frame * 0.07f) * 3f
+        val sway = sin(frame * 0.11f) * 5f
         palm(canvas, paint, path, w * 0.06f, h, h * 0.50f, 18f * d, sway, d, palm)
         palm(canvas, paint, path, w * 0.95f, h, h * 0.44f, -16f * d, -sway, d, palm)
     }
@@ -520,6 +530,26 @@ internal object GameTap {
         paint.style = Paint.Style.FILL
         paint.color = withAlpha(colour, ((1f - t) * (1f - t) * 220f).toInt())
         canvas.drawCircle(ox + dx * ease, oy + dy * ease, radius, paint)
+    }
+
+    /**
+     * The wet centre of a burst of spray paint: a ragged splat of three nested discs with a few lobes round its edge,
+     * which spreads quickly and then fades. [t] is 0 at the tap to 1 as it fades.
+     */
+    fun spraySplat(canvas: Canvas, paint: Paint, x: Float, y: Float, radius: Float, t: Float, colour: Int, d: Float) {
+        val grow = 0.55f + 0.45f * min(1f, t * 5f)
+        val fade = (1f - t) * (1f - t)
+        val r = radius * grow
+        paint.style = Paint.Style.FILL
+        for (i in 0 until 3) {
+            paint.color = withAlpha(colour, (fade * (50f + i * 45f)).toInt())
+            canvas.drawCircle(x, y, r * (1f - i * 0.28f), paint)
+        }
+        paint.color = withAlpha(colour, (fade * 150f).toInt())
+        for (i in 0 until 6) {
+            val a = i * 1.047f + 0.3f
+            canvas.drawCircle(x + cos(a) * r * 0.95f, y + sin(a) * r * 0.95f, max(1f, r * 0.18f), paint)
+        }
     }
 
     /** A drip of paint running down from the mist, its head a little fatter than its trail. */

@@ -131,9 +131,10 @@ class StitchKeyDrawable(
 }
 
 /**
- * Liquid mercury, like the Discovery sleeve and the helmets: a chrome key with a bright top, a dark horizon across
- * the middle and a lighter reflection below, a soft shine, and a strip of [led] light along the bottom. Pressed,
- * the whole outline lights up in [led].
+ * Polished chrome, like the Discovery sleeve and the helmets: a bevelled rim round a face that reflects a bright sky
+ * above a sharp dark horizon and a lighter ground below, with two slanting highlights, and a strip of [led] light
+ * along the bottom. Pressed, the whole face is outlined in [led]. The tones are worked out from [fill] (a light grey
+ * gives silver; a colour gives tinted chrome).
  */
 class ChromeKeyDrawable(
     private val fill: Int,
@@ -145,43 +146,88 @@ class ChromeKeyDrawable(
 ) : KeyShapeDrawable(insetX, insetY, density) {
     override fun drawKey(canvas: Canvas, l: Float, t: Float, r: Float, b: Float) {
         val corner = 8f * density
-        gradient(LinearGradient(0f, t, 0f, b, lighten(fill, 0.55f), darken(fill, 0.15f), Shader.TileMode.CLAMP))
+        val white = 0xFFFFFFFF.toInt()
+        val black = 0xFF000000.toInt()
+        val bright = mixArgb(fill, white, 0.9f)
+        val skyLow = mixArgb(fill, black, 0.3f)
+        val groundTop = mixArgb(fill, black, 0.32f)
+        val groundLow = mixArgb(fill, white, 0.7f)
+        val darkest = mixArgb(fill, black, 0.8f)
+
+        // The rim: a bevel, bright on top and dark below.
+        gradient(LinearGradient(0f, t, 0f, b, bright, darkest, Shader.TileMode.CLAMP))
         roundRect(canvas, l, t, r, b, corner)
 
-        // The horizon: the lower half reflects a dark band that fades back to light at the bottom edge.
-        val mid = t + (b - t) * 0.5f
-        gradient(
-            LinearGradient(
-                0f, mid, 0f, b,
-                withAlpha(darken(fill, 0.4f), 170), withAlpha(lighten(fill, 0.5f), 140), Shader.TileMode.CLAMP,
-            ),
-        )
+        val i = 2.2f * density
+        val fl = l + i
+        val ft = t + i
+        val fr = r - i
+        val fb = b - i
+        val fc = corner - i
+        val horizon = ft + (fb - ft) * 0.52f
+
+        // The sky above the horizon.
+        gradient(LinearGradient(0f, ft, 0f, horizon, bright, skyLow, Shader.TileMode.CLAMP))
         path.reset()
-        path.moveTo(l, mid)
-        path.lineTo(r, mid)
-        path.lineTo(r, b - corner)
-        path.quadTo(r, b, r - corner, b)
-        path.lineTo(l + corner, b)
-        path.quadTo(l, b, l, b - corner)
+        path.moveTo(fl, horizon)
+        path.lineTo(fl, ft + fc)
+        path.quadTo(fl, ft, fl + fc, ft)
+        path.lineTo(fr - fc, ft)
+        path.quadTo(fr, ft, fr, ft + fc)
+        path.lineTo(fr, horizon)
         path.close()
         canvas.drawPath(path, paint)
 
-        // The shine across the top.
-        solid(0x55FFFFFF)
-        roundRect(canvas, l + 3f * density, t + 2f * density, r - 3f * density, t + (b - t) * 0.36f, corner - 2f * density)
+        // The ground below it, dark at the horizon and bright at the bottom.
+        gradient(LinearGradient(0f, horizon, 0f, fb, groundTop, groundLow, Shader.TileMode.CLAMP))
+        path.reset()
+        path.moveTo(fl, horizon)
+        path.lineTo(fr, horizon)
+        path.lineTo(fr, fb - fc)
+        path.quadTo(fr, fb, fr - fc, fb)
+        path.lineTo(fl + fc, fb)
+        path.quadTo(fl, fb, fl, fb - fc)
+        path.close()
+        canvas.drawPath(path, paint)
 
-        line(withAlpha(darken(fill, 0.5f), 220), px)
+        // The horizon itself: a thin, sharp dark line.
+        solid(withAlpha(darkest, 230))
+        canvas.drawRect(fl, horizon - 0.8f * density, fr, horizon + 0.9f * density, paint)
+
+        // Two slanting highlights across the sky.
+        val w = fr - fl
+        solid(withAlpha(white, 150))
+        path.reset()
+        path.moveTo(fl + w * 0.14f, ft + density)
+        path.lineTo(fl + w * 0.30f, ft + density)
+        path.lineTo(fl + w * 0.18f, horizon - density)
+        path.lineTo(fl + w * 0.06f, horizon - density)
+        path.close()
+        canvas.drawPath(path, paint)
+        solid(withAlpha(white, 90))
+        path.reset()
+        path.moveTo(fl + w * 0.36f, ft + density)
+        path.lineTo(fl + w * 0.42f, ft + density)
+        path.lineTo(fl + w * 0.30f, horizon - density)
+        path.lineTo(fl + w * 0.24f, horizon - density)
+        path.close()
+        canvas.drawPath(path, paint)
+
+        // A thin bright line on the top lip of the face, and the dark outer edge.
+        line(withAlpha(white, 210), density)
+        canvas.drawLine(fl + fc, ft + 0.5f * density, fr - fc, ft + 0.5f * density, paint)
+        line(withAlpha(darkest, 230), px)
         edge(canvas, l, t, r, b, corner, px)
 
-        // The LED: a strip along the bottom, or the whole outline when pressed.
+        // The LED: a strip along the bottom, or the whole face outlined when pressed.
         if (pressed) {
             line(withAlpha(led, 90), 4f * density)
-            edge(canvas, l, t, r, b, corner, 4f * density)
-            line(led, 2f * density)
-            edge(canvas, l, t, r, b, corner, 2f * density)
+            edge(canvas, fl, ft, fr, fb, fc, 4f * density)
+            line(led, 1.8f * density)
+            edge(canvas, fl, ft, fr, fb, fc, 1.8f * density)
         } else {
             solid(led)
-            roundRect(canvas, l + 9f * density, b - 5f * density, r - 9f * density, b - 3f * density, density)
+            roundRect(canvas, l + 9f * density, b - 5.5f * density, r - 9f * density, b - 3.5f * density, density)
         }
     }
 }
@@ -228,47 +274,6 @@ class TicketKeyDrawable(
 
         line(withAlpha(stripe, 200), px)
         canvas.drawPath(path, paint)
-    }
-}
-
-/**
- * A slab of cheese, from the Sailing the Seas of Cheese sleeve: a rounded gold block with a darker rind along the
- * bottom and a few holes, each shaded so it looks scooped out. The holes are different on every key.
- */
-class HolesKeyDrawable(
-    private val fill: Int,
-    private val rind: Int,
-    private val pressed: Boolean,
-    insetX: Float,
-    insetY: Float,
-    density: Float,
-) : KeyShapeDrawable(insetX, insetY, density) {
-    override fun drawKey(canvas: Canvas, l: Float, t: Float, r: Float, b: Float) {
-        val sx = bounds.left
-        val sy = bounds.top
-        val corner = 6f * density
-        gradient(
-            LinearGradient(0f, t, 0f, b, lighten(fill, if (pressed) 0.3f else 0.18f), fill, Shader.TileMode.CLAMP),
-        )
-        roundRect(canvas, l, t, r, b, corner)
-
-        canvas.save()
-        canvas.clipRect(l, t, r, b - 3f * density)
-        for (i in 0 until 5) {
-            val cx = l + (0.06f + musicUnit(i, sx, 5) * 0.88f) * (r - l)
-            val cy = t + (0.12f + musicUnit(i, sy, 6) * 0.70f) * (b - t)
-            val radius = (2.2f + musicUnit(i, sx + sy, 7) * 3.2f) * density
-            solid(withAlpha(lighten(fill, 0.5f), 150))
-            canvas.drawCircle(cx + 0.7f * density, cy + 0.8f * density, radius, paint)
-            solid(darken(fill, 0.22f))
-            canvas.drawCircle(cx, cy, radius, paint)
-        }
-        canvas.restore()
-
-        solid(rind)
-        roundRect(canvas, l + density, b - 3.2f * density, r - density, b, 1.6f * density)
-        line(rind, 1.4f * density)
-        edge(canvas, l, t, r, b, corner, 1.4f * density)
     }
 }
 
@@ -364,70 +369,106 @@ class GothicKeyDrawable(
 }
 
 /**
- * A shattered pane, like the Kerrang! masthead: a dark square cracked from an impact point (somewhere different on
- * each key) by hairlines that kink as they run out to the edge and are joined by two rings of fine cracks, with a
- * bar of [bar] colour along the bottom. Pressed, the cracks are heavier.
+ * A lump of modelling clay, like the Primus videos: a pillowy slab whose outline is a little different on every key
+ * (hand-pressed, never straight), with a soft highlight, a darker underside, a thumbprint pushed into one corner and a
+ * faint seam round the edge. Pressed, the clay sinks and flattens. [seam] is the colour of the edge line.
  */
-class ShatterKeyDrawable(
+class ClayKeyDrawable(
     private val fill: Int,
-    private val crack: Int,
-    private val bar: Int,
+    private val seam: Int,
+    private val pressed: Boolean,
+    insetX: Float,
+    insetY: Float,
+    density: Float,
+) : KeyShapeDrawable(insetX, insetY, density) {
+    override fun drawKey(canvas: Canvas, l0: Float, t0: Float, r0: Float, b0: Float) {
+        val sx = bounds.left
+        val sy = bounds.top
+        val sink = if (pressed) 1.6f * density else 0f
+        val l = l0
+        val r = r0
+        val t = t0 + sink
+        val b = b0 - 2f * density + sink * 0.5f
+        val rc = 10f * density
+        fun j(i: Int) = (musicUnit(i, sx, 51) - 0.5f) * 2.6f * density
+
+        fun blob() {
+            path.reset()
+            path.moveTo(l + rc + j(0), t + j(1))
+            path.quadTo((l + r) / 2f + j(2), t - 1.5f * density + j(3), r - rc + j(4), t + j(5))
+            path.quadTo(r + j(6), t + j(7), r + j(8), t + rc + j(9))
+            path.quadTo(r + 1.2f * density + j(10), (t + b) / 2f + j(11), r + j(12), b - rc + j(13))
+            path.quadTo(r + j(14), b + j(15), r - rc + j(16), b + j(17))
+            path.quadTo((l + r) / 2f + j(18), b + 1.8f * density + j(19), l + rc + j(20), b + j(21))
+            path.quadTo(l + j(22), b + j(23), l + j(24), b - rc + j(25))
+            path.quadTo(l - 1.2f * density + j(26), (t + b) / 2f + j(27), l + j(28), t + rc + j(29))
+            path.quadTo(l + j(30), t + j(31), l + rc + j(32), t + j(33))
+            path.close()
+        }
+
+        // The contact shadow under the clay.
+        canvas.save()
+        canvas.translate(0f, (if (pressed) 0.8f else 2f) * density)
+        solid(withAlpha(0xFF000000.toInt(), 80))
+        blob()
+        canvas.drawPath(path, paint)
+        canvas.restore()
+
+        solid(fill)
+        blob()
+        canvas.drawPath(path, paint)
+
+        // Darker towards the bottom.
+        gradient(LinearGradient(0f, t, 0f, b, withAlpha(darken(fill, 0.6f), 0), withAlpha(darken(fill, 0.6f), 150), Shader.TileMode.CLAMP))
+        canvas.drawPath(path, paint)
+
+        canvas.save()
+        canvas.clipRect(l, t, r, b)
+        // The soft highlight and the thumbprint.
+        solid(withAlpha(0xFFFFFFFF.toInt(), if (pressed) 30 else 75))
+        rect.set(l + 4f * density, t + 2.5f * density, l + (r - l) * 0.62f, t + (b - t) * 0.42f)
+        canvas.drawOval(rect, paint)
+        val tx = if (musicUnit(0, sx, 52) < 0.5f) r - 9f * density else l + 9f * density
+        val ty = b - 7f * density
+        line(withAlpha(darken(fill, 0.5f), 70), density * 0.9f)
+        for (k in 1..3) {
+            rect.set(tx - k * 2.2f * density, ty - k * 1.7f * density, tx + k * 2.2f * density, ty + k * 1.7f * density)
+            canvas.drawOval(rect, paint)
+        }
+        canvas.restore()
+
+        line(withAlpha(seam, 120), px)
+        blob()
+        canvas.drawPath(path, paint)
+    }
+}
+
+/**
+ * A game menu row, like the pause menu of San Andreas: a flat dark bar with a fine rule along its top and a heavier one
+ * along its bottom in [rule], the bottom rule brightening at the left end. Pressed (the row is highlighted), a bar of
+ * [rule] colour runs down the left edge.
+ */
+class MenuKeyDrawable(
+    private val fill: Int,
+    private val rule: Int,
     private val pressed: Boolean,
     insetX: Float,
     insetY: Float,
     density: Float,
 ) : KeyShapeDrawable(insetX, insetY, density) {
     override fun drawKey(canvas: Canvas, l: Float, t: Float, r: Float, b: Float) {
-        val sx = bounds.left
-        val sy = bounds.top
-        solid(fill)
+        // Dark at the left, fading a little towards the right like a menu bar.
+        gradient(LinearGradient(l, 0f, r, 0f, fill, withAlpha(fill, ((fill ushr 24) * 0.75f).toInt()), Shader.TileMode.CLAMP))
         canvas.drawRect(l, t, r, b, paint)
-
-        val ix = l + (0.25f + musicUnit(sx, sy, 41) * 0.5f) * (r - l)
-        val iy = t + (0.25f + musicUnit(sy, sx, 42) * 0.5f) * (b - t)
-        val spokes = 8
-        val step = (2.0 * PI / spokes).toFloat()
-        val reach = (r - l) + (b - t)
-        val ringRadius = floatArrayOf(7f * density, 16f * density)
-
-        canvas.save()
-        canvas.clipRect(l, t, r, b)
-        val heavy = if (pressed) 1.5f * density else px
-        line(withAlpha(crack, if (pressed) 230 else 120), heavy)
-        for (i in 0 until spokes) {
-            var angle = i * step + (musicUnit(i, sx, 43) - 0.5f) * 0.5f
-            var x = ix
-            var y = iy
-            var travelled = 0f
-            var s = 0
-            while (travelled < reach && s < 6) {
-                angle += (musicUnit(i, s, 44) - 0.5f) * 0.35f
-                val length = (6f + musicUnit(i, s, 45) * 10f) * density
-                val nx = x + cos(angle) * length
-                val ny = y + sin(angle) * length
-                canvas.drawLine(x, y, nx, ny, paint)
-                x = nx
-                y = ny
-                travelled += length
-                s++
-            }
+        line(withAlpha(rule, 70), px)
+        canvas.drawLine(l, t + px / 2f, r, t + px / 2f, paint)
+        line(withAlpha(rule, 190), 1.4f * density)
+        canvas.drawLine(l, b - 0.7f * density, r, b - 0.7f * density, paint)
+        line(rule, 2.4f * density)
+        canvas.drawLine(l, b - 1.2f * density, l + (r - l) * 0.22f, b - 1.2f * density, paint)
+        if (pressed) {
+            solid(rule)
+            canvas.drawRect(l, t, l + 3.5f * density, b, paint)
         }
-        // The rings join one spoke to the next.
-        line(withAlpha(crack, if (pressed) 170 else 100), px)
-        for (k in ringRadius.indices) {
-            for (i in 0 until spokes) {
-                val ra = ringRadius[k] * (0.8f + musicUnit(i, k, 46) * 0.4f)
-                val rb = ringRadius[k] * (0.8f + musicUnit(i + 1, k, 46) * 0.4f)
-                val a1 = i * step
-                val a2 = (i + 1) * step
-                canvas.drawLine(ix + cos(a1) * ra, iy + sin(a1) * ra, ix + cos(a2) * rb, iy + sin(a2) * rb, paint)
-            }
-        }
-        canvas.restore()
-
-        solid(bar)
-        canvas.drawRect(l, b - 3f * density, r, b, paint)
-        line(withAlpha(crack, 90), px)
-        edge(canvas, l, t, r, b, 0f, px)
     }
 }
