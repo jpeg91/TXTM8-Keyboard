@@ -162,6 +162,7 @@ class SetupActivity : ThemedScreen() {
                     "GTA Vice City" to KeyboardSettings.THEME_GTA_VICE_CITY,
                     "GTA San Andreas" to KeyboardSettings.THEME_GTA_SAN_ANDREAS,
                     "Pip-Boy" to KeyboardSettings.THEME_PIP_BOY,
+                    "Pip-Boy (amber)" to KeyboardSettings.THEME_PIP_BOY_AMBER,
                     "WipEout 2097" to KeyboardSettings.THEME_WIPEOUT_2097,
                     "WipEout HD" to KeyboardSettings.THEME_WIPEOUT_HD,
                     "MonsterGear" to KeyboardSettings.THEME_MONSTERGEAR,
@@ -174,7 +175,6 @@ class SetupActivity : ThemedScreen() {
                     "Nine Inch Nails" to KeyboardSettings.THEME_NINE_INCH_NAILS,
                     "The Prodigy" to KeyboardSettings.THEME_THE_PRODIGY,
                     "Massive Attack" to KeyboardSettings.THEME_MASSIVE_ATTACK,
-                    "Primus" to KeyboardSettings.THEME_PRIMUS,
                     "Blur" to KeyboardSettings.THEME_BLUR,
                     "Daft Punk: Homework" to KeyboardSettings.THEME_DAFT_PUNK_HOMEWORK,
                     "Daft Punk: Discovery" to KeyboardSettings.THEME_DAFT_PUNK_DISCOVERY,
@@ -592,6 +592,9 @@ class SetupActivity : ThemedScreen() {
                     KeyStyle.GOTHIC -> notes.add("gothic arch")
                     KeyStyle.CLAY -> notes.add("clay")
                     KeyStyle.MENU -> notes.add("game menu")
+                    KeyStyle.SHELL -> notes.add("moulded buttons")
+                    KeyStyle.PLAYER -> notes.add("player buttons")
+                    KeyStyle.GLOWLINE -> notes.add("glowing outline")
                     KeyStyle.DEFAULT -> if (theme.squareKeys) notes.add("square")
                 }
             }
@@ -601,6 +604,7 @@ class SetupActivity : ThemedScreen() {
                 if (theme.backdrop == Backdrop.STRIPES) notes.add("stripes")
                 if (theme.stripStyle == StripStyle.PIXEL_SCREEN) notes.add("pixel screen")
                 if (theme.stripStyle == StripStyle.WINDOW) notes.add("menu window")
+                if (theme.stripStyle == StripStyle.HANDHELD_SCREEN) notes.add("handheld screen")
             }
             MixPart.ANIMATION -> {
                 if (theme.stars) notes.add("stars")

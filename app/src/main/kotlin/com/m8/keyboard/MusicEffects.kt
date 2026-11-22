@@ -402,17 +402,7 @@ internal object MusicAmbient {
             val y = (unit(i, 3, 61) * (h + size * 4f) + frame * fall * 0.5f) % (h + size * 4f) - size * 2f
             val x = w * (0.05f + 0.9f * unit(i, 4, 61)) + sin(frame * 0.05f + i * 2.1f) * 14f * d
             val angle = sin(frame * 0.045f + i) * 40f + 20f * (i % 3 - 1)
-            paint.color = colourAt(colours, i, 0x80EFF3F6.toInt())
-            paint.style = Paint.Style.FILL
-            canvas.save()
-            canvas.translate(x, y)
-            canvas.rotate(angle)
-            oval.set(-size * 0.16f, -size * 0.5f, size * 0.16f, size * 0.5f)
-            canvas.drawOval(oval, paint)
-            paint.style = Paint.Style.STROKE
-            paint.strokeWidth = max(1f, 0.9f * d)
-            canvas.drawLine(0f, -size * 0.62f, 0f, size * 0.7f, paint)
-            canvas.restore()
+            MusicTap.feather(canvas, paint, oval, x, y, size, angle, colourAt(colours, i, 0x80EFF3F6.toInt()), d)
         }
         tidy(paint)
     }
@@ -542,6 +532,22 @@ internal object MusicAmbient {
 
 /** The tap effects added for the music and TV themes ([TapEffectKind.STARBURST] and so on), drawn by [TapEffectDrawable]. */
 internal object MusicTap {
+    /** One pale feather: a slim vane with a shaft that runs a little beyond it. [size] is its length, [angle] in degrees. */
+    fun feather(canvas: Canvas, paint: Paint, oval: RectF, x: Float, y: Float, size: Float, angle: Float, colour: Int, d: Float) {
+        paint.color = colour
+        paint.style = Paint.Style.FILL
+        canvas.save()
+        canvas.translate(x, y)
+        canvas.rotate(angle)
+        oval.set(-size * 0.16f, -size * 0.5f, size * 0.16f, size * 0.5f)
+        canvas.drawOval(oval, paint)
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = max(1f, 0.9f * d)
+        canvas.drawLine(0f, -size * 0.62f, 0f, size * 0.7f, paint)
+        canvas.restore()
+        paint.style = Paint.Style.FILL
+    }
+
     /**
      * A comic-book "POW": a jagged burst that pops out larger than its final size, settles, and fades, with speed
      * lines round it. [fill] is its colour (one per tap), the outline is always near-black ink and a smaller burst of

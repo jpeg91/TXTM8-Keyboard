@@ -29,11 +29,11 @@ object ThemeComposer {
         KeyStyle.BACKLIT, KeyStyle.BUBBLE, KeyStyle.UNDERGLOW, KeyStyle.PETAL, KeyStyle.DISH, KeyStyle.PLATE,
         KeyStyle.ETCHED, KeyStyle.MOULDED, KeyStyle.RIVETED, KeyStyle.WINDOW, KeyStyle.PHOSPHOR, KeyStyle.DECO,
         KeyStyle.TERRAIN, KeyStyle.CHECKER, KeyStyle.BLOCK, KeyStyle.SCRATCHED, KeyStyle.STITCH, KeyStyle.TICKET,
-        KeyStyle.SPEECH, KeyStyle.GOTHIC, KeyStyle.CLAY, KeyStyle.MENU,
+        KeyStyle.SPEECH, KeyStyle.GOTHIC, KeyStyle.CLAY, KeyStyle.MENU, KeyStyle.SHELL, KeyStyle.GLOWLINE,
     )
     private val SHADOWED = setOf(
         KeyStyle.LCD, KeyStyle.MEMPHIS, KeyStyle.NOKIA, KeyStyle.PIXEL, KeyStyle.SLANTED, KeyStyle.TERRAIN, KeyStyle.CHECKER,
-        KeyStyle.SCRATCHED,
+        KeyStyle.SCRATCHED, KeyStyle.SHELL,
     )
 
     @Synchronized
@@ -67,6 +67,8 @@ object ThemeComposer {
             if (keyStyle in OUTLINED && border == 0) border = c.text
             if (keyStyle in SHADOWED && shadow == 0) shadow = darken(c.key, 0.55f)
         }
+        // A handheld screen needs a colour for its lit panel.
+        if (background?.stripStyle == StripStyle.HANDHELD_SCREEN && background !== c && border == 0) border = c.text
         var deep = c.deep
         if (backdrop == Backdrop.STRIPES && background !== c && deep == 0) deep = darken(c.accent, 0.5f)
 

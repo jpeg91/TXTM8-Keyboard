@@ -30,6 +30,9 @@ enum class StripStyle {
     /** A pixelated handheld screen (the Game Boy Advance). */
     PIXEL_SCREEN,
 
+    /** A lit handheld screen on a dark bezel with a pixel grid, a glare and a power lamp (the Game Boy Advance); the colour of the lit panel is [KeyboardTheme.border]. */
+    HANDHELD_SCREEN,
+
     /** A blue gradient window with a silver line along its top and bottom, like a Final Fantasy VII menu (uses [KeyboardTheme.keyPressed] as its bright end). */
     WINDOW,
 }

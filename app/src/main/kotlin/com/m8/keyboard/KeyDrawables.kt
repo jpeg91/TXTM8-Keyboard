@@ -718,6 +718,15 @@ enum class TapEffectKind {
 
     /** Lumps of modelling clay flung from the tap that move in jerky stop-motion steps. */
     CLAY,
+
+    /** A burst of coloured square sprites that fly out in eight directions in steps, and flicker out, like a handheld game. */
+    PIXELS,
+
+    /** A single pale feather that drifts down from the tap, turning as it falls, like the ones that fall in the background. */
+    FEATHER,
+
+    /** A small desktop window that opens at the tap, fills with lines of text and tears away, like the Wired. */
+    WINDOW,
 }
 
 /**
@@ -789,6 +798,9 @@ class TapEffectDrawable(
             TapEffectKind.STARBURST -> 1f
             TapEffectKind.TRACK -> 3f
             TapEffectKind.CLAY -> 6f
+            TapEffectKind.FEATHER -> 1f
+            TapEffectKind.PIXELS -> 8f
+            TapEffectKind.WINDOW -> 1f
         }
         var count = expected.toInt() + if (random.nextFloat() < expected - expected.toInt()) 1 else 0
         if (count < 1) count = 1
@@ -985,6 +997,29 @@ class TapEffectDrawable(
                         colour = colour, phase = rnd(0f, 6.28f),
                         spin = rnd(0.02f, 0.05f) * (if (random.nextBoolean()) 1f else -1f),
                     )
+                    TapEffectKind.PIXELS -> {
+                        val angle = i * 0.785398f + 0.39f
+                        Particle(
+                            x = x, y = y,
+                            vx = kotlin.math.cos(angle), vy = kotlin.math.sin(angle),
+                            size = 4f * d,
+                            bornAt = now, life = 650L,
+                            colour = colours[i % colours.size], phase = 0f, spin = 0f,
+                        )
+                    }
+                    TapEffectKind.FEATHER -> Particle(
+                        x = x, y = y - 4f * d,
+                        vx = rnd(-14f, 14f) * d, vy = -rnd(10f, 26f) * d,
+                        size = rnd(20f, 26f) * d,
+                        bornAt = now, life = 2300L,
+                        colour = colour, phase = rnd(0f, 6.28f), spin = 0f,
+                    )
+                    TapEffectKind.WINDOW -> Particle(
+                        x = x, y = y, vx = 0f, vy = 0f,
+                        size = d,
+                        bornAt = now, life = 1000L,
+                        colour = colour, phase = rnd(0f, 1000f), spin = 0f,
+                    )
                     TapEffectKind.CLAY -> Particle(
                         x = x + rnd(-6f, 6f) * d, y = y,
                         vx = rnd(-120f, 120f) * d, vy = -rnd(90f, 200f) * d,
@@ -1060,6 +1095,17 @@ class TapEffectDrawable(
                 TapEffectKind.COINS -> GameTap.coin(canvas, paint, oval, p.x, p.y, sec, t, density, colours)
                 TapEffectKind.STARBURST -> MusicTap.starburst(canvas, paint, path, p.x, p.y, p.size, p.phase, t, density, p.colour)
                 TapEffectKind.TRACK -> MusicTap.track(canvas, paint, path, p.x, p.y, p.phase, p.spin, t, density, p.colour)
+                TapEffectKind.PIXELS -> GameTap.pixel(canvas, paint, p.x, p.y, p.vx, p.vy, p.size, t, p.colour, density)
+                TapEffectKind.FEATHER -> {
+                    val gravity = 38f * density
+                    val sway = kotlin.math.sin(sec * 2.3f + p.phase)
+                    MusicTap.feather(
+                        canvas, paint, oval,
+                        p.x + p.vx * sec + sway * 15f * density, p.y + p.vy * sec + 0.5f * gravity * sec * sec,
+                        p.size, sway * 42f + p.phase * 6f, withAlpha(p.colour, (fade * 230f).toInt().coerceIn(0, 255)), density,
+                    )
+                }
+                TapEffectKind.WINDOW -> GameTap.window(canvas, paint, p.x, p.y, t, p.phase.toInt(), density, colours)
                 TapEffectKind.CLAY -> {
                     // Moves only eight times a second, like a stop-motion figure.
                     val step = (sec * 8f).toInt()
@@ -1472,6 +1518,7 @@ fun KeyboardTheme.stripDrawable(density: Float): Drawable = when (stripStyle) {
     StripStyle.FLAT -> ColorDrawable(strip)
     StripStyle.PATTERN -> GlitterPatternDrawable(strip, density, stripMode = true)
     StripStyle.PIXEL_SCREEN -> PixelScreenDrawable(strip, density)
+    StripStyle.HANDHELD_SCREEN -> HandheldScreenDrawable(strip, border, density)
     StripStyle.WINDOW -> WindowStripDrawable(strip, keyPressed, border, density)
 }
 
@@ -1583,6 +1630,8 @@ fun KeyboardTheme.keyBackground(
     keyColor: Int? = null,
     pressedKeyColor: Int? = null,
     actionSlot: Int = 0,
+    rowPosition: Int = 0,
+    rowCount: Int = 1,
 ): Drawable {
     val normal = keyColor ?: if (action) actionFill(actionSlot) else key
     val pressed = pressedKeyColor ?: if (action) actionFillPressed(actionSlot) else keyPressed
@@ -1800,6 +1849,19 @@ fun KeyboardTheme.keyBackground(
             )
             KeyStyle.GOTHIC -> return framed(
                 GothicKeyDrawable(color, border, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.PLAYER -> return framed(
+                PlayerKeyDrawable(color, if (action) accent else 0, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.GLOWLINE -> return framed(
+                GlowLineKeyDrawable(
+                    // Action keys take their line from their own colour and keep a near-black body.
+                    if (action) darken(color, 0.9f) else color, if (action) color else border,
+                    isPressed, rowPosition, rowCount, gapXDp * density, gapYDp * density, density,
+                ),
+            )
+            KeyStyle.SHELL -> return framed(
+                ShellKeyDrawable(color, shadow, isPressed, gapXDp * density, gapYDp * density, density),
             )
             KeyStyle.CLAY -> return framed(
                 ClayKeyDrawable(color, border, isPressed, gapXDp * density, gapYDp * density, density),

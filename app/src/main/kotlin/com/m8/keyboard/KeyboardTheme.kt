@@ -151,7 +151,7 @@ class KeyboardTheme(
         private val SQUARE_STYLES = setOf(
             KeyStyle.BRACKET, KeyStyle.RETICLE, KeyStyle.SCANLINE, KeyStyle.FRAME, KeyStyle.GLITCH, KeyStyle.ETCHED,
             KeyStyle.RIVETED, KeyStyle.PHOSPHOR, KeyStyle.DECO, KeyStyle.STENCIL, KeyStyle.CHECKER, KeyStyle.BLOCK,
-            KeyStyle.SCRATCHED, KeyStyle.TICKET, KeyStyle.GOTHIC, KeyStyle.MENU,
+            KeyStyle.SCRATCHED, KeyStyle.TICKET, KeyStyle.GOTHIC, KeyStyle.MENU, KeyStyle.PLAYER,
         )
 
         val DARK = KeyboardTheme(
@@ -248,29 +248,42 @@ class KeyboardTheme(
             typeface = Typeface.create("sans-serif", Typeface.BOLD),
         )
 
-        /** Purple Game Boy Advance shell with a bright, pixel-art inspired candidate display. */
+        /**
+         * The Game Boy Advance in Indigo, built from the console itself. The whole keyboard is the moulded indigo shell with a
+         * fine plastic grain and a slow fall of shade towards the bottom. Every key is a domed plastic button standing in
+         * a dark cut-out, with a sheen across its top, that sinks into the cut-out when pressed; Enter is a magenta
+         * button and Delete a pale lavender one, like the A and B buttons. The candidate strip is the screen: a lit,
+         * slightly greenish panel with a pixel grid and a glare on a near-black bezel, with a red power lamp, and the
+         * words on it are in pixels. Every tap pops eight coloured sprites out in steps, which flicker out. Slanted
+         * lettering, like the labels on the shell.
+         */
         val GAME_BOY_ADVANCE = KeyboardTheme(
-            background = 0xFF7856A4.toInt(),
-            strip = 0xFF5A3D82.toInt(),
-            key = 0xFFC2A6E8.toInt(),
-            keyPressed = 0xFFA98AD7.toInt(),
-            text = 0xFF2D2041.toInt(),
-            accent = 0xFFF3C85B.toInt(),
-            accentText = 0xFF302044.toInt(),
-            actionKey = 0xFFFF8FB8.toInt(),
-            actionKeyPressed = 0xFFFFE16A.toInt(),
-            actionText = 0xFF2D2041.toInt(),
-            subText = 0xFFEADDF9.toInt(),
-            shadow = 0xFF3D285E.toInt(),
-            deep = 0xFF3D285E.toInt(),
-            keyStyle = KeyStyle.PIXEL,
-            candidateStyle = CandidateStyle.ROUNDED,
-            pixelBorder = 0xFFE8D9FF.toInt(),
-            pixelColours = GBA_PIXEL_COLOURS,
-            stripStyle = StripStyle.PIXEL_SCREEN,
-            stripText = 0xFFFFFFFF.toInt(),
-            rainbowLetters = true,
-            typeface = Typeface.create("sans-serif", Typeface.BOLD),
+            background = 0xFF5A4B9E.toInt(),
+            backgroundBottom = 0xFF43377F.toInt(),
+            strip = 0xFF1E1E26.toInt(),
+            key = 0xFF6F60BA.toInt(),
+            keyPressed = 0xFF4F4390.toInt(),
+            text = 0xFFF1EEFB.toInt(),
+            accent = 0xFF2F6FE0.toInt(),
+            accentText = 0xFFFFFFFF.toInt(),
+            actionKey = 0xFF9484DE.toInt(),
+            actionKeyPressed = 0xFF7868C4.toInt(),
+            actionText = 0xFF241C4A.toInt(),
+            subText = 0xFFC3BBEC.toInt(),
+            border = 0xFFD3E0C2.toInt(),
+            shadow = 0xFF2F2561.toInt(),
+            actionKeyColours = intArrayOf(0xFFD94F8C.toInt(), 0xFF9484DE.toInt(), 0xFF3C3173.toInt(), 0xFF3C3173.toInt()),
+            actionTextColours = intArrayOf(0xFFFFFFFF.toInt(), 0xFF241C4A.toInt(), 0xFFF1EEFB.toInt(), 0xFFF1EEFB.toInt()),
+            keyStyle = KeyStyle.SHELL,
+            candidateStyle = CandidateStyle.SQUARE,
+            candidateFont = CandidateFont.PIXEL,
+            stripStyle = StripStyle.HANDHELD_SCREEN,
+            stripText = 0xFF1B2620.toInt(),
+            ambient = AmbientKind.TEXTURE,
+            ambientColours = intArrayOf(0x00000000, 0x14FFFFFF, 0x16000000),
+            tapEffect = TapEffectKind.PIXELS,
+            effectColours = intArrayOf(0xFFE8453C.toInt(), 0xFFF5D13A.toInt(), 0xFF4CC24A.toInt(), 0xFF3C7BE8.toInt()),
+            typeface = Typeface.create("sans-serif", Typeface.BOLD_ITALIC),
         )
 
         /** Hot-pink, early-2000s glitter-graphics inspired theme with chunky pixel keys. */
@@ -1212,27 +1225,35 @@ class KeyboardTheme(
         )
 
         /**
-         * Motorola RAZR V3 (2004): black with square, flat keys edged in silver like the etched metal keypad, and
-         * the cool electroluminescent blue of its backlight on the lettering. The typing pulse glows in that
-         * same blue. Colours are estimates, not researched values.
+         * Motorola RAZR V3 (2004): the electroluminescent keypad lit in the dark. Every row of keys is one glowing cyan
+         * line that snakes through the keys (down the left of the first, over its top, down between the first and second, under
+         * the second, and so on to the side of the last), on black glass; the digits and letters glow in the same cyan, and a soft band of backlight rolls up the keypad behind the glass, and a pressed key lights up from inside. Enter is the
+         * green of the call key, Delete the red of the end key. The candidate strip is the black front screen with cyan
+         * lettering, and the typing pulse glows cyan.
+         * Palette and shapes from photographs of the keypad.
          */
         val RAZR_V3 = KeyboardTheme(
-            background = 0xFF07090D.toInt(),
-            backgroundBottom = 0xFF12171F.toInt(),
-            strip = 0xFF0B0E13.toInt(),
-            key = 0xFF141920.toInt(),
-            keyPressed = 0xFF1C4F7A.toInt(),
-            text = 0xFF5CC8FF.toInt(),
-            accent = 0xFF2FA8FF.toInt(),
-            accentText = 0xFF04121F.toInt(),
-            actionKey = 0xFF1B222B.toInt(),
-            actionKeyPressed = 0xFF23628F.toInt(),
-            actionText = 0xFF9BE0FF.toInt(),
-            subText = 0xFF2F86BF.toInt(),
-            border = 0xFFA9B2BF.toInt(),
-            squareKeys = true,
-            keyStyle = KeyStyle.ETCHED,
-            typeface = Typeface.create("sans-serif-light", Typeface.NORMAL),
+            background = 0xFF030507.toInt(),
+            backgroundBottom = 0xFF0A1118.toInt(),
+            strip = 0xFF05080B.toInt(),
+            key = 0x70081017.toInt(),
+            keyPressed = 0xFF0C3A4D.toInt(),
+            text = 0xFF46D6FF.toInt(),
+            accent = 0xFF1EBEEB.toInt(),
+            accentText = 0xFF03131B.toInt(),
+            actionKey = 0xFF1EBEEB.toInt(),
+            actionKeyPressed = 0xFF1EBEEB.toInt(),
+            actionText = 0xFF8FE6FF.toInt(),
+            subText = 0xFF1B93B8.toInt(),
+            border = 0xFF1EBEEB.toInt(),
+            stripText = 0xFF46D6FF.toInt(),
+            actionKeyColours = intArrayOf(0xFF2EDC7A.toInt(), 0xFFFF3B3B.toInt(), 0xFF1EBEEB.toInt(), 0xFF1EBEEB.toInt()),
+            actionTextColours = intArrayOf(0xFF8FFFC0.toInt(), 0xFFFF8F8F.toInt(), 0xFF8FE6FF.toInt(), 0xFF8FE6FF.toInt()),
+            keyStyle = KeyStyle.GLOWLINE,
+            candidateStyle = CandidateStyle.OUTLINED_SQUARE,
+            ambient = AmbientKind.BACKLIGHT,
+            ambientColours = intArrayOf(0x5022B8E8.toInt()),
+            typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL),
         )
 
         /**
@@ -1515,8 +1536,8 @@ class KeyboardTheme(
         /**
          * Serial Experiments Lain: CRT green on black with washed-out grey outlines, a red warning highlight and
          * Delete, and a screen that is alive behind the keys: scanlines, a slow rolling band, flicker, fragments of
-         * grey blocks that jump about, and a blinking red indicator. Blocks march out from every tap. Colours are
-         * estimates, not researched values.
+         * grey blocks that jump about, and a blinking red indicator. A small grey window opens at every tap, fills
+         * with lines of text and tears away, like the Wired. Colours are estimates, not researched values.
          */
         val LAIN = KeyboardTheme(
             background = 0xFF050805.toInt(),
@@ -1536,8 +1557,8 @@ class KeyboardTheme(
             squareKeys = true,
             ambient = AmbientKind.CRT,
             ambientColours = intArrayOf(0x1A36FF5A, 0xFFB8BDB8.toInt(), 0xFFD8272B.toInt()),
-            tapEffect = TapEffectKind.BLOCKS,
-            effectColours = intArrayOf(0xFF7FE57F.toInt(), 0xFFB8BDB8.toInt(), 0xFFD8272B.toInt()),
+            tapEffect = TapEffectKind.WINDOW,
+            effectColours = intArrayOf(0xFF3C8F4A.toInt(), 0xFFB8BDB8.toInt(), 0xFFD8272B.toInt()),
             keyStyle = KeyStyle.SCANLINE,
             typeface = Typeface.create("monospace", Typeface.NORMAL),
         )
@@ -1566,29 +1587,37 @@ class KeyboardTheme(
         )
 
         /**
-         * Winamp: dark metallic panels and small, slightly glassy buttons with lime-green lettering, a black display
-         * strip, orange for Enter and the highlight, and a spectrum analyser (green at the bottom, through yellow to
-         * orange and red) that idles low and leaps with every key you press. Colours are estimates, not researched
-         * values.
+         * Winamp, in its classic skin: the dark slate-violet panels of the player with its silver buttons, each a square
+         * metal button with a black outline and a light and dark bevel like the transport buttons, which reverses when
+         * pressed. Action keys are toggle buttons with a small lamp in the corner that lights when pressed, and Enter is
+         * the skin's gold. The candidate strip is the playlist: black, with lime-green lettering and the selected word as
+         * the playlist's blue highlight bar. A spectrum analyser leaps behind the keys with every key you press, and the
+         * pulse as you type is lime. Lettering is a small monospace in capitals, like the skin's.
+         * Palette from the skin itself; the look is drawn from the player.
          */
         val WINAMP = KeyboardTheme(
-            background = 0xFF1B1D22.toInt(),
-            backgroundBottom = 0xFF2B2F36.toInt(),
+            background = 0xFF30324F.toInt(),
+            backgroundBottom = 0xFF1D1F37.toInt(),
             strip = 0xFF000000.toInt(),
-            key = 0xE03A404C.toInt(),
-            keyPressed = 0xFF55606E.toInt(),
-            text = 0xFF2BE82B.toInt(),
-            accent = 0xFFFF8A1F.toInt(),
-            accentText = 0xFF000000.toInt(),
-            actionKey = 0xE05A6270.toInt(),
-            actionKeyPressed = 0xFF7A8494.toInt(),
-            actionText = 0xFF2BE82B.toInt(),
-            subText = 0xFF3FBF3F.toInt(),
-            border = 0xFF0A0B0D.toInt(),
-            actionKeyColours = intArrayOf(0xFFE8831C.toInt(), 0xE05A6270.toInt(), 0xE05A6270.toInt(), 0xE05A6270.toInt()),
-            actionTextColours = intArrayOf(0xFF000000.toInt(), 0xFF2BE82B.toInt(), 0xFF2BE82B.toInt(), 0xFF2BE82B.toInt()),
-            keyStyle = KeyStyle.GLOSS,
-            keyGloss = 45,
+            key = 0xF0959AB4.toInt(),
+            keyPressed = 0xFF7C819C.toInt(),
+            text = 0xFF00E800.toInt(),
+            accent = 0xFF0000C6.toInt(),
+            accentText = 0xFFFFFFFF.toInt(),
+            actionKey = 0xF0959AB4.toInt(),
+            actionKeyPressed = 0xFF7C819C.toInt(),
+            actionText = 0xFF12142B.toInt(),
+            subText = 0xFF3A3D5E.toInt(),
+            keyLabel = 0xFF12142B.toInt(),
+            keySubLabel = 0xFF3A3D5E.toInt(),
+            stripText = 0xFF00E800.toInt(),
+            pulseColour = 0xFF22DD22.toInt(),
+            actionKeyColours = intArrayOf(0xFFC9A44C.toInt(), 0xF0959AB4.toInt(), 0xF0959AB4.toInt(), 0xF0959AB4.toInt()),
+            actionTextColours = intArrayOf(0xFF2B1D05.toInt(), 0xFF12142B.toInt(), 0xFF12142B.toInt(), 0xFF12142B.toInt()),
+            keyStyle = KeyStyle.PLAYER,
+            candidateStyle = CandidateStyle.SQUARE,
+            squareKeys = true,
+            shoutLabels = true,
             ambient = AmbientKind.EQUALISER,
             ambientColours = intArrayOf(0xFF22DD22.toInt(), 0xFFE8E020.toInt(), 0xFFFF8A1F.toInt(), 0xFFE02020.toInt()),
             typeface = Typeface.create("monospace", Typeface.BOLD),
@@ -1968,6 +1997,37 @@ class KeyboardTheme(
         )
 
         /**
+         * The Pip-Boy 3000 in amber: the same screen as [PIP_BOY] in the amber phosphor of the later games. Keys are dark
+         * brown boxes with clipped corners, fine scanlines and a glowing amber outline; a pressed key floods dim amber and
+         * its outline blooms. Enter is lit solid like a selected entry and Delete is a pale cream. Scanlines, a rolling
+         * bar, a flicker and a dark vignette play over the glass, a block cursor blinks on the last key, and taps ping
+         * like a radar.
+         */
+        val PIP_BOY_AMBER = KeyboardTheme(
+            background = 0xFF140D03.toInt(),
+            backgroundBottom = 0xFF241604.toInt(),
+            strip = 0xFF2B1B06.toInt(),
+            key = 0xFF2B1B06.toInt(),
+            keyPressed = 0xFF6B4410.toInt(),
+            text = 0xFFFFB02E.toInt(),
+            accent = 0xFFFFB02E.toInt(),
+            accentText = 0xFF140D03.toInt(),
+            subText = 0xFFB87A14.toInt(),
+            border = 0xFFB87F1A.toInt(),
+            deep = 0xFFFFD98A.toInt(),
+            actionKeyColours = intArrayOf(0xFFFFB02E.toInt(), 0xFFFFE9B8.toInt(), 0xFF6B4410.toInt(), 0xFF6B4410.toInt()),
+            actionTextColours = intArrayOf(0xFF140D03.toInt(), 0xFF140D03.toInt(), 0xFFFFD98A.toInt(), 0xFFFFD98A.toInt()),
+            keyStyle = KeyStyle.PHOSPHOR,
+            shoutLabels = true,
+            ambient = AmbientKind.PIPBOY,
+            ambientColours = intArrayOf(0x40000000.toInt(), 0x2EFFB02E.toInt(), 0xDD000000.toInt(), 0x14FFB02E.toInt()),
+            tapEffect = TapEffectKind.RIPPLES,
+            effectColours = intArrayOf(0xFFFFB02E.toInt(), 0xFFFFD98A.toInt()),
+            cursorColour = 0xFFFFB02E.toInt(),
+            typeface = Typeface.create("monospace", Typeface.BOLD),
+        )
+
+        /**
          * Nine Inch Nails, The Downward Spiral (1994): the industrial, photocopied world of Russell Mills' artwork. The keys
          * have no body at all: only the sepia scratches and the rust creeping up from each bottom edge are drawn, so the
          * spiral shows right through them, and a pressed key flares Halo red. A spiral turns slowly and breathes behind
@@ -2055,34 +2115,6 @@ class KeyboardTheme(
             tapEffect = TapEffectKind.RIPPLES,
             effectColours = intArrayOf(0xFF1A5296.toInt(), 0xFFD11F2E.toInt(), 0xFFEFEEEA.toInt()),
             typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL),
-        )
-
-        /**
-         * Primus (1990s): the claymation videos. Every key is a lump of modelling clay, hand-pressed so no two outlines
-         * match, with a thumbprint in one corner, on a mud-brown field where blobs of clay drift about and are
-         * re-modelled a few times a second like stop-motion. Lettering is bold italic serif; Enter is tin-can red, and
-         * every tap flings little lumps of clay that move in jerky stop-motion steps.
-         * Palette from the theme-ideas sheet; the look is drawn from the band's own visual identity.
-         */
-        val PRIMUS = KeyboardTheme(
-            background = 0xFF3B2B1F.toInt(),
-            strip = 0xFF595C33.toInt(),
-            key = 0xFFE6B833.toInt(),
-            keyPressed = 0xFFF2D06A.toInt(),
-            text = 0xFF3B2B1F.toInt(),
-            accent = 0xFF9E2929.toInt(),
-            accentText = 0xFFEFE2C2.toInt(),
-            subText = 0xFF595C33.toInt(),
-            border = 0xFFC48A31.toInt(),
-            stripText = 0xFFEFE2C2.toInt(),
-            actionKeyColours = intArrayOf(0xFF9E2929.toInt(), 0xFF595C33.toInt(), 0xFFC48A31.toInt(), 0xFFEFE2C2.toInt()),
-            actionTextColours = intArrayOf(0xFFEFE2C2.toInt(), 0xFFEFE2C2.toInt(), 0xFF3B2B1F.toInt(), 0xFF3B2B1F.toInt()),
-            keyStyle = KeyStyle.CLAY,
-            ambient = AmbientKind.CLAYMATION,
-            ambientColours = intArrayOf(0x66C48A31.toInt(), 0x669E2929.toInt(), 0x66595C33.toInt(), 0x66E6B833.toInt(), 0x66EFE2C2.toInt()),
-            tapEffect = TapEffectKind.CLAY,
-            effectColours = intArrayOf(0xFFE6B833.toInt(), 0xFF9E2929.toInt(), 0xFF595C33.toInt(), 0xFFC48A31.toInt(), 0xFFEFE2C2.toInt()),
-            typeface = Typeface.create("serif", Typeface.BOLD_ITALIC),
         )
 
         /**
@@ -2318,7 +2350,7 @@ class KeyboardTheme(
          * Evanescence, Fallen (2003): a cathedral at night. Tall gothic-arch keys with a line of tracery inside, in
          * Fallen slate on midnight, outlined in porcelain cyan and lettered in pale ivory; a pressed key glows. Behind
          * them stands the cathedral itself: a pointed arch round a rose window, a moon that pulses, shafts of light and
-         * mist along the floor. Pale feathers drift down over the keys, and every tap lets fall a few pale petals.
+         * mist along the floor. Pale feathers drift down over the keys, and every tap lets fall one more, from the tap itself.
          * Enter is mist blue.
          * Palette from the theme-ideas sheet; the look is drawn from the artwork and identity itself.
          */
@@ -2341,8 +2373,8 @@ class KeyboardTheme(
             ambientColours = intArrayOf(0x66587C9A.toInt(), 0x88EFF3F6.toInt(), 0x26B5CCDA.toInt(), 0x30B5CCDA.toInt()),
             overlay = AmbientKind.FEATHERS,
             overlayColours = intArrayOf(0xA0EFF3F6.toInt(), 0x90B5CCDA.toInt(), 0x80EFF3F6.toInt()),
-            tapEffect = TapEffectKind.PETALS,
-            effectColours = intArrayOf(0xFFEFF3F6.toInt(), 0xFFB5CCDA.toInt(), 0xFF587C9A.toInt()),
+            tapEffect = TapEffectKind.FEATHER,
+            effectColours = intArrayOf(0xFFEFF3F6.toInt(), 0xFFB5CCDA.toInt(), 0xFFD9E4EC.toInt()),
             typeface = Typeface.create("serif", Typeface.NORMAL),
         )
 
@@ -2541,10 +2573,10 @@ class KeyboardTheme(
                 KeyboardSettings.THEME_GTA_VICE_CITY -> GTA_VICE_CITY
                 KeyboardSettings.THEME_GTA_SAN_ANDREAS -> GTA_SAN_ANDREAS
                 KeyboardSettings.THEME_PIP_BOY -> PIP_BOY
+                KeyboardSettings.THEME_PIP_BOY_AMBER -> PIP_BOY_AMBER
                 KeyboardSettings.THEME_NINE_INCH_NAILS -> NINE_INCH_NAILS
                 KeyboardSettings.THEME_THE_PRODIGY -> THE_PRODIGY
                 KeyboardSettings.THEME_MASSIVE_ATTACK -> MASSIVE_ATTACK
-                KeyboardSettings.THEME_PRIMUS -> PRIMUS
                 KeyboardSettings.THEME_BLUR -> BLUR
                 KeyboardSettings.THEME_DAFT_PUNK_HOMEWORK -> DAFT_PUNK_HOMEWORK
                 KeyboardSettings.THEME_DAFT_PUNK_DISCOVERY -> DAFT_PUNK_DISCOVERY

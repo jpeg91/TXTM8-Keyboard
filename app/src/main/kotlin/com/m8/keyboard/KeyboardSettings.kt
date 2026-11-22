@@ -176,7 +176,8 @@ data class KeyboardSettings(
         const val THEME_NINE_INCH_NAILS = 76
         const val THEME_THE_PRODIGY = 77
         const val THEME_MASSIVE_ATTACK = 78
-        const val THEME_PRIMUS = 79
+        /** Was the Primus theme, which has been removed: anyone who had it gets the P5 theme. */
+        const val THEME_RETIRED_PRIMUS = 79
         const val THEME_BLUR = 80
         /** Was the Oasis theme, which has been removed: anyone who had it gets the P5 theme. */
         const val THEME_RETIRED_OASIS = 81
@@ -192,6 +193,7 @@ data class KeyboardSettings(
         const val THEME_MTV = 91
         const val THEME_MTV2 = 92
         const val THEME_KERRANG = 93
+        const val THEME_PIP_BOY_AMBER = 94
 
         /** Index in [P5_ACCENTS] of the original red (the default) and of the purple. */
         const val P5_ACCENT_RED = 0
@@ -199,11 +201,12 @@ data class KeyboardSettings(
 
         /**
          * Moves anyone on a theme that no longer exists to its replacement: the purple theme
-         * becomes P5 with the purple accent, and the removed RAZR and Oasis themes become P5.
+         * becomes P5 with the purple accent, and the removed RAZR, Oasis and Primus themes become P5.
          */
         fun migrateThemes(p: SharedPreferences) {
             val stored = p.getInt(KEY_THEME, THEME_P5)
-            if (stored != THEME_RETIRED_PURPLE && stored != THEME_RETIRED_RAZR && stored != THEME_RETIRED_OASIS) return
+            val retired = setOf(THEME_RETIRED_PURPLE, THEME_RETIRED_RAZR, THEME_RETIRED_OASIS, THEME_RETIRED_PRIMUS)
+            if (stored !in retired) return
             val edit = p.edit().putInt(KEY_THEME, THEME_P5)
             if (stored == THEME_RETIRED_PURPLE) edit.putInt(KEY_P5_ACCENT, P5_ACCENT_PURPLE)
             edit.apply()

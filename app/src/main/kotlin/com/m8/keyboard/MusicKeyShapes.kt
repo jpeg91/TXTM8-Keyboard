@@ -131,10 +131,9 @@ class StitchKeyDrawable(
 }
 
 /**
- * Polished chrome, like the Discovery sleeve and the helmets: a bevelled rim round a face that reflects a bright sky
- * above a sharp dark horizon and a lighter ground below, with two slanting highlights, and a strip of [led] light
- * along the bottom. Pressed, the whole face is outlined in [led]. The tones are worked out from [fill] (a light grey
- * gives silver; a colour gives tinted chrome).
+ * Liquid mercury, like the Discovery sleeve and the helmets: a chrome key with a bright top, a dark horizon across
+ * the middle and a lighter reflection below, a soft shine, and a strip of [led] light along the bottom. Pressed,
+ * the whole outline lights up in [led].
  */
 class ChromeKeyDrawable(
     private val fill: Int,
@@ -146,88 +145,43 @@ class ChromeKeyDrawable(
 ) : KeyShapeDrawable(insetX, insetY, density) {
     override fun drawKey(canvas: Canvas, l: Float, t: Float, r: Float, b: Float) {
         val corner = 8f * density
-        val white = 0xFFFFFFFF.toInt()
-        val black = 0xFF000000.toInt()
-        val bright = mixArgb(fill, white, 0.9f)
-        val skyLow = mixArgb(fill, black, 0.3f)
-        val groundTop = mixArgb(fill, black, 0.32f)
-        val groundLow = mixArgb(fill, white, 0.7f)
-        val darkest = mixArgb(fill, black, 0.8f)
-
-        // The rim: a bevel, bright on top and dark below.
-        gradient(LinearGradient(0f, t, 0f, b, bright, darkest, Shader.TileMode.CLAMP))
+        gradient(LinearGradient(0f, t, 0f, b, lighten(fill, 0.55f), darken(fill, 0.15f), Shader.TileMode.CLAMP))
         roundRect(canvas, l, t, r, b, corner)
 
-        val i = 2.2f * density
-        val fl = l + i
-        val ft = t + i
-        val fr = r - i
-        val fb = b - i
-        val fc = corner - i
-        val horizon = ft + (fb - ft) * 0.52f
-
-        // The sky above the horizon.
-        gradient(LinearGradient(0f, ft, 0f, horizon, bright, skyLow, Shader.TileMode.CLAMP))
+        // The horizon: the lower half reflects a dark band that fades back to light at the bottom edge.
+        val mid = t + (b - t) * 0.5f
+        gradient(
+            LinearGradient(
+                0f, mid, 0f, b,
+                withAlpha(darken(fill, 0.4f), 170), withAlpha(lighten(fill, 0.5f), 140), Shader.TileMode.CLAMP,
+            ),
+        )
         path.reset()
-        path.moveTo(fl, horizon)
-        path.lineTo(fl, ft + fc)
-        path.quadTo(fl, ft, fl + fc, ft)
-        path.lineTo(fr - fc, ft)
-        path.quadTo(fr, ft, fr, ft + fc)
-        path.lineTo(fr, horizon)
+        path.moveTo(l, mid)
+        path.lineTo(r, mid)
+        path.lineTo(r, b - corner)
+        path.quadTo(r, b, r - corner, b)
+        path.lineTo(l + corner, b)
+        path.quadTo(l, b, l, b - corner)
         path.close()
         canvas.drawPath(path, paint)
 
-        // The ground below it, dark at the horizon and bright at the bottom.
-        gradient(LinearGradient(0f, horizon, 0f, fb, groundTop, groundLow, Shader.TileMode.CLAMP))
-        path.reset()
-        path.moveTo(fl, horizon)
-        path.lineTo(fr, horizon)
-        path.lineTo(fr, fb - fc)
-        path.quadTo(fr, fb, fr - fc, fb)
-        path.lineTo(fl + fc, fb)
-        path.quadTo(fl, fb, fl, fb - fc)
-        path.close()
-        canvas.drawPath(path, paint)
+        // The shine across the top.
+        solid(0x55FFFFFF)
+        roundRect(canvas, l + 3f * density, t + 2f * density, r - 3f * density, t + (b - t) * 0.36f, corner - 2f * density)
 
-        // The horizon itself: a thin, sharp dark line.
-        solid(withAlpha(darkest, 230))
-        canvas.drawRect(fl, horizon - 0.8f * density, fr, horizon + 0.9f * density, paint)
-
-        // Two slanting highlights across the sky.
-        val w = fr - fl
-        solid(withAlpha(white, 150))
-        path.reset()
-        path.moveTo(fl + w * 0.14f, ft + density)
-        path.lineTo(fl + w * 0.30f, ft + density)
-        path.lineTo(fl + w * 0.18f, horizon - density)
-        path.lineTo(fl + w * 0.06f, horizon - density)
-        path.close()
-        canvas.drawPath(path, paint)
-        solid(withAlpha(white, 90))
-        path.reset()
-        path.moveTo(fl + w * 0.36f, ft + density)
-        path.lineTo(fl + w * 0.42f, ft + density)
-        path.lineTo(fl + w * 0.30f, horizon - density)
-        path.lineTo(fl + w * 0.24f, horizon - density)
-        path.close()
-        canvas.drawPath(path, paint)
-
-        // A thin bright line on the top lip of the face, and the dark outer edge.
-        line(withAlpha(white, 210), density)
-        canvas.drawLine(fl + fc, ft + 0.5f * density, fr - fc, ft + 0.5f * density, paint)
-        line(withAlpha(darkest, 230), px)
+        line(withAlpha(darken(fill, 0.5f), 220), px)
         edge(canvas, l, t, r, b, corner, px)
 
-        // The LED: a strip along the bottom, or the whole face outlined when pressed.
+        // The LED: a strip along the bottom, or the whole outline when pressed.
         if (pressed) {
             line(withAlpha(led, 90), 4f * density)
-            edge(canvas, fl, ft, fr, fb, fc, 4f * density)
-            line(led, 1.8f * density)
-            edge(canvas, fl, ft, fr, fb, fc, 1.8f * density)
+            edge(canvas, l, t, r, b, corner, 4f * density)
+            line(led, 2f * density)
+            edge(canvas, l, t, r, b, corner, 2f * density)
         } else {
             solid(led)
-            roundRect(canvas, l + 9f * density, b - 5.5f * density, r - 9f * density, b - 3.5f * density, density)
+            roundRect(canvas, l + 9f * density, b - 5f * density, r - 9f * density, b - 3f * density, density)
         }
     }
 }

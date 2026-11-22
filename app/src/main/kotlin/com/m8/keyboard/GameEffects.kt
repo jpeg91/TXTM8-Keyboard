@@ -198,18 +198,23 @@ internal object GameAmbient {
             canvas.drawCircle(sx, sy, (0.8f + tw) * d, paint)
         }
 
-        // The sun bobs gently, and the slits across it scroll steadily downwards, widening as they go.
+        // The sun bobs gently. Its top half is solid; slits are born at its middle and scroll steadily down the lower
+        // half, widening as they go.
         val r = min(w * 0.26f, h * 0.30f)
         val cx = w / 2f
         val cy = horizon - r * 0.55f + sin(frame * 0.07f) * r * 0.05f
         paint.shader = LinearGradient(0f, cy - r, 0f, horizon, sunTop, sunBottom, Shader.TileMode.CLAMP)
-        val period = r * 0.32f
+        canvas.save()
+        canvas.clipRect(0f, cy - r, w, cy)
+        canvas.drawCircle(cx, cy, r, paint)
+        canvas.restore()
+        val period = r * 0.30f
         val scroll = (frame * 0.9f * d) % period
-        var y = cy - r - period + scroll
+        var y = cy - period + scroll
         while (y < horizon) {
-            val t = ((y - (cy - r)) / (2f * r)).coerceIn(0f, 1f)
-            val gap = (0.6f + 7f * t) * d
-            val top = max(y, cy - r)
+            val t = ((y - cy) / r).coerceIn(0f, 1f)
+            val gap = (0.4f + 8f * t) * d
+            val top = max(y, cy)
             val bottom = min(y + period - gap, horizon)
             if (bottom > top) {
                 canvas.save()
@@ -221,9 +226,8 @@ internal object GameAmbient {
         }
         paint.shader = null
 
-        // The glow along the horizon, which breathes, and the horizon line.
-        val breath = 0x48 + (0x30 * sin(frame * 0.1f)).toInt()
-        paint.shader = LinearGradient(0f, horizon - 26f * d, 0f, horizon, withAlpha(glow, 0), withAlpha(glow, breath), Shader.TileMode.CLAMP)
+        // The glow along the horizon, steady, and the horizon line.
+        paint.shader = LinearGradient(0f, horizon - 26f * d, 0f, horizon, withAlpha(glow, 0), withAlpha(glow, 0x60), Shader.TileMode.CLAMP)
         canvas.drawRect(0f, horizon - 26f * d, w, horizon, paint)
         paint.shader = null
         paint.color = withAlpha(glow, 0xB0)
@@ -652,5 +656,78 @@ internal object GameTap {
         paint.color = withAlpha(lighten(gold, 0.55f), alpha)
         rect.set(x - width * 0.35f, cy - halfHeight * 0.62f, x + width * 0.35f, cy + halfHeight * 0.62f)
         canvas.drawOval(rect, paint)
+    }
+
+    /**
+     * A small desktop window opening at the tap, like the ones in the Wired: it grows from a thin line, shows a title bar
+     * with a blinking red lamp and lines of text that fill in, then tears into sideways-shifted strips and fades.
+     * [t] is 0 at the tap to 1 at the end; [seed] makes each window tear differently. [colours]: 0 the title bar and
+     * text, 1 the outline, 2 the lamp.
+     */
+    fun window(canvas: Canvas, paint: Paint, x: Float, y: Float, t: Float, seed: Int, d: Float, colours: IntArray) {
+        val bar = colourAt(colours, 0, 0xFF7FE57F.toInt())
+        val line = colourAt(colours, 1, 0xFFB8BDB8.toInt())
+        val lamp = colourAt(colours, 2, 0xFFD8272B.toInt())
+        val width = 58f * d
+        val full = 40f * d
+        val open = min(1f, t / 0.18f)
+        val height = max(2f * d, full * (1f - (1f - open) * (1f - open)))
+        val left = x - width * 0.3f
+        val top = y - full - 6f * d + (full - height) / 2f
+        val tear = if (t > 0.7f) (t - 0.7f) / 0.3f else 0f
+        val alpha = (255f * (1f - tear * tear)).toInt().coerceIn(0, 255)
+        val step = (t * 30f).toInt()
+        val strips = 6
+        for (s in 0 until strips) {
+            val y0 = top + height * s / strips
+            val y1 = top + height * (s + 1) / strips
+            val shift = if (tear > 0f) ((hash3(s, step, seed) % 100) / 100f - 0.5f) * 24f * d * tear else 0f
+            canvas.save()
+            canvas.clipRect(left - 2f * d + shift, y0, left + width + 2f * d + shift, y1 + 0.5f)
+            canvas.translate(shift, 0f)
+            paint.style = Paint.Style.FILL
+            paint.color = withAlpha(0xFF050805.toInt(), alpha * 4 / 5)
+            canvas.drawRect(left, top, left + width, top + height, paint)
+            paint.style = Paint.Style.STROKE
+            paint.strokeWidth = max(1f, 1.1f * d)
+            paint.color = withAlpha(line, alpha)
+            canvas.drawRect(left, top, left + width, top + height, paint)
+            if (height > 12f * d) {
+                paint.style = Paint.Style.FILL
+                paint.color = withAlpha(bar, alpha * 3 / 4)
+                canvas.drawRect(left, top, left + width, top + 8f * d, paint)
+                if ((t * 10f).toInt() % 2 == 0) {
+                    paint.color = withAlpha(lamp, alpha)
+                    canvas.drawCircle(left + width - 5f * d, top + 4f * d, 2f * d, paint)
+                }
+                for (k in 0 until 3) {
+                    val ty = top + 14f * d + k * 7f * d
+                    if (ty + 3f * d > top + height) break
+                    val grow = ((t - 0.15f) / 0.4f - k * 0.2f).coerceIn(0f, 1f)
+                    val longest = (width - 12f * d) * (0.55f + 0.45f * ((hash3(k, seed, 5) % 100) / 100f))
+                    paint.color = withAlpha(line, alpha * 3 / 4)
+                    canvas.drawRect(left + 6f * d, ty, left + 6f * d + longest * grow, ty + 2.2f * d, paint)
+                }
+            }
+            canvas.restore()
+        }
+    }
+
+    /**
+     * One sprite of a pixel burst: a square that moves outwards along ([dx], [dy]) in ten steps rather than smoothly,
+     * snapped to a coarse grid like a handheld's screen, and flickers off and on as it dies. [size] is its side in pixels.
+     */
+    fun pixel(canvas: Canvas, paint: Paint, x: Float, y: Float, dx: Float, dy: Float, size: Float, t: Float, colour: Int, d: Float) {
+        if (t > 0.55f && (t * 24f).toInt() % 2 == 1) return
+        val stepped = (t * 10f).toInt() / 10f
+        val reach = 30f * d * (1f - (1f - stepped) * (1f - stepped))
+        val snap = size
+        val px = Math.round((x + dx * reach) / snap) * snap
+        val py = Math.round((y + dy * reach + 10f * d * stepped * stepped) / snap) * snap
+        paint.style = Paint.Style.FILL
+        paint.color = 0xFF14141C.toInt()
+        canvas.drawRect(px - snap / 2f - max(1f, 0.7f * d), py - snap / 2f - max(1f, 0.7f * d), px + snap / 2f + max(1f, 0.7f * d), py + snap / 2f + max(1f, 0.7f * d), paint)
+        paint.color = colour
+        canvas.drawRect(px - snap / 2f, py - snap / 2f, px + snap / 2f, py + snap / 2f, paint)
     }
 }

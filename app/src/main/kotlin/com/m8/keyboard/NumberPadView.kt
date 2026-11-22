@@ -141,8 +141,9 @@ class NumberPadView(
         grid.orientation = VERTICAL
         for (rowKeys in listOf("123", "456", "789", "*0#")) {
             val r = newRow()
-            for (k in rowKeys) {
-                val key = makeKey(labelFor(k), keyColour = theme.keyCycle?.let { it[(k - '0').mod(it.size)] })
+            for ((column, k) in rowKeys.withIndex()) {
+                // The keys of a row meet, so a theme can draw the row as one line snaking through its keys.
+                val key = makeKey(labelFor(k), keyColour = theme.keyCycle?.let { it[(k - '0').mod(it.size)] }, rowPosition = column, rowCount = rowKeys.length)
                 key.setOnClickListener {
                     settings.feedback(it)
                     listener.onKeypadKey(k)
@@ -339,6 +340,8 @@ class NumberPadView(
         action: Boolean = false,
         actionSlot: Int = 0,
         keyColour: Int? = null,
+        rowPosition: Int = 0,
+        rowCount: Int = 1,
     ): TextView {
         val tv = TextView(context)
         tv.text = label
@@ -348,7 +351,7 @@ class NumberPadView(
         tv.setTextColor(if (action) theme.actionLabel(actionSlot) else theme.keyText)
         tv.background = theme.keyBackground(
             density(), action, GAP_DP, GAP_DP, 10,
-            keyColor = keyColour, pressedKeyColor = keyColour?.let { darken(it, 0.22f) }, actionSlot = actionSlot,
+            keyColor = keyColour, pressedKeyColor = keyColour?.let { darken(it, 0.22f) }, actionSlot = actionSlot, rowPosition = rowPosition, rowCount = rowCount,
         )
         return tv
     }

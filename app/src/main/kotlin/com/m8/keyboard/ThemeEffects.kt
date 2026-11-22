@@ -155,6 +155,15 @@ enum class KeyStyle {
     /** A lump of modelling clay with a hand-pressed outline, a highlight and a thumbprint, like the Primus videos. */
     CLAY,
 
+    /** A square metal player button with a light and dark bevel and, on action keys, a small lamp, like Winamp's transport buttons. */
+    PLAYER,
+
+    /** Black glass with a glowing outline whose edges curve, like the electroluminescent keypad of the Motorola RAZR V3. */
+    GLOWLINE,
+
+    /** A moulded plastic button standing in a dark cut-out in the shell, like the buttons of the Game Boy Advance. */
+    SHELL,
+
     /** A flat dark menu row with a fine rule above and a heavier one below, like the pause menu of San Andreas. */
     MENU,
 }
@@ -236,6 +245,9 @@ enum class AmbientKind {
 
     /** A turning peppermint disc of twisted red and white wedges. */
     PEPPERMINT,
+
+    /** The soft glow of a keypad's backlight rolling slowly up the keyboard, to show through keys of glass. */
+    BACKLIGHT,
 
     /** A flood of colour that changes every second or so, held and then blended into the next, like the channel idents. */
     COLOUR_CYCLE,
@@ -700,6 +712,7 @@ class AmbientBackground(
         AmbientKind.CROSS -> 70L
         AmbientKind.PEPPERMINT -> 60L
         AmbientKind.COLOUR_CYCLE -> 100L
+        AmbientKind.BACKLIGHT -> 60L
         AmbientKind.CATHEDRAL -> 70L
         AmbientKind.FEATHERS -> 60L
         AmbientKind.TURF -> 1000L
@@ -790,6 +803,7 @@ class AmbientBackground(
             AmbientKind.CROSS -> MusicAmbient.cross(canvas, paint, path, w, h, frame, density, colours)
             AmbientKind.PEPPERMINT -> MusicAmbient.peppermint(canvas, paint, path, w, h, frame, density, colours)
             AmbientKind.COLOUR_CYCLE -> MusicAmbient.colourCycle(canvas, paint, w, h, frame, colours)
+            AmbientKind.BACKLIGHT -> DeviceAmbient.backlight(canvas, paint, w, h, frame, colours)
             AmbientKind.CATHEDRAL -> MusicAmbient.cathedral(canvas, paint, path, w, h, frame, density, colours)
             AmbientKind.FEATHERS -> MusicAmbient.feathers(canvas, paint, w, h, frame, density, colours)
             AmbientKind.DOGS -> MusicAmbient.dogs(canvas, paint, path, w, h, frame, density, colours)

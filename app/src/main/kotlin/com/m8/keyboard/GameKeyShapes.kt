@@ -1,11 +1,15 @@
 // app/src/main/kotlin/com/m8/keyboard/GameKeyShapes.kt
 package com.m8.keyboard
 
+import android.graphics.Bitmap
+import android.graphics.BitmapShader
 import android.graphics.Canvas
 import android.graphics.ColorFilter
 import android.graphics.LinearGradient
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.PixelFormat
+import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.drawable.Drawable
 import kotlin.math.max
@@ -586,6 +590,140 @@ class WindowStripDrawable(
 
     override fun setAlpha(alpha: Int) {}
     override fun setColorFilter(colorFilter: ColorFilter?) {}
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun getOpacity(): Int = PixelFormat.OPAQUE
+}
+
+/**
+ * A moulded plastic button set into a handheld's shell, like the buttons of the Game Boy Advance: a dark cut-out in
+ * the shell with a softly domed button standing in it, a pale sheen along its top and a darker underside that shows
+ * its height. Pressed, the button sinks into the cut-out and loses its sheen. [recess] is the colour of the cut-out.
+ */
+class ShellKeyDrawable(
+    private val fill: Int,
+    private val recess: Int,
+    private val pressed: Boolean,
+    insetX: Float,
+    insetY: Float,
+    density: Float,
+) : KeyShapeDrawable(insetX, insetY, density) {
+    override fun drawKey(canvas: Canvas, l: Float, t: Float, r: Float, b: Float) {
+        val corner = min((b - t) * 0.4f, 16f * density)
+        solid(recess)
+        roundRect(canvas, l, t, r, b, corner)
+
+        val m = 1.8f * density
+        val height = if (pressed) 0.8f * density else 2.4f * density
+        val sink = if (pressed) 1.4f * density else 0f
+        val bl = l + m
+        val br = r - m
+        val bt = t + m + sink
+        val bb = b - m - (height - sink).coerceAtLeast(0f)
+
+        // The underside of the button, which shows below its face.
+        solid(darken(fill, 0.5f))
+        roundRect(canvas, bl, bt + height, br, b - m, corner - m)
+
+        // The face: lighter at the top, a shade darker at the bottom; flat and darker when pressed.
+        if (pressed) {
+            solid(darken(fill, 0.06f))
+        } else {
+            gradient(LinearGradient(0f, bt, 0f, bb, lighten(fill, 0.22f), darken(fill, 0.1f), Shader.TileMode.CLAMP))
+        }
+        roundRect(canvas, bl, bt, br, bb, corner - m)
+
+        if (!pressed) {
+            // A sheen across the top of the dome.
+            solid(withAlpha(0xFFFFFFFF.toInt(), 46))
+            roundRect(
+                canvas, bl + (br - bl) * 0.14f, bt + 1.6f * density,
+                br - (br - bl) * 0.14f, bt + 1.6f * density + (bb - bt) * 0.3f, corner * 0.6f,
+            )
+        }
+    }
+}
+
+/**
+ * A handheld's screen on its dark bezel, like the one on the Game Boy Advance: a lit, slightly greenish panel set into a
+ * near-black frame with a fine grid of pixels over it, a soft diagonal glare in one corner and a small red power lamp on
+ * the bezel. [bezel] is the frame colour and [screen] the colour of the lit panel.
+ */
+class HandheldScreenDrawable(
+    private val bezel: Int,
+    private val screen: Int,
+    private val density: Float,
+) : Drawable() {
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val rect = RectF()
+    private val path = Path()
+    private val grid: BitmapShader by lazy {
+        // One cell of the pixel grid: a faint dark column and row, repeated across the screen.
+        val cell = max(2, Math.round(2f * density))
+        val bitmap = Bitmap.createBitmap(cell, cell, Bitmap.Config.ARGB_8888)
+        for (i in 0 until cell) {
+            bitmap.setPixel(0, i, 0x1A000000)
+            bitmap.setPixel(i, 0, 0x12000000)
+        }
+        BitmapShader(bitmap, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT)
+    }
+
+    override fun draw(canvas: Canvas) {
+        val b = bounds
+        if (b.width() <= 0 || b.height() <= 0) return
+        val l = b.left.toFloat()
+        val t = b.top.toFloat()
+        val r = b.right.toFloat()
+        val bt = b.bottom.toFloat()
+        paint.shader = null
+        paint.style = Paint.Style.FILL
+        paint.color = bezel
+        canvas.drawRect(l, t, r, bt, paint)
+
+        val insetX = 9f * density
+        val insetY = min(5f * density, (bt - t) * 0.14f)
+        val sl = l + insetX
+        val st = t + insetY
+        val sr = r - insetX
+        val sb = bt - insetY
+        val corner = 3f * density
+
+        // The lit panel, a little brighter in the middle than at its edges.
+        rect.set(sl, st, sr, sb)
+        paint.color = screen
+        canvas.drawRoundRect(rect, corner, corner, paint)
+        paint.shader = LinearGradient(0f, st, 0f, sb, withAlpha(0xFFFFFFFF.toInt(), 40), withAlpha(0xFF000000.toInt(), 26), Shader.TileMode.CLAMP)
+        canvas.drawRoundRect(rect, corner, corner, paint)
+        paint.shader = grid
+        canvas.drawRoundRect(rect, corner, corner, paint)
+        paint.shader = null
+
+        // The glare: a pale wedge across the top-left corner.
+        path.reset()
+        path.moveTo(sl, st)
+        path.lineTo(sl + (sr - sl) * 0.34f, st)
+        path.lineTo(sl, sb)
+        path.close()
+        paint.color = withAlpha(0xFFFFFFFF.toInt(), 22)
+        canvas.drawPath(path, paint)
+
+        // The shadow the bezel casts on the panel.
+        paint.style = Paint.Style.STROKE
+        paint.strokeWidth = max(1f, 1.4f * density)
+        paint.color = withAlpha(0xFF000000.toInt(), 90)
+        canvas.drawRoundRect(rect, corner, corner, paint)
+
+        // The power lamp, on the left bezel, with a little glow.
+        paint.style = Paint.Style.FILL
+        val lampX = l + insetX / 2f
+        val lampY = (t + bt) / 2f
+        paint.color = withAlpha(0xFFFF3B30.toInt(), 70)
+        canvas.drawCircle(lampX, lampY, 2.6f * density, paint)
+        paint.color = 0xFFFF3B30.toInt()
+        canvas.drawCircle(lampX, lampY, 1.3f * density, paint)
+    }
+
+    override fun setAlpha(alpha: Int) { paint.alpha = alpha }
+    override fun setColorFilter(colorFilter: ColorFilter?) { paint.colorFilter = colorFilter }
     @Suppress("OVERRIDE_DEPRECATION")
     override fun getOpacity(): Int = PixelFormat.OPAQUE
 }

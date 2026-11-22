@@ -143,7 +143,7 @@ fun KeyboardTheme.iconKey(
     actionSlot: Int = 0,
 ): IconKeyView {
     val density = context.resources.displayMetrics.density
-    val view = IconKeyView(context, icon, if (action) actionLabel(actionSlot) else text)
+    val view = IconKeyView(context, icon, if (action) actionLabel(actionSlot) else keyText)
     view.background = keyBackground(density, action, gapXDp, gapYDp, cornerDp, actionSlot = actionSlot)
     view.contentDescription = description
     return view
