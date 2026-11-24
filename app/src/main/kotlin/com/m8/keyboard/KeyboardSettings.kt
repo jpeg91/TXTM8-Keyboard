@@ -194,6 +194,29 @@ data class KeyboardSettings(
         const val THEME_MTV2 = 92
         const val THEME_KERRANG = 93
         const val THEME_PIP_BOY_AMBER = 94
+        const val THEME_GEN_1 = 95
+        const val THEME_GEN_2 = 96
+        const val THEME_GEN_3 = 97
+        const val THEME_BLACKBERRY = 98
+        const val THEME_TAMAGOTCHI = 99
+        const val THEME_GAME_AND_WATCH = 100
+        const val THEME_CASIO_CALCULATOR = 101
+        const val THEME_MEGA_DRIVE = 102
+        const val THEME_ZX_SPECTRUM = 103
+        const val THEME_COMMODORE_64 = 104
+        const val THEME_TELETEXT = 105
+        const val THEME_MSN_MESSENGER = 106
+        const val THEME_TETRIS = 107
+        const val THEME_PAC_MAN = 108
+        const val THEME_CODEC_CALL = 109
+        const val THEME_HEV_SUIT = 110
+        const val THEME_MINECRAFT = 111
+        const val THEME_JOY_DIVISION = 112
+        const val THEME_NOSTROMO = 113
+        const val THEME_VHS = 114
+        const val THEME_RAIN_ON_WINDOW = 115
+        const val THEME_DEMOSCENE = 116
+        const val THEME_FIREFLIES = 117
 
         /** Index in [P5_ACCENTS] of the original red (the default) and of the purple. */
         const val P5_ACCENT_RED = 0

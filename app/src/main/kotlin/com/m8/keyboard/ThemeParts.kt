@@ -33,6 +33,15 @@ enum class StripStyle {
     /** A lit handheld screen on a dark bezel with a pixel grid, a glare and a power lamp (the Game Boy Advance); the colour of the lit panel is [KeyboardTheme.border]. */
     HANDHELD_SCREEN,
 
+    /** A small LCD in a frame, like a toy pet's or a calculator's: [KeyboardTheme.strip] is the frame and [KeyboardTheme.deep] the colour of the lit panel. */
+    LCD_PANEL,
+
+    /** [LCD_PANEL] with the faint unlit segments of three seven-segment digits at its right, like a calculator's. */
+    LCD_DIGITS,
+
+    /** Flat paper with the four slanted stripes of a rainbow in its lower right corner, like a home computer of the early eighties ([KeyboardTheme.strip] is the paper). */
+    SPECTRUM_PAPER,
+
     /** A blue gradient window with a silver line along its top and bottom, like a Final Fantasy VII menu (uses [KeyboardTheme.keyPressed] as its bright end). */
     WINDOW,
 }
@@ -75,3 +84,6 @@ enum class CandidateStyle {
     /** An angular plate with two corners cut off. */
     CHAMFER,
 }
+
+/** The strip styles that draw a lit panel inside a frame, so the candidates must stay inside the panel. */
+val INSET_STRIPS = setOf(StripStyle.HANDHELD_SCREEN, StripStyle.LCD_PANEL, StripStyle.LCD_DIGITS)

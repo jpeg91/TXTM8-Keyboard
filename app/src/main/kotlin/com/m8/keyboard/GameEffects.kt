@@ -11,6 +11,7 @@ import android.graphics.Shader
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.cos
+import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sin
@@ -198,51 +199,58 @@ internal object GameAmbient {
             canvas.drawCircle(sx, sy, (0.8f + tw) * d, paint)
         }
 
-        // The sun bobs gently. Its top half is solid; slits are born at its middle and scroll steadily down the lower
-        // half, widening as they go.
+        // The sun is still and solid. Its top half is whole; slits are born at its middle and scroll steadily down the
+        // lower half, widening as they go. The slits are drawn as rectangles with soft edges, inside a circular clip, so
+        // that a slit thinner than a pixel fades smoothly instead of popping in and out.
         val r = min(w * 0.26f, h * 0.30f)
         val cx = w / 2f
-        val cy = horizon - r * 0.55f + sin(frame * 0.07f) * r * 0.05f
+        val cy = horizon - r * 0.55f
+        // A shader is drawn at the paint's own alpha, so the paint is made opaque first (the stars leave it translucent).
+        paint.color = 0xFFFFFFFF.toInt()
         paint.shader = LinearGradient(0f, cy - r, 0f, horizon, sunTop, sunBottom, Shader.TileMode.CLAMP)
         canvas.save()
-        canvas.clipRect(0f, cy - r, w, cy)
-        canvas.drawCircle(cx, cy, r, paint)
-        canvas.restore()
+        path.reset()
+        path.addCircle(cx, cy, r, Path.Direction.CW)
+        canvas.clipPath(path)
+        canvas.drawRect(cx - r, cy - r, cx + r, cy, paint)
         val period = r * 0.30f
         val scroll = (frame * 0.9f * d) % period
         var y = cy - period + scroll
         while (y < horizon) {
             val t = ((y - cy) / r).coerceIn(0f, 1f)
-            val gap = (0.4f + 8f * t) * d
+            val gap = (1.4f + 9f * t) * d
             val top = max(y, cy)
             val bottom = min(y + period - gap, horizon)
-            if (bottom > top) {
-                canvas.save()
-                canvas.clipRect(0f, top, w, bottom)
-                canvas.drawCircle(cx, cy, r, paint)
-                canvas.restore()
-            }
+            if (bottom > top) canvas.drawRect(cx - r, top, cx + r, bottom, paint)
             y += period
         }
+        canvas.restore()
         paint.shader = null
 
         // The glow along the horizon, steady, and the horizon line.
+        paint.color = 0xFFFFFFFF.toInt()
         paint.shader = LinearGradient(0f, horizon - 26f * d, 0f, horizon, withAlpha(glow, 0), withAlpha(glow, 0x60), Shader.TileMode.CLAMP)
         canvas.drawRect(0f, horizon - 26f * d, w, horizon, paint)
         paint.shader = null
         paint.color = withAlpha(glow, 0xB0)
         canvas.drawRect(0f, horizon, w, horizon + max(1f, 1.5f * d), paint)
 
-        // The reflection: bars that widen and narrow, each shimmering at its own pace.
-        var by = horizon + 5f * d
-        var k = 0
-        while (by < h) {
-            val wobble = 0.5f + 0.5f * sin(frame * (0.16f + k * 0.02f) + k * 1.3f)
-            val half = r * (0.9f - k * 0.045f).coerceAtLeast(0.25f) * (0.5f + 0.5f * wobble)
-            paint.color = withAlpha(lerpArgb(sunBottom, sunTop, wobble), max(0x18, 0x7A - k * 9))
-            canvas.drawRect(cx - half, by, cx + half, by + (2f + k * 0.35f) * d, paint)
-            by += (6f + k * 1.8f) * d
-            k++
+        // The reflection: bars of the sun's light that start under the horizon and scroll steadily downwards, growing
+        // thicker, wider apart and fainter as they go. Each bar keeps its own width as it travels.
+        val travel = frame * 0.045f
+        val whole = floor(travel).toInt()
+        val frac = travel - whole
+        for (k in 0..14) {
+            val u = k + frac
+            val barY = horizon + 4f * d + (5.5f * u + 0.5f * u * u) * d
+            if (barY >= h) break
+            val id = k - whole
+            val jitter = 0.62f + 0.38f * (hash3(id, 7, 3) % 100 / 100f)
+            val half = r * (0.95f - u * 0.03f).coerceAtLeast(0.3f) * jitter
+            val fadeIn = min(1f, u * 1.4f)
+            val alpha = (0x80 * fadeIn * (1f - u / 16f)).toInt().coerceAtLeast(0)
+            paint.color = withAlpha(lerpArgb(sunBottom, sunTop, hash3(id, 9, 3) % 100 / 100f), alpha)
+            canvas.drawRect(cx - half, barY, cx + half, barY + (1.8f + u * 0.3f) * d, paint)
         }
 
         // The palms.

@@ -30,10 +30,11 @@ object ThemeComposer {
         KeyStyle.ETCHED, KeyStyle.MOULDED, KeyStyle.RIVETED, KeyStyle.WINDOW, KeyStyle.PHOSPHOR, KeyStyle.DECO,
         KeyStyle.TERRAIN, KeyStyle.CHECKER, KeyStyle.BLOCK, KeyStyle.SCRATCHED, KeyStyle.STITCH, KeyStyle.TICKET,
         KeyStyle.SPEECH, KeyStyle.GOTHIC, KeyStyle.CLAY, KeyStyle.MENU, KeyStyle.SHELL, KeyStyle.GLOWLINE,
+        KeyStyle.TEXTBOX, KeyStyle.FRETTED, KeyStyle.RIBBED, KeyStyle.TILE, KeyStyle.MAZE,
     )
     private val SHADOWED = setOf(
         KeyStyle.LCD, KeyStyle.MEMPHIS, KeyStyle.NOKIA, KeyStyle.PIXEL, KeyStyle.SLANTED, KeyStyle.TERRAIN, KeyStyle.CHECKER,
-        KeyStyle.SCRATCHED, KeyStyle.SHELL,
+        KeyStyle.SCRATCHED, KeyStyle.SHELL, KeyStyle.TEXTBOX, KeyStyle.BUTTON, KeyStyle.MOSAIC, KeyStyle.TILE, KeyStyle.MAZE,
     )
 
     @Synchronized
@@ -70,6 +71,8 @@ object ThemeComposer {
         // A handheld screen needs a colour for its lit panel.
         if (background?.stripStyle == StripStyle.HANDHELD_SCREEN && background !== c && border == 0) border = c.text
         var deep = c.deep
+        // An LCD strip needs a colour for its lit panel.
+        if (background !== c && deep == 0 && (background?.stripStyle == StripStyle.LCD_PANEL || background?.stripStyle == StripStyle.LCD_DIGITS)) deep = c.text
         if (backdrop == Backdrop.STRIPES && background !== c && deep == 0) deep = darken(c.accent, 0.5f)
 
         // A gradient belongs to the background part; from another theme it fades from this palette's background.
@@ -121,6 +124,7 @@ object ThemeComposer {
             overlayColours = animation?.overlayColours,
             pulseColour = c.pulseColour,
             cursorColour = animation?.cursorColour ?: 0,
+            flatKeys = keys?.flatKeys ?: false,
             keyLabel = c.keyLabel,
             keySubLabel = c.keySubLabel,
             stripText = c.stripText,

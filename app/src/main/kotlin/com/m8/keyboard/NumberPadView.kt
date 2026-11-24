@@ -83,6 +83,8 @@ class NumberPadView(
         strip.orientation = HORIZONTAL
         scroll.isHorizontalScrollBarEnabled = false
         scroll.background = theme.stripDrawable(context.resources.displayMetrics.density)
+        // On a handheld's screen the candidates stay inside the lit panel, clear of the bezel around it.
+        if (theme.stripStyle in INSET_STRIPS) scroll.setPadding(dp(10), 0, dp(10), 0)
         scroll.addView(strip, FrameLayout.LayoutParams(WRAP, MATCH))
 
         val barHeight = 52
@@ -261,7 +263,12 @@ class NumberPadView(
                 listener.onKeypadCandidateLong(i)
                 true
             }
-            strip.addView(tv, LinearLayout.LayoutParams(WRAP, MATCH))
+            val params = LinearLayout.LayoutParams(WRAP, MATCH)
+            if (theme.stripStyle in INSET_STRIPS) {
+                params.topMargin = dp(6)
+                params.bottomMargin = dp(6)
+            }
+            strip.addView(tv, params)
         }
         if (selected in words.indices) {
             val child = strip.getChildAt(selected)
@@ -359,7 +366,7 @@ class NumberPadView(
 
 
 
-/** 5x7, one-colour bitmap lettering for the original Game Boy suggestion LCD. */
+/** 5x7 capitals and lower case, in one-colour bitmap lettering, for the Game Boy suggestion LCD. */
 private class GameBoyPixelTextView(context: Context) : TextView(context) {
     private val pixelPaint = Paint().apply {
         style = Paint.Style.FILL
@@ -368,20 +375,21 @@ private class GameBoyPixelTextView(context: Context) : TextView(context) {
     }
 
     override fun onDraw(canvas: Canvas) {
-        val value = text?.toString()?.uppercase().orEmpty()
+        val value = text?.toString().orEmpty()
         if (value.isEmpty()) return
 
         val availableWidth = (width - paddingLeft - paddingRight).toFloat()
         val availableHeight = (height - paddingTop - paddingBottom).toFloat()
         if (availableWidth <= 0f || availableHeight <= 0f) return
 
-        // Each glyph is 5x7 pixels, with one blank pixel between characters.
+        // Each glyph is 5 pixels wide, with one blank pixel between characters, and sits in 9 rows: capitals and the
+        // body of lower case in the first 7, and the tails of g, j, p, q and y in the last 2.
         val columns = value.length * 6 - 1
-        val pixel = minOf(textSize / 7f, availableHeight / 7f, availableWidth / columns.coerceAtLeast(1))
+        val pixel = minOf(textSize / 8f, availableHeight / 9f, availableWidth / columns.coerceAtLeast(1))
         if (pixel <= 0f) return
         val glyphWidth = columns * pixel
         val left = paddingLeft + (availableWidth - glyphWidth) / 2f
-        val top = paddingTop + (availableHeight - 7f * pixel) / 2f
+        val top = paddingTop + (availableHeight - 9f * pixel) / 2f
 
         pixelPaint.color = currentTextColor
         value.forEachIndexed { index, character ->
@@ -427,6 +435,32 @@ private class GameBoyPixelTextView(context: Context) : TextView(context) {
             'X' to arrayOf("10001", "10001", "01010", "00100", "01010", "10001", "10001"),
             'Y' to arrayOf("10001", "10001", "01010", "00100", "00100", "00100", "00100"),
             'Z' to arrayOf("11111", "00001", "00010", "00100", "01000", "10000", "11111"),
+            'a' to arrayOf("00000", "00000", "01110", "00001", "01111", "10001", "01111"),
+            'b' to arrayOf("10000", "10000", "10110", "11001", "10001", "10001", "11110"),
+            'c' to arrayOf("00000", "00000", "01110", "10000", "10000", "10001", "01110"),
+            'd' to arrayOf("00001", "00001", "01101", "10011", "10001", "10001", "01111"),
+            'e' to arrayOf("00000", "00000", "01110", "10001", "11111", "10000", "01110"),
+            'f' to arrayOf("00110", "01001", "01000", "11100", "01000", "01000", "01000"),
+            'g' to arrayOf("00000", "00000", "01111", "10001", "10001", "10001", "01111", "00001", "01110"),
+            'h' to arrayOf("10000", "10000", "10110", "11001", "10001", "10001", "10001"),
+            'i' to arrayOf("00100", "00000", "01100", "00100", "00100", "00100", "01110"),
+            'j' to arrayOf("00010", "00000", "00110", "00010", "00010", "00010", "00010", "10010", "01100"),
+            'k' to arrayOf("10000", "10000", "10010", "10100", "11000", "10100", "10010"),
+            'l' to arrayOf("01100", "00100", "00100", "00100", "00100", "00100", "01110"),
+            'm' to arrayOf("00000", "00000", "11010", "10101", "10101", "10101", "10101"),
+            'n' to arrayOf("00000", "00000", "10110", "11001", "10001", "10001", "10001"),
+            'o' to arrayOf("00000", "00000", "01110", "10001", "10001", "10001", "01110"),
+            'p' to arrayOf("00000", "00000", "11110", "10001", "10001", "10001", "11110", "10000", "10000"),
+            'q' to arrayOf("00000", "00000", "01111", "10001", "10001", "10001", "01111", "00001", "00001"),
+            'r' to arrayOf("00000", "00000", "10110", "11001", "10000", "10000", "10000"),
+            's' to arrayOf("00000", "00000", "01111", "10000", "01110", "00001", "11110"),
+            't' to arrayOf("01000", "01000", "11100", "01000", "01000", "01001", "00110"),
+            'u' to arrayOf("00000", "00000", "10001", "10001", "10001", "10011", "01101"),
+            'v' to arrayOf("00000", "00000", "10001", "10001", "10001", "01010", "00100"),
+            'w' to arrayOf("00000", "00000", "10001", "10001", "10101", "10101", "01010"),
+            'x' to arrayOf("00000", "00000", "10001", "01010", "00100", "01010", "10001"),
+            'y' to arrayOf("00000", "00000", "10001", "10001", "10001", "10001", "01111", "00001", "01110"),
+            'z' to arrayOf("00000", "00000", "11111", "00010", "00100", "01000", "11111"),
             '0' to arrayOf("01110", "10001", "10011", "10101", "11001", "10001", "01110"),
             '1' to arrayOf("00100", "01100", "00100", "00100", "00100", "00100", "01110"),
             '2' to arrayOf("01110", "10001", "00001", "00010", "00100", "01000", "11111"),

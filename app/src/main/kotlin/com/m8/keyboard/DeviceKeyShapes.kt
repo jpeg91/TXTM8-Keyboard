@@ -87,8 +87,8 @@ class PlayerKeyDrawable(
  * it, down between it and the second key, under the second key, up between the second and third, over the third, and
  * so on, ending with the side of the last key. Each key draws its own part of that line ([position] is the key's place
  * in its row of [count] keys; even places are crossed over the top, odd places under the bottom), and the parts meet
- * on the edges between keys. A key on its own ([count] 1) is a closed, softly curved outline instead. Pressed, the
- * glass lights up from inside.
+ * on the edges between keys. A key on its own ([count] 1) is a plain, closed, rounded outline instead. Pressed, the
+ * line glows brighter.
  */
 class GlowLineKeyDrawable(
     private val fill: Int,
@@ -104,64 +104,59 @@ class GlowLineKeyDrawable(
 
     override fun drawKey(canvas: Canvas, l: Float, t: Float, r: Float, b: Float) {
         val h = b - t
+        val single = count == 1
         val rc = min(h * 0.28f, 12f * density)
-        val bow = min(h * 0.06f, 2.5f * density)
+        // Only the keys of a row curve; a key on its own is a plain rounded outline.
+        val bow = if (single) 0f else min(h * 0.06f, 2.5f * density)
         val first = position == 0
         val last = position == count - 1
-        val single = count == 1
         // Where the sides sit: on the edge between two keys, so both keys' halves of the line meet; on the key's own edge at the ends of a row.
-        val xl = if (first) l else l - gapX
-        val xr = if (last) r else r + gapX
+        val xl = Math.round(if (first) l else l - gapX).toFloat()
+        val xr = Math.round(if (last) r else r + gapX).toFloat()
         val onTop = position % 2 == 0
         val cx = (xl + xr) / 2f
+        // The curved edges bow towards the key's edge but never past it, so their glow is not cut off by the view.
+        val tt = t + bow
+        val bb = b - bow
 
         strokePath.reset()
         if (single) {
-            strokePath.moveTo(xl, t + rc)
-            strokePath.quadTo(xl, t - bow, xl + rc, t)
-            strokePath.quadTo(cx, t - bow * 2, xr - rc, t)
-            strokePath.quadTo(xr, t - bow, xr, t + rc)
-            strokePath.lineTo(xr, b - rc)
-            strokePath.quadTo(xr, b + bow, xr - rc, b)
-            strokePath.quadTo(cx, b + bow * 2, xl + rc, b)
-            strokePath.quadTo(xl, b + bow, xl, b - rc)
+            strokePath.moveTo(xl, tt + rc)
+            strokePath.quadTo(xl, tt, xl + rc, tt)
+            strokePath.lineTo(xr - rc, tt)
+            strokePath.quadTo(xr, tt, xr, tt + rc)
+            strokePath.lineTo(xr, bb - rc)
+            strokePath.quadTo(xr, bb, xr - rc, bb)
+            strokePath.lineTo(xl + rc, bb)
+            strokePath.quadTo(xl, bb, xl, bb - rc)
             strokePath.close()
         } else if (onTop) {
             // Up the left side, over the top, down the right side.
-            strokePath.moveTo(xl, b - rc)
-            strokePath.lineTo(xl, t + rc)
-            strokePath.quadTo(xl, t, xl + rc, t)
-            strokePath.quadTo(cx, t - bow * 2, xr - rc, t)
-            strokePath.quadTo(xr, t, xr, t + rc)
-            strokePath.lineTo(xr, b - rc)
+            strokePath.moveTo(xl, bb - rc)
+            strokePath.lineTo(xl, tt + rc)
+            strokePath.quadTo(xl, tt, xl + rc, tt)
+            strokePath.quadTo(cx, tt - bow * 2f, xr - rc, tt)
+            strokePath.quadTo(xr, tt, xr, tt + rc)
+            strokePath.lineTo(xr, bb - rc)
         } else {
             // Down the left side, under the bottom, up the right side.
-            strokePath.moveTo(xl, t + rc)
-            strokePath.lineTo(xl, b - rc)
-            strokePath.quadTo(xl, b, xl + rc, b)
-            strokePath.quadTo(cx, b + bow * 2, xr - rc, b)
-            strokePath.quadTo(xr, b, xr, b - rc)
-            strokePath.lineTo(xr, t + rc)
-        }
-        // The glass: the whole key, so the row is one slab of glass with the line drawn on it.
-        // It stops short of the sides, so that a neighbour's glass never covers this key's half of the line between them.
-        val fl = xl + 4f * density
-        val fr = xr - 4f * density
-        path.reset()
-        path.moveTo(fl, t)
-        path.lineTo(fr, t)
-        path.lineTo(fr, b)
-        path.lineTo(fl, b)
-        path.close()
-        gradient(LinearGradient(0f, t, 0f, b, lighten(fill, 0.12f), darken(fill, 0.2f), Shader.TileMode.CLAMP))
-        if (single) roundRect(canvas, xl, t, xr, b, rc) else canvas.drawPath(path, paint)
-        if (pressed) {
-            solid(withAlpha(line, 80))
-            if (single) roundRect(canvas, xl, t, xr, b, rc) else canvas.drawPath(path, paint)
+            strokePath.moveTo(xl, tt + rc)
+            strokePath.lineTo(xl, bb - rc)
+            strokePath.quadTo(xl, bb, xl + rc, bb)
+            strokePath.quadTo(cx, bb + bow * 2f, xr - rc, bb)
+            strokePath.quadTo(xr, bb, xr, bb - rc)
+            strokePath.lineTo(xr, tt + rc)
         }
 
+        // The glass: the whole key, so the row is one slab of glass with the line drawn on it. It stops short of the
+        // sides, so that a neighbour's glass never covers this key's half of the line between them.
+        val fl = xl + 4f * density
+        val fr = xr - 4f * density
+        gradient(LinearGradient(0f, t, 0f, b, lighten(fill, 0.12f), darken(fill, 0.2f), Shader.TileMode.CLAMP))
+        if (single) roundRect(canvas, xl, t, xr, b, rc) else canvas.drawRect(fl, t, fr, b, paint)
+
         // The glow, then the line itself.
-        val lit = if (pressed) 1.4f else 1f
+        val lit = if (pressed) 1.6f else 1f
         for ((alpha, width) in listOf(
             Pair(if (pressed) 70 else 34, 6f * density),
             Pair(if (pressed) 150 else 90, 3.2f * density),

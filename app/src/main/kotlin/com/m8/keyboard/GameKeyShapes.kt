@@ -727,3 +727,52 @@ class HandheldScreenDrawable(
     @Suppress("OVERRIDE_DEPRECATION")
     override fun getOpacity(): Int = PixelFormat.OPAQUE
 }
+
+
+/**
+ * A text box from a handheld role-playing game: a pixel-stepped box with a dark [frame] line, a gap, and a second, finer
+ * [inner] line inside it (none when [inner] is 0), all in whole blocks like pixels, with the corners notched. When the
+ * key is [pressed] a small selection arrow points at its text from the left, as in the game's menus (on keys wide
+ * enough to have room for it).
+ */
+class TextBoxKeyDrawable(
+    private val fill: Int,
+    private val frame: Int,
+    private val inner: Int,
+    private val pressed: Boolean,
+    insetX: Float,
+    insetY: Float,
+    density: Float,
+) : KeyShapeDrawable(insetX, insetY, density) {
+    /** A box with notched corners, [d] blocks in from the edge, in [colour]. */
+    private fun notched(canvas: Canvas, l: Float, t: Float, r: Float, b: Float, u: Float, d: Int, colour: Int) {
+        solid(colour)
+        val o = d * u
+        canvas.drawRect(l + o + u, t + o, r - o - u, b - o, paint)
+        canvas.drawRect(l + o, t + o + u, r - o, b - o - u, paint)
+    }
+
+    override fun drawKey(canvas: Canvas, l: Float, t: Float, r: Float, b: Float) {
+        val u = max(px, Math.round(1.2f * density).toFloat())
+        val left = Math.round(l).toFloat()
+        val top = Math.round(t).toFloat()
+        val right = Math.round(r).toFloat()
+        val bottom = Math.round(b).toFloat()
+        notched(canvas, left, top, right, bottom, u, 0, frame)
+        notched(canvas, left, top, right, bottom, u, 1, fill)
+        if (inner != 0) {
+            notched(canvas, left, top, right, bottom, u, 2, inner)
+            notched(canvas, left, top, right, bottom, u, 3, fill)
+        }
+        if (pressed && right - left > 44f * density) {
+            // The selection arrow: a triangle of blocks, tall in the middle and one block wide at its tip.
+            val x = left + (if (inner != 0) 7f else 5f) * u
+            val cy = (top + bottom) / 2f
+            solid(frame)
+            for (row in -3..3) {
+                val rowWidth = (4 - kotlin.math.abs(row)) * 2f * u
+                canvas.drawRect(x, cy + row * 2f * u - u, x + rowWidth, cy + row * 2f * u + u, paint)
+            }
+        }
+    }
+}

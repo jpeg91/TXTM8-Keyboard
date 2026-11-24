@@ -161,6 +161,30 @@ enum class KeyStyle {
     /** Black glass with a glowing outline whose edges curve, like the electroluminescent keypad of the Motorola RAZR V3. */
     GLOWLINE,
 
+    /** A pixel-stepped text box with a double line round it and a selection arrow when pressed, like the menus of the handheld role-playing games. */
+    TEXTBOX,
+
+    /** A thumb-keyboard key, like a BlackBerry's: a domed black cap with a chrome fret under every row (`border` is the chrome and the rim). */
+    FRETTED,
+
+    /** A glossy round button, like those under the screen of a toy pet (`shadow` is the colour of the shadow it stands on). */
+    BUTTON,
+
+    /** Black plastic with a band of fine ribs across the lower half, like a console of the early nineties (`border` is the rim). */
+    RIBBED,
+
+    /** A frame of chunky block-graphics cells round a black inside, like a box on a teletext page; action keys are solid colour (`shadow` is the inside, 0 for black). */
+    MOSAIC,
+
+    /** A tile like a block of a falling-block puzzle on a four-shade handheld: framed, bevelled light and dark (`border` the frame, `deep` the light bevel, `shadow` the dark one). */
+    TILE,
+
+    /** A piece of maze wall: a rounded box of two parallel lines in `border` round black, with a small pellet in `shadow` at the bottom that is eaten while the key is pressed; action keys are solid colour. */
+    MAZE,
+
+    /** A button like those of a block-building game's menus: grey speckled stone with a black outline and a light and dark bevel. */
+    CRAFT,
+
     /** A moulded plastic button standing in a dark cut-out in the shell, like the buttons of the Game Boy Advance. */
     SHELL,
 
@@ -249,6 +273,12 @@ enum class AmbientKind {
     /** The soft glow of a keypad's backlight rolling slowly up the keyboard, to show through keys of glass. */
     BACKLIGHT,
 
+    /** The border of a home computer loading from tape: bands of colour that race down the keyboard for a moment after each key press, then cut out. `ambientColours`: pilot tone pair, then data pair. */
+    TAPE_LOADING,
+
+    /** A coarse still mosaic of square tiles in `ambientColours`, like the earth of a block-building game. */
+    PIXEL_TILES,
+
     /** A flood of colour that changes every second or so, held and then blended into the next, like the channel idents. */
     COLOUR_CYCLE,
 
@@ -269,6 +299,21 @@ enum class AmbientKind {
 
     /** A still halftone screen: staggered dots that grow from nothing at one corner to nearly touching at the other. */
     HALFTONE,
+
+    /** The Unknown Pleasures sleeve: stacked rows of white line swelling into jagged peaks, each hiding the one behind. Still. */
+    PULSAR,
+
+    /** A video tape tracking badly: a band of streaks rolling up the screen, jumping tears and a strip of noise along the bottom. */
+    VHS,
+
+    /** A rainy window at night: soft blurred lights, still beads of water and fat drops running down in fits and starts. */
+    WINDOW_RAIN,
+
+    /** Amiga copper bars: soft horizontal bars of colour weaving up and down on sine waves. */
+    COPPER_BARS,
+
+    /** Small lights wandering in loops and swelling into a soft glow before fading again. */
+    FIREFLIES,
 }
 
 // ------------------------------------------------------------------ colour helpers
@@ -667,6 +712,9 @@ class AmbientBackground(
 
     // Spectrum analyser: when a key was last pressed, and the gradient that colours the bars by height.
     private var eqKickAt = 0L
+
+    // Tape loading: when a key was last pressed (0 for never).
+    private var tapeKickAt = 0L
     private var barShader: Shader? = null
 
     // CRT scanlines and the speckled texture are tiny bitmaps repeated across the screen, made once.
@@ -713,12 +761,19 @@ class AmbientBackground(
         AmbientKind.PEPPERMINT -> 60L
         AmbientKind.COLOUR_CYCLE -> 100L
         AmbientKind.BACKLIGHT -> 60L
+        AmbientKind.TAPE_LOADING -> 40L
+        AmbientKind.PIXEL_TILES -> 1000L
         AmbientKind.CATHEDRAL -> 70L
         AmbientKind.FEATHERS -> 60L
         AmbientKind.TURF -> 1000L
         AmbientKind.DOGS -> 50L
         AmbientKind.CLAYMATION -> 80L
         AmbientKind.HALFTONE -> 1000L
+        AmbientKind.PULSAR -> 1000L
+        AmbientKind.VHS -> 60L
+        AmbientKind.WINDOW_RAIN -> 60L
+        AmbientKind.COPPER_BARS -> 50L
+        AmbientKind.FIREFLIES -> 60L
     }
 
     init {
@@ -804,6 +859,16 @@ class AmbientBackground(
             AmbientKind.PEPPERMINT -> MusicAmbient.peppermint(canvas, paint, path, w, h, frame, density, colours)
             AmbientKind.COLOUR_CYCLE -> MusicAmbient.colourCycle(canvas, paint, w, h, frame, colours)
             AmbientKind.BACKLIGHT -> DeviceAmbient.backlight(canvas, paint, w, h, frame, colours)
+            AmbientKind.PIXEL_TILES -> {
+                animating = false
+                DeviceAmbient.pixelTiles(canvas, paint, w, h, density, colours)
+            }
+            AmbientKind.TAPE_LOADING -> {
+                val since = now - tapeKickAt
+                // Only while the tape is "loading" does it need frames; the rest of the time it is drawn once and rests.
+                if (tapeKickAt == 0L || since > 650L) animating = false
+                if (tapeKickAt != 0L) DeviceAmbient.tapeLoading(canvas, paint, w, h, frame, since, density, colours)
+            }
             AmbientKind.CATHEDRAL -> MusicAmbient.cathedral(canvas, paint, path, w, h, frame, density, colours)
             AmbientKind.FEATHERS -> MusicAmbient.feathers(canvas, paint, w, h, frame, density, colours)
             AmbientKind.DOGS -> MusicAmbient.dogs(canvas, paint, path, w, h, frame, density, colours)
@@ -816,6 +881,14 @@ class AmbientBackground(
                 animating = false // still, like the texture: drawn when needed and then at rest
                 MusicAmbient.halftone(canvas, paint, w, h, density, colours)
             }
+            AmbientKind.PULSAR -> {
+                animating = false
+                DeviceAmbient.pulsar(canvas, paint, path, w, h, density, colours)
+            }
+            AmbientKind.VHS -> DeviceAmbient.vhs(canvas, paint, w, h, frame, density, colours)
+            AmbientKind.WINDOW_RAIN -> DeviceAmbient.windowRain(canvas, paint, w, h, frame, density, colours)
+            AmbientKind.COPPER_BARS -> DeviceAmbient.copperBars(canvas, paint, w, h, frame, density, colours)
+            AmbientKind.FIREFLIES -> DeviceAmbient.fireflies(canvas, paint, w, h, frame, density, colours)
         }
         canvas.restore()
         paint.shader = null
@@ -1377,6 +1450,11 @@ class AmbientBackground(
     override fun pulse(key: RectF?) {
         if (kind == AmbientKind.EQUALISER) {
             eqKickAt = SystemClock.uptimeMillis()
+            invalidateSelf()
+            return
+        }
+        if (kind == AmbientKind.TAPE_LOADING) {
+            tapeKickAt = SystemClock.uptimeMillis()
             invalidateSelf()
             return
         }

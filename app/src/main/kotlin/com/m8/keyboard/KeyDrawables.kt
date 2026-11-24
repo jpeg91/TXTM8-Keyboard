@@ -727,6 +727,15 @@ enum class TapEffectKind {
 
     /** A small desktop window that opens at the tap, fills with lines of text and tears away, like the Wired. */
     WINDOW,
+
+    /** Yellow smiley faces that float up from the tap, like a chat program's emoticons. */
+    SMILEYS,
+
+    /** A falling block of four cells that drops down a stack from the tap, turning, then flickers out. */
+    TETROMINO,
+
+    /** Chips of a broken block that fly out from the tap and fall under gravity. */
+    DEBRIS,
 }
 
 /**
@@ -801,6 +810,9 @@ class TapEffectDrawable(
             TapEffectKind.FEATHER -> 1f
             TapEffectKind.PIXELS -> 8f
             TapEffectKind.WINDOW -> 1f
+            TapEffectKind.SMILEYS -> 2f
+            TapEffectKind.TETROMINO -> 1f
+            TapEffectKind.DEBRIS -> 9f
         }
         var count = expected.toInt() + if (random.nextFloat() < expected - expected.toInt()) 1 else 0
         if (count < 1) count = 1
@@ -1020,6 +1032,24 @@ class TapEffectDrawable(
                         bornAt = now, life = 1000L,
                         colour = colour, phase = rnd(0f, 1000f), spin = 0f,
                     )
+                    TapEffectKind.SMILEYS -> Particle(
+                        x = x + rnd(-16f, 16f) * d, y = y - 8f * d, vx = 0f, vy = 0f,
+                        size = rnd(9f, 12f) * d,
+                        bornAt = now + i * 110L, life = 1300L,
+                        colour = colour, phase = rnd(0f, 6.28f), spin = 0f,
+                    )
+                    TapEffectKind.TETROMINO -> Particle(
+                        x = x, y = y, vx = 0f, vy = 0f, size = d,
+                        bornAt = now, life = 1200L,
+                        colour = colour, phase = random.nextInt(7).toFloat(), spin = 0f,
+                    )
+                    TapEffectKind.DEBRIS -> Particle(
+                        x = x, y = y,
+                        vx = rnd(-110f, 110f) * d, vy = -rnd(60f, 210f) * d,
+                        size = rnd(3.5f, 6f) * d,
+                        bornAt = now, life = rnd(650f, 950f).toLong(),
+                        colour = colour, phase = 0f, spin = 0f,
+                    )
                     TapEffectKind.CLAY -> Particle(
                         x = x + rnd(-6f, 6f) * d, y = y,
                         vx = rnd(-120f, 120f) * d, vy = -rnd(90f, 200f) * d,
@@ -1106,6 +1136,9 @@ class TapEffectDrawable(
                     )
                 }
                 TapEffectKind.WINDOW -> GameTap.window(canvas, paint, p.x, p.y, t, p.phase.toInt(), density, colours)
+                TapEffectKind.SMILEYS -> DeviceTap.smiley(canvas, paint, p.x, p.y, p.size, t, p.phase, density, p.colour)
+                TapEffectKind.TETROMINO -> DeviceTap.tetromino(canvas, paint, p.x, p.y, p.phase.toInt(), t, density, p.colour)
+                TapEffectKind.DEBRIS -> DeviceTap.debris(canvas, paint, p.x, p.y, p.vx, p.vy, p.size, sec, t, p.colour, density)
                 TapEffectKind.CLAY -> {
                     // Moves only eight times a second, like a stop-motion figure.
                     val step = (sec * 8f).toInt()
@@ -1519,6 +1552,9 @@ fun KeyboardTheme.stripDrawable(density: Float): Drawable = when (stripStyle) {
     StripStyle.PATTERN -> GlitterPatternDrawable(strip, density, stripMode = true)
     StripStyle.PIXEL_SCREEN -> PixelScreenDrawable(strip, density)
     StripStyle.HANDHELD_SCREEN -> HandheldScreenDrawable(strip, border, density)
+    StripStyle.LCD_PANEL -> LcdPanelDrawable(strip, deep, false, density)
+    StripStyle.LCD_DIGITS -> LcdPanelDrawable(strip, deep, true, density)
+    StripStyle.SPECTRUM_PAPER -> SpectrumPaperDrawable(strip, density)
     StripStyle.WINDOW -> WindowStripDrawable(strip, keyPressed, border, density)
 }
 
@@ -1791,7 +1827,7 @@ fun KeyboardTheme.keyBackground(
                 PlateKeyDrawable(color, border, isPressed, gapXDp * density, gapYDp * density, density),
             )
             KeyStyle.ETCHED -> return framed(
-                EtchedKeyDrawable(color, border, isPressed, gapXDp * density, gapYDp * density, density),
+                EtchedKeyDrawable(color, border, isPressed, flatKeys, gapXDp * density, gapYDp * density, density),
             )
             KeyStyle.MOULDED -> return framed(
                 MouldedKeyDrawable(color, border, corner, isPressed, gapXDp * density, gapYDp * density, density),
@@ -1851,7 +1887,7 @@ fun KeyboardTheme.keyBackground(
                 GothicKeyDrawable(color, border, isPressed, gapXDp * density, gapYDp * density, density),
             )
             KeyStyle.PLAYER -> return framed(
-                PlayerKeyDrawable(color, if (action) accent else 0, isPressed, gapXDp * density, gapYDp * density, density),
+                PlayerKeyDrawable(color, if (action) (if (border != 0) border else accent) else 0, isPressed, gapXDp * density, gapYDp * density, density),
             )
             KeyStyle.GLOWLINE -> return framed(
                 GlowLineKeyDrawable(
@@ -1859,6 +1895,33 @@ fun KeyboardTheme.keyBackground(
                     if (action) darken(color, 0.9f) else color, if (action) color else border,
                     isPressed, rowPosition, rowCount, gapXDp * density, gapYDp * density, density,
                 ),
+            )
+            KeyStyle.FRETTED -> return framed(
+                FretKeyDrawable(color, border, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.TILE -> return framed(
+                TileKeyDrawable(color, border, deep, shadow, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.MAZE -> return framed(
+                MazeKeyDrawable(color, border, shadow, action, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.CRAFT -> return framed(
+                CraftKeyDrawable(color, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.RIBBED -> return framed(
+                RibbedKeyDrawable(color, border, corner, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.MOSAIC -> return framed(
+                MosaicKeyDrawable(
+                    color, if (shadow != 0) shadow else 0xFF000000.toInt(), action, isPressed,
+                    gapXDp * density, gapYDp * density, density,
+                ),
+            )
+            KeyStyle.BUTTON -> return framed(
+                ButtonKeyDrawable(color, shadow, isPressed, gapXDp * density, gapYDp * density, density),
+            )
+            KeyStyle.TEXTBOX -> return framed(
+                TextBoxKeyDrawable(color, border, shadow, isPressed, gapXDp * density, gapYDp * density, density),
             )
             KeyStyle.SHELL -> return framed(
                 ShellKeyDrawable(color, shadow, isPressed, gapXDp * density, gapYDp * density, density),

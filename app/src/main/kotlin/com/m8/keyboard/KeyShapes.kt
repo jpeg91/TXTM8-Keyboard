@@ -649,12 +649,14 @@ class PlateKeyDrawable(
 
 /**
  * An etched metal key: a nearly square plate with a brushed sheen across it, a silver edge, and fine light and
- * dark lines inside the top and bottom edges. Pressed, an inner ring lights up like a backlit key.
+ * dark lines inside the top and bottom edges. Pressed, an inner ring lights up like a backlit key. When [flat] there is no
+ * sheen, only the plain fill.
  */
 class EtchedKeyDrawable(
     private val fill: Int,
     private val border: Int,
     private val pressed: Boolean,
+    private val flat: Boolean,
     insetX: Float,
     insetY: Float,
     density: Float,
@@ -665,7 +667,7 @@ class EtchedKeyDrawable(
         roundRect(canvas, l, t, r, b, radius)
         if (border == 0) return
 
-        gradient(
+        if (!flat) gradient(
             LinearGradient(
                 l, 0f, r, 0f,
                 intArrayOf(withAlpha(border, 0), withAlpha(border, 0x30), withAlpha(border, 0)),

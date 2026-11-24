@@ -112,121 +112,148 @@ class SetupActivity : ThemedScreen() {
                     "Custom mix" to KeyboardSettings.THEME_CUSTOM,
                 ),
             ),
+            // In order of release; the Nokias stay together, and the undated styles come last.
             ThemeGroup(
                 "Phones & gadgets",
                 listOf(
-                    "Nokia 3210" to KeyboardSettings.THEME_NOKIA_3210,
-                    "Nokia 3310" to KeyboardSettings.THEME_NOKIA,
-                    "Nokia 3510i" to KeyboardSettings.THEME_NOKIA_3510I,
-                    "Nokia 7210" to KeyboardSettings.THEME_NOKIA_7210,
-                    "Sony Ericsson T610" to KeyboardSettings.THEME_SONY_ERICSSON_T610,
-                    "Razr V3" to KeyboardSettings.THEME_RAZR_V3,
-                    "Kawaii Flip Phone" to KeyboardSettings.THEME_KAWAII,
-                    "Amber Backlight" to KeyboardSettings.THEME_AMBER_BACKLIGHT,
+                    "Walkman" to KeyboardSettings.THEME_WALKMAN,
+                    "Game & Watch" to KeyboardSettings.THEME_GAME_AND_WATCH,
+                    "Casio Calculator" to KeyboardSettings.THEME_CASIO_CALCULATOR,
                     "Pager" to KeyboardSettings.THEME_PAGER,
                     "Palm Pilot" to KeyboardSettings.THEME_PALM,
-                    "Walkman" to KeyboardSettings.THEME_WALKMAN,
+                    "Tamagotchi" to KeyboardSettings.THEME_TAMAGOTCHI,
+                    "Nokia 3210" to KeyboardSettings.THEME_NOKIA_3210,
+                    "Nokia 3310" to KeyboardSettings.THEME_NOKIA,
+                    "Nokia 7210" to KeyboardSettings.THEME_NOKIA_7210,
+                    "Nokia 3510i" to KeyboardSettings.THEME_NOKIA_3510I,
+                    "Sony Ericsson T610" to KeyboardSettings.THEME_SONY_ERICSSON_T610,
+                    "BlackBerry" to KeyboardSettings.THEME_BLACKBERRY,
+                    "Razr V3" to KeyboardSettings.THEME_RAZR_V3,
+                    "Amber Backlight" to KeyboardSettings.THEME_AMBER_BACKLIGHT,
+                    "Kawaii Flip Phone" to KeyboardSettings.THEME_KAWAII,
                 ),
             ),
-            // Every games console, handhelds included, grouped by maker and in order of release.
+            // Every games console, handhelds included, in order of release; the variants of one console stay together.
             ThemeGroup(
                 "Game consoles",
                 listOf(
+                    "Mega Drive" to KeyboardSettings.THEME_MEGA_DRIVE,
                     "Game Boy" to KeyboardSettings.THEME_GAME_BOY,
                     "SNES (US)" to KeyboardSettings.THEME_SNES,
                     "SNES (EU)" to KeyboardSettings.THEME_SNES_EU,
+                    "Saturn" to KeyboardSettings.THEME_SATURN,
+                    "PlayStation" to KeyboardSettings.THEME_PLAYSTATION,
                     "Virtual Boy" to KeyboardSettings.THEME_VIRTUAL_BOY,
                     "N64" to KeyboardSettings.THEME_N64,
-                    "Game Boy Advance" to KeyboardSettings.THEME_GAME_BOY_ADVANCE,
-                    "GameCube" to KeyboardSettings.THEME_GAMECUBE,
-                    "Saturn" to KeyboardSettings.THEME_SATURN,
-                    "Dreamcast (US)" to KeyboardSettings.THEME_DREAMCAST,
                     "Dreamcast (JP)" to KeyboardSettings.THEME_DREAMCAST_JP,
+                    "Dreamcast (US)" to KeyboardSettings.THEME_DREAMCAST,
                     "Dreamcast (EU)" to KeyboardSettings.THEME_DREAMCAST_EU,
-                    "PlayStation" to KeyboardSettings.THEME_PLAYSTATION,
                     "PS2" to KeyboardSettings.THEME_PS2,
-                    "PSP" to KeyboardSettings.THEME_PSP,
+                    "GameCube" to KeyboardSettings.THEME_GAMECUBE,
                     "Xbox" to KeyboardSettings.THEME_XBOX,
+                    "Game Boy Advance" to KeyboardSettings.THEME_GAME_BOY_ADVANCE,
                     "N-Gage" to KeyboardSettings.THEME_NGAGE,
+                    "PSP" to KeyboardSettings.THEME_PSP,
                 ),
             ),
+            // In order of release; the games with more than one theme stay together.
             ThemeGroup(
                 "Video games",
                 listOf(
+                    "Pac-Man" to KeyboardSettings.THEME_PAC_MAN,
+                    "Tetris" to KeyboardSettings.THEME_TETRIS,
                     "Super Mario Bros." to KeyboardSettings.THEME_SUPER_MARIO_BROS,
                     "Sonic the Hedgehog" to KeyboardSettings.THEME_SONIC_THE_HEDGEHOG,
                     "DOOM" to KeyboardSettings.THEME_DOOM,
+                    "Gen 1" to KeyboardSettings.THEME_GEN_1,
+                    "Gen 2" to KeyboardSettings.THEME_GEN_2,
+                    "Gen 3" to KeyboardSettings.THEME_GEN_3,
+                    "MonsterGear" to KeyboardSettings.THEME_MONSTERGEAR,
+                    "MonsterNav" to KeyboardSettings.THEME_MONSTERNAV,
+                    "WipEout 2097" to KeyboardSettings.THEME_WIPEOUT_2097,
+                    "WipEout HD" to KeyboardSettings.THEME_WIPEOUT_HD,
                     "Final Fantasy VII" to KeyboardSettings.THEME_FINAL_FANTASY_VII,
+                    "Codec Call" to KeyboardSettings.THEME_CODEC_CALL,
+                    "HEV Suit" to KeyboardSettings.THEME_HEV_SUIT,
                     "Worms Armageddon" to KeyboardSettings.THEME_WORMS_ARMAGEDDON,
                     "The Sims" to KeyboardSettings.THEME_THE_SIMS,
                     "GTA Vice City" to KeyboardSettings.THEME_GTA_VICE_CITY,
                     "GTA San Andreas" to KeyboardSettings.THEME_GTA_SAN_ANDREAS,
                     "Pip-Boy" to KeyboardSettings.THEME_PIP_BOY,
                     "Pip-Boy (amber)" to KeyboardSettings.THEME_PIP_BOY_AMBER,
-                    "WipEout 2097" to KeyboardSettings.THEME_WIPEOUT_2097,
-                    "WipEout HD" to KeyboardSettings.THEME_WIPEOUT_HD,
-                    "MonsterGear" to KeyboardSettings.THEME_MONSTERGEAR,
-                    "MonsterNav" to KeyboardSettings.THEME_MONSTERNAV,
+                    "Minecraft" to KeyboardSettings.THEME_MINECRAFT,
                 ),
             ),
+            // In order of release; an act with more than one theme stays together.
             ThemeGroup(
                 "Music & TV",
                 listOf(
-                    "Nine Inch Nails" to KeyboardSettings.THEME_NINE_INCH_NAILS,
-                    "The Prodigy" to KeyboardSettings.THEME_THE_PRODIGY,
-                    "Massive Attack" to KeyboardSettings.THEME_MASSIVE_ATTACK,
-                    "Blur" to KeyboardSettings.THEME_BLUR,
-                    "Daft Punk: Homework" to KeyboardSettings.THEME_DAFT_PUNK_HOMEWORK,
-                    "Daft Punk: Discovery" to KeyboardSettings.THEME_DAFT_PUNK_DISCOVERY,
-                    "Daft Punk: Human After All" to KeyboardSettings.THEME_DAFT_PUNK_HUMAN_AFTER_ALL,
-                    "Justice" to KeyboardSettings.THEME_JUSTICE,
-                    "Gorillaz" to KeyboardSettings.THEME_GORILLAZ,
-                    "The White Stripes" to KeyboardSettings.THEME_THE_WHITE_STRIPES,
-                    "The Strokes" to KeyboardSettings.THEME_THE_STROKES,
-                    "Evanescence" to KeyboardSettings.THEME_EVANESCENCE,
-                    "Aphex Twin: SAW II" to KeyboardSettings.THEME_APHEX_TWIN,
+                    "Joy Division" to KeyboardSettings.THEME_JOY_DIVISION,
                     "MTV" to KeyboardSettings.THEME_MTV,
                     "MTV2" to KeyboardSettings.THEME_MTV2,
                     "Kerrang!" to KeyboardSettings.THEME_KERRANG,
+                    "Nine Inch Nails" to KeyboardSettings.THEME_NINE_INCH_NAILS,
+                    "Massive Attack" to KeyboardSettings.THEME_MASSIVE_ATTACK,
+                    "Aphex Twin: SAW II" to KeyboardSettings.THEME_APHEX_TWIN,
+                    "Blur" to KeyboardSettings.THEME_BLUR,
+                    "The Prodigy" to KeyboardSettings.THEME_THE_PRODIGY,
+                    "Daft Punk: Homework" to KeyboardSettings.THEME_DAFT_PUNK_HOMEWORK,
+                    "Daft Punk: Discovery" to KeyboardSettings.THEME_DAFT_PUNK_DISCOVERY,
+                    "Daft Punk: Human After All" to KeyboardSettings.THEME_DAFT_PUNK_HUMAN_AFTER_ALL,
+                    "The White Stripes" to KeyboardSettings.THEME_THE_WHITE_STRIPES,
+                    "The Strokes" to KeyboardSettings.THEME_THE_STROKES,
+                    "Gorillaz" to KeyboardSettings.THEME_GORILLAZ,
+                    "Evanescence" to KeyboardSettings.THEME_EVANESCENCE,
+                    "Justice" to KeyboardSettings.THEME_JUSTICE,
                 ),
             ),
+            // In order of release; the Evangelion themes stay together.
             ThemeGroup(
                 "Film & TV",
                 listOf(
-                    "Saved by the Bell" to KeyboardSettings.THEME_SATURDAY,
+                    "Nostromo" to KeyboardSettings.THEME_NOSTROMO,
                     "Star Trek LCARS" to KeyboardSettings.THEME_LCARS,
+                    "Saved by the Bell" to KeyboardSettings.THEME_SATURDAY,
+                    "Hackers" to KeyboardSettings.THEME_HACKERS,
+                    "Ghost in the Shell" to KeyboardSettings.THEME_GHOST_IN_THE_SHELL,
                     "Evangelion Unit-00" to KeyboardSettings.THEME_EVANGELION_00,
                     "Evangelion Unit-01" to KeyboardSettings.THEME_EVANGELION_01,
                     "Evangelion Unit-02" to KeyboardSettings.THEME_EVANGELION_02,
                     "Serial Experiments Lain" to KeyboardSettings.THEME_LAIN,
-                    "Ghost in the Shell" to KeyboardSettings.THEME_GHOST_IN_THE_SHELL,
-                    "Hackers" to KeyboardSettings.THEME_HACKERS,
                     "Matrix" to KeyboardSettings.THEME_MATRIX,
                 ),
             ),
+            // In order of release.
             ThemeGroup(
                 "Retro computers",
                 listOf(
-                    "MS-DOS / BIOS" to KeyboardSettings.THEME_BIOS,
                     "Terminal Green" to KeyboardSettings.THEME_TERMINAL_GREEN,
                     "Terminal Amber" to KeyboardSettings.THEME_TERMINAL_AMBER,
+                    "Teletext" to KeyboardSettings.THEME_TELETEXT,
+                    "MS-DOS / BIOS" to KeyboardSettings.THEME_BIOS,
+                    "ZX Spectrum" to KeyboardSettings.THEME_ZX_SPECTRUM,
+                    "Commodore 64" to KeyboardSettings.THEME_COMMODORE_64,
+                    "Demoscene" to KeyboardSettings.THEME_DEMOSCENE,
                     "Retro Desktop" to KeyboardSettings.THEME_RETRO_DESKTOP,
                     "Windows 95" to KeyboardSettings.THEME_WINDOWS_95,
                     "Windows XP" to KeyboardSettings.THEME_XP,
                 ),
             ),
+            // In order of release.
             ThemeGroup(
                 "Web & media players",
                 listOf(
+                    "VHS" to KeyboardSettings.THEME_VHS,
                     "Netscape Navigator" to KeyboardSettings.THEME_NETSCAPE,
                     "GeoCities" to KeyboardSettings.THEME_GEOCITIES,
                     "Winamp" to KeyboardSettings.THEME_WINAMP,
+                    "MSN Messenger" to KeyboardSettings.THEME_MSN_MESSENGER,
                     "Media Player" to KeyboardSettings.THEME_MEDIA_PLAYER,
                 ),
             ),
-            // The themes with twinkling stars: they share the Star density slider.
+            // The first six have twinkling stars and share the Star density slider; the next four animate wherever you tap and share the Effect amount slider; Rain on Window and Fireflies are moving backdrops.
             ThemeGroup(
-                "Twinkling stars",
+                "Effects",
                 listOf(
                     "Glitter Graphics" to KeyboardSettings.THEME_GLITTER,
                     "Night Sky" to KeyboardSettings.THEME_NIGHT_SKY,
@@ -234,16 +261,12 @@ class SetupActivity : ThemedScreen() {
                     "Aurora" to KeyboardSettings.THEME_AURORA,
                     "Synthwave" to KeyboardSettings.THEME_SYNTHWAVE,
                     "Gold on Black" to KeyboardSettings.THEME_GOLD_ON_BLACK,
-                ),
-            ),
-            // The themes that animate wherever you tap: they share the Effect amount slider.
-            ThemeGroup(
-                "Tap animations",
-                listOf(
                     "Bubbles" to KeyboardSettings.THEME_BUBBLES,
                     "Embers" to KeyboardSettings.THEME_EMBERS,
                     "Sakura" to KeyboardSettings.THEME_SAKURA,
                     "Neon Ripples" to KeyboardSettings.THEME_RIPPLES,
+                    "Rain on Window" to KeyboardSettings.THEME_RAIN_ON_WINDOW,
+                    "Fireflies" to KeyboardSettings.THEME_FIREFLIES,
                 ),
             ),
         )
@@ -595,6 +618,14 @@ class SetupActivity : ThemedScreen() {
                     KeyStyle.SHELL -> notes.add("moulded buttons")
                     KeyStyle.PLAYER -> notes.add("player buttons")
                     KeyStyle.GLOWLINE -> notes.add("glowing outline")
+                    KeyStyle.TEXTBOX -> notes.add("text box")
+                    KeyStyle.FRETTED -> notes.add("fretted keys")
+                    KeyStyle.BUTTON -> notes.add("round buttons")
+                    KeyStyle.RIBBED -> notes.add("ribbed plastic")
+                    KeyStyle.TILE -> notes.add("block tiles")
+                    KeyStyle.MAZE -> notes.add("maze walls")
+                    KeyStyle.CRAFT -> notes.add("stone buttons")
+                    KeyStyle.MOSAIC -> notes.add("mosaic frames")
                     KeyStyle.DEFAULT -> if (theme.squareKeys) notes.add("square")
                 }
             }
@@ -605,6 +636,8 @@ class SetupActivity : ThemedScreen() {
                 if (theme.stripStyle == StripStyle.PIXEL_SCREEN) notes.add("pixel screen")
                 if (theme.stripStyle == StripStyle.WINDOW) notes.add("menu window")
                 if (theme.stripStyle == StripStyle.HANDHELD_SCREEN) notes.add("handheld screen")
+                if (theme.stripStyle == StripStyle.SPECTRUM_PAPER) notes.add("rainbow paper")
+                if (theme.stripStyle == StripStyle.LCD_PANEL || theme.stripStyle == StripStyle.LCD_DIGITS) notes.add("LCD screen")
             }
             MixPart.ANIMATION -> {
                 if (theme.stars) notes.add("stars")
