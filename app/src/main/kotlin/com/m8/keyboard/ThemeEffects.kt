@@ -789,6 +789,9 @@ class AmbientBackground(
 
     /** Lets go of the cached Memphis drawings (when the keyboard is hidden or resized); they are redrawn when next needed. */
     private fun releaseMemphisFrames() {
+        chevShaders = arrayOfNulls(0)
+        chevTiles.forEach { it?.recycle() }
+        chevTiles = arrayOfNulls(0)
         for (i in memphisFrames.indices) {
             memphisFrames[i]?.recycle()
             memphisFrames[i] = null
@@ -1394,30 +1397,67 @@ class AmbientBackground(
     // -------------------------------------------------- WipEout: speed chevrons
 
     /** [colours]: the chevron colours, used in turn row by row (ARGB: the alpha sets how strong they are). */
+    // One chevron cell per colour, drawn once into a small bitmap; each row then just slides a repeating shader of it across the
+    // screen, instead of stroking a path of chevrons every frame.
+    private var chevTiles: Array<Bitmap?> = arrayOfNulls(0)
+    private var chevShaders: Array<BitmapShader?> = arrayOfNulls(0)
+
     private fun drawChevrons(canvas: Canvas, w: Float, h: Float, frame: Int) {
         val d = density
         val rowH = 22f * d
         val step = 28f * d
         val half = 7f * d
         val rows = (h / rowH).toInt() + 1
-        paint.style = Paint.Style.STROKE
+        val tw = Math.round(step).coerceAtLeast(1)
+        val th = Math.round(rowH).coerceAtLeast(1)
+        val c = (tw - half) / 2f
+        if (chevShaders.size != rows) {
+            chevShaders = arrayOfNulls(rows)
+            if (chevTiles.size != maxOf(1, colours.size)) {
+                chevTiles.forEach { it?.recycle() }
+                chevTiles = arrayOfNulls(maxOf(1, colours.size))
+            }
+        }
         paint.strokeWidth = 2.4f * d
         paint.strokeJoin = Paint.Join.MITER
+        paint.isFilterBitmap = true
+        val m = Matrix()
         for (r in 0 until rows) {
+            val ci = if (colours.isEmpty()) 0 else r % colours.size
+            var shader = chevShaders[r]
+            if (shader == null) {
+                var tile = chevTiles[ci]
+                if (tile == null) {
+                    tile = Bitmap.createBitmap(tw, th, Bitmap.Config.ARGB_8888)
+                    val tc = Canvas(tile)
+                    val tp = Paint(Paint.ANTI_ALIAS_FLAG)
+                    tp.style = Paint.Style.STROKE
+                    tp.strokeWidth = 2.4f * d
+                    tp.strokeJoin = Paint.Join.MITER
+                    tp.color = col(r)
+                    val p = Path()
+                    p.moveTo(c, th / 2f - half)
+                    p.lineTo(c + half, th / 2f)
+                    p.lineTo(c, th / 2f + half)
+                    tc.drawPath(p, tp)
+                    chevTiles[ci] = tile
+                }
+                shader = BitmapShader(tile, Shader.TileMode.REPEAT, Shader.TileMode.CLAMP)
+                chevShaders[r] = shader
+            }
             val speed = (1.4f + (hash3(r, 2, 3) % 5) * 0.55f) * d
             val off = (frame * speed) % step
-            val cy = r * rowH + rowH / 2f
-            path.reset()
-            var x = -step + off
-            while (x < w + step) {
-                path.moveTo(x, cy - half)
-                path.lineTo(x + half, cy)
-                path.lineTo(x, cy + half)
-                x += step
-            }
-            paint.color = col(r)
-            canvas.drawPath(path, paint)
+            // The tile is a whole number of pixels wide, so scale it to exactly one step before sliding it.
+            m.setScale(step / tw, 1f)
+            m.postTranslate(off - c * step / tw, r * rowH)
+            shader.setLocalMatrix(m)
+            paint.style = Paint.Style.FILL
+            paint.color = 0xFFFFFFFF.toInt()
+            paint.shader = shader
+            canvas.drawRect(0f, r * rowH, w, r * rowH + rowH, paint)
         }
+        paint.shader = null
+        paint.isFilterBitmap = false
     }
 
     // -------------------------------------------------- Netscape: speckled texture
