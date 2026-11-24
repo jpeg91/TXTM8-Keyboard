@@ -704,7 +704,6 @@ class AmbientBackground(
     private val soundX = FloatArray(SOUND_EVENTS)
     private val soundAges = FloatArray(SOUND_EVENTS)
     private var soundNext = 0
-    private val tick = Runnable { invalidateSelf() }
     private val glyphs: CharArray = if (kind == AmbientKind.RAIN) matrixGlyphs() else CharArray(0)
     private val one = CharArray(1)
     private var hill: Shader? = null
@@ -816,7 +815,7 @@ class AmbientBackground(
         base.setVisible(visible, restart)
         val changed = super.setVisible(visible, restart)
         if (!visible) {
-            unscheduleSelf(tick)
+            AnimationClock.cancel(this)
             releaseMemphisFrames()
         }
         return changed
@@ -896,10 +895,12 @@ class AmbientBackground(
         canvas.restore()
         paint.shader = null
         paint.alpha = 255
-        // One pending tick at most: other redraws (typing, a pulse) must not start extra chains of frames.
-        unscheduleSelf(tick)
+        // One pending request at most: other redraws (typing, a pulse) must not start extra chains of frames.
+        AnimationClock.cancel(this)
         // The sound wave only needs frames while a sound is still ringing; flat, it is drawn once and rests.
-        if (isVisible && animating) scheduleSelf(tick, now + frameMs)
+        // The next redraw is asked for when the next frame starts, and the shared clock rounds that up to its
+        // grid, so this layer's redraw lands on the same tick as the other layers' and Android draws once.
+        if (isVisible && animating) AnimationClock.request(this, startedAt + (frame + 1L) * frameMs)
     }
 
     private fun col(i: Int): Int = if (colours.isEmpty()) 0xFFFFFFFF.toInt() else colours[i % colours.size]
@@ -1573,7 +1574,7 @@ class KeyTracker(private val host: ViewGroup) {
 /**
  * A blinking block cursor at the bottom-left of the last key pressed, like a DOS prompt. It is a foreground
  * drawable (the keys would hide it in the background). It blinks by hand, on the clock, at a steady rate wherever
- * it is: it asks for a frame only when it next has to change, so it costs almost nothing.
+ * it is: it asks the shared [AnimationClock] for a frame only when it next has to change, so it costs almost nothing.
  */
 class KeyCursorDrawable(
     private val tracker: KeyTracker,
@@ -1582,7 +1583,6 @@ class KeyCursorDrawable(
 ) : Drawable() {
     private val paint = Paint()
     private val blinkStart = SystemClock.uptimeMillis()
-    private val tick = Runnable { invalidateSelf() }
 
     /** The cursor moved to a new key. It jumps there but keeps its blink going, as a real prompt does. */
     fun moved() {
@@ -1591,7 +1591,7 @@ class KeyCursorDrawable(
 
     override fun setVisible(visible: Boolean, restart: Boolean): Boolean {
         val changed = super.setVisible(visible, restart)
-        if (!visible) unscheduleSelf(tick)
+        if (!visible) AnimationClock.cancel(this)
         return changed
     }
 
@@ -1605,8 +1605,8 @@ class KeyCursorDrawable(
             paint.color = colour
             canvas.drawRect(left, bottom - 3f * density, left + 8f * density, bottom, paint)
         }
-        unscheduleSelf(tick)
-        if (isVisible) scheduleSelf(tick, blinkStart + (phase + 1) * BLINK_MS)
+        AnimationClock.cancel(this)
+        if (isVisible) AnimationClock.request(this, blinkStart + (phase + 1) * BLINK_MS)
     }
 
     override fun setAlpha(alpha: Int) { paint.alpha = alpha }

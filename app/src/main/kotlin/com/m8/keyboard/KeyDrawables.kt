@@ -20,6 +20,7 @@ import android.graphics.drawable.StateListDrawable
 import android.os.SystemClock
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import kotlin.random.Random
 
 /**
@@ -522,14 +523,19 @@ class GlitterTwinkleDrawable(
     /** 0..100: how many stars appear. 50 is the original amount; 0 is none and 100 is about double. */
     private val starDensity: Int = 50,
 ) : Drawable() {
-    private data class Twinkle(
+    private class Twinkle(
         val key: View,
         val corner: Int,
         val bornFrame: Int,
         val lifetime: Int,
         val radius: Float,
         val colour: Int,
-    )
+    ) {
+        /** Where the star sits in the host's coordinates; worked out when it is born and again after a layout. */
+        var x = 0f
+        var y = 0f
+        var placed = false
+    }
 
     private val random = Random(System.nanoTime())
     private val paint = Paint().apply { isAntiAlias = false; style = Paint.Style.FILL }
@@ -537,72 +543,88 @@ class GlitterTwinkleDrawable(
     private val twinkles = ArrayList<Twinkle>()
     private var frame = 0
     private var running = false
-    private val frameTask = Runnable { invalidateSelf() }
+
+    // The keys and where they are only change when the keyboard is laid out, so they are looked up then and
+    // reused; before, every frame walked the whole view tree and asked each star for its screen position.
+    private var keys: List<View> = emptyList()
+    private var layoutDirty = true
+    private var lastStepAt = 0L
+    private val hostLocation = IntArray(2)
+    private val keyLocation = IntArray(2)
+    private val layoutListener = ViewTreeObserver.OnGlobalLayoutListener { layoutDirty = true }
     private val attachListener = object : View.OnAttachStateChangeListener {
-        override fun onViewAttachedToWindow(v: View) { start() }
-        override fun onViewDetachedFromWindow(v: View) { stop() }
+        override fun onViewAttachedToWindow(v: View) {
+            watchLayout()
+            start()
+        }
+        override fun onViewDetachedFromWindow(v: View) {
+            stop()
+            unwatchLayout()
+        }
     }
 
     init {
         host.addOnAttachStateChangeListener(attachListener)
-        if (host.isAttachedToWindow) start()
+        if (host.isAttachedToWindow) {
+            watchLayout()
+            start()
+        }
+    }
+
+    private fun watchLayout() {
+        val observer = host.viewTreeObserver
+        if (observer.isAlive) observer.addOnGlobalLayoutListener(layoutListener)
+        layoutDirty = true
+    }
+
+    private fun unwatchLayout() {
+        val observer = host.viewTreeObserver
+        if (observer.isAlive) observer.removeOnGlobalLayoutListener(layoutListener)
     }
 
     fun start() {
         if (running || strength <= 0f) return
         running = true
-        scheduleSelf(frameTask, android.os.SystemClock.uptimeMillis() + FRAME_MS)
+        lastStepAt = android.os.SystemClock.uptimeMillis()
+        AnimationClock.request(this, lastStepAt + FRAME_MS)
     }
 
     fun stop() {
         running = false
-        unscheduleSelf(frameTask)
+        AnimationClock.cancel(this)
+    }
+
+    /** Works out where [twinkle] sits in the host, from its key's position on screen. [hostLocation] must be current. */
+    private fun place(twinkle: Twinkle) {
+        val key = twinkle.key
+        if (key.width <= 0 || key.height <= 0) {
+            twinkle.placed = false
+            return
+        }
+        key.getLocationOnScreen(keyLocation)
+        val inset = 3f * density
+        twinkle.x = when (twinkle.corner) {
+            0, 2 -> keyLocation[0] - hostLocation[0] + inset
+            else -> keyLocation[0] - hostLocation[0] + key.width - inset
+        }
+        twinkle.y = when (twinkle.corner) {
+            0, 1 -> keyLocation[1] - hostLocation[1] + inset
+            else -> keyLocation[1] - hostLocation[1] + key.height - inset
+        }
+        twinkle.placed = true
     }
 
     override fun draw(canvas: Canvas) {
         if (!running || strength <= 0f || colours.isEmpty()) return
-        frame++
-        val keys = clickableLeaves(host)
-        twinkles.removeAll { frame - it.bornFrame >= it.lifetime || !it.key.isShown }
-
-        // Spawn in small irregular bursts. The lifetime and position are independent per star.
-        // At the default density of 50 this averages about one new star per frame; the slider
-        // scales that from none (0) to about two per frame (100).
-        val expected = 1.02f * starDensity.coerceIn(0, 100) / 50f
-        val whole = expected.toInt()
-        val count = whole + if (random.nextFloat() < expected - whole) 1 else 0
-        if (keys.isNotEmpty() && count > 0) {
-            repeat(count) {
-                val key = keys[random.nextInt(keys.size)]
-                twinkles.add(
-                    Twinkle(
-                        key = key,
-                        corner = random.nextInt(4),
-                        bornFrame = frame,
-                        lifetime = random.nextInt(6, 10),
-                        radius = random.nextFloat() * 7f * density + 12f * density,
-                        colour = colours[random.nextInt(colours.size)],
-                    ),
-                )
-            }
+        val now = SystemClock.uptimeMillis()
+        // Stars age and spawn once per FRAME_MS. Other layers redraw the keyboard more often than that, and
+        // those redraws just repaint the stars where they already are.
+        if (now - lastStepAt >= FRAME_MS) {
+            lastStepAt = now
+            step()
         }
-
-        val hostLocation = IntArray(2)
-        host.getLocationOnScreen(hostLocation)
         for (twinkle in twinkles) {
-            val key = twinkle.key
-            if (key.width <= 0 || key.height <= 0 || !key.isShown) continue
-            val location = IntArray(2)
-            key.getLocationOnScreen(location)
-            val inset = 3f * density
-            val x = when (twinkle.corner) {
-                0, 2 -> location[0] - hostLocation[0] + inset
-                else -> location[0] - hostLocation[0] + key.width - inset
-            }
-            val y = when (twinkle.corner) {
-                0, 1 -> location[1] - hostLocation[1] + inset
-                else -> location[1] - hostLocation[1] + key.height - inset
-            }
+            if (!twinkle.placed) continue
             val age = frame - twinkle.bornFrame
             val fadeAlpha = when (age) {
                 0 -> 145
@@ -613,10 +635,46 @@ class GlitterTwinkleDrawable(
             if (alpha <= 0) continue
             paint.color = twinkle.colour
             paint.alpha = alpha
-            drawStar(canvas, x, y, twinkle.radius, paint)
+            drawStar(canvas, twinkle.x, twinkle.y, twinkle.radius, paint)
         }
         paint.alpha = 255
-        scheduleSelf(frameTask, android.os.SystemClock.uptimeMillis() + FRAME_MS)
+        AnimationClock.request(this, lastStepAt + FRAME_MS)
+    }
+
+    /** Moves the stars on one frame: ages them, removes the expired, and spawns new ones. */
+    private fun step() {
+        frame++
+        var moved = false
+        if (layoutDirty || keys.isEmpty()) {
+            layoutDirty = false
+            keys = clickableLeaves(host)
+            moved = true
+        }
+        twinkles.removeAll { frame - it.bornFrame >= it.lifetime || !it.key.isShown }
+
+        // Spawn in small irregular bursts. The lifetime and position are independent per star.
+        // At the default density of 50 this averages about one new star per frame; the slider
+        // scales that from none (0) to about two per frame (100).
+        val expected = 1.02f * starDensity.coerceIn(0, 100) / 50f
+        val whole = expected.toInt()
+        val count = whole + if (random.nextFloat() < expected - whole) 1 else 0
+        val spawn = if (keys.isNotEmpty()) count else 0
+        if (moved || spawn > 0) host.getLocationOnScreen(hostLocation)
+        // After a layout the keys have moved, so every star is placed again.
+        if (moved) for (twinkle in twinkles) place(twinkle)
+        repeat(spawn) {
+            val key = keys[random.nextInt(keys.size)]
+            val twinkle = Twinkle(
+                key = key,
+                corner = random.nextInt(4),
+                bornFrame = frame,
+                lifetime = random.nextInt(6, 10),
+                radius = random.nextFloat() * 7f * density + 12f * density,
+                colour = colours[random.nextInt(colours.size)],
+            )
+            place(twinkle)
+            twinkles.add(twinkle)
+        }
     }
 
     private fun clickableLeaves(parent: ViewGroup): List<View> {
@@ -1151,7 +1209,7 @@ class TapEffectDrawable(
                 }
             }
         }
-        if (particles.isNotEmpty()) invalidateSelf() // ask for the next frame
+        if (particles.isNotEmpty()) AnimationClock.request(this, now + 1) // next frame on the shared clock's grid
     }
 
     private fun drawBubble(canvas: Canvas, p: Particle, sec: Float, t: Float, fade: Float) {
@@ -1614,7 +1672,7 @@ class PulseBackground(
             paint.alpha = (255f * strength * level).toInt().coerceIn(0, 255)
             canvas.drawRect(bounds, paint)
         }
-        if (running) invalidateSelf() // ask for the next frame
+        if (running) AnimationClock.request(this, SystemClock.uptimeMillis() + 1) // next frame on the shared clock's grid
     }
 
     override fun pulse() = pulse(null)
