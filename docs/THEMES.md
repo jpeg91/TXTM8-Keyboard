@@ -73,6 +73,7 @@ Set only what the theme needs; every other field has a default.
 
 **Animations are independent slots** (`ThemeLayers`).
 - Behind the keys: the background (plus the `ambient` animation) and the typing pulse. Over the keys: the `overlay` animation, `stars`, `tapEffect` and the cursor. Any combination can be on at once; with more than one over-the-keys slot, `EffectStack` draws them together.
+- Animation timing: every animated layer asks the shared `AnimationClock` (`AnimationClock.kt`) for its next frame instead of using its own timer. The clock rounds requests up to a 42 ms grid (about 24 frames a second) and redraws every layer that is due on a tick together. A new animated drawable should work out its frame from `SystemClock.uptimeMillis()` when it draws, call `AnimationClock.request(this, whenItNextChanges)` at the end of `draw`, and call `AnimationClock.cancel(this)` when hidden or stopped. Do not use `scheduleSelf`, `postDelayed` or `invalidateSelf()` every frame.
 - The typing pulse is drawn in `pulseColour` (a Colours-part field; 0 means the `accent`).
 - The typing pulse is on for every theme and follows the pulse settings. Settings controls appear per slot: `stars` shows Star density, `tapEffect` shows Effect amount, and the pulse controls are always shown.
 - `ambient` follows the Effect amount setting only when the theme also has a `tapEffect` (`ambientFollowsEffectAmount`). Otherwise it is always on.
